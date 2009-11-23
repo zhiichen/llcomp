@@ -57,12 +57,15 @@ class CloneVisitor(OffsetNodeVisitor):
 		# In case it's a function, we need to print the parameter list in a different order
 		#	so we send the node.name attribute to the children, where will be printed correctly
 		if isinstance(node.type, c_ast.FuncDecl):
-			self.visit_FuncDecl(offset, node.type, node.name)
+			self.visit_FuncDecl(node.type, node.name, offset)
 		elif isinstance(node.type, c_ast.ArrayDecl):
 			# Array declarations are also different, you need to pass the node name attribute
-			decl_name = node.name + " ".join(['%s'%qual for qual in node.quals]) + " ".join(['%s'%stor for stor in node.storage])
+			storage = " ".join(['%s'%stor for stor in node.storage]) # + node.name 
+			decl_name = node.name + " ".join(['%s'%qual for qual in node.quals])
+			self.write(offset, storage);
 			new_offset = offset
 			self.visit_ArrayDecl(node = node.type, node_name = decl_name, offset = new_offset)
+			self.write(offset, ";\n")
 		else:
 			self.visit_TypeDecl(node.type, offset)
 			string = node.name + " ".join(['%s'%qual for qual in node.quals]) + " ".join(['%s'%stor for stor in node.storage])
