@@ -1,5 +1,5 @@
 static char rcsid[] =
-  "$Id: for001.c,v 1.4 2000/07/30 13:10:11 a-hasega Exp $";
+    "$Id: for001.c,v 1.4 2000/07/30 13:10:11 a-hasega Exp $";
 /* 
  * $RWC_Release: Omni-1.6a $
  * $RWC_Copyright:
@@ -34,108 +34,94 @@ int thds;
 int *buf;
 
 
-void
-clear ()
+void clear()
 {
-  int lp;
+    int lp;
 
-  for (lp = 0; lp <= thds; lp++)
-    {
-      buf[lp] = 0;
+    for (lp = 0; lp <= thds; lp++) {
+	buf[lp] = 0;
     }
 }
 
 
-int
-check_result (int v)
+int check_result(int v)
 {
-  int lp;
+    int lp;
 
-  int err = 0;
+    int err = 0;
 
 
-  for (lp = 0; lp < thds; lp++)
-    {
-      if (buf[lp] != v)
-	{
-	  err += 1;
+    for (lp = 0; lp < thds; lp++) {
+	if (buf[lp] != v) {
+	    err += 1;
 	}
     }
-  if (buf[thds] != 0)
-    {
-      err += 1;
+    if (buf[thds] != 0) {
+	err += 1;
     }
 
-  return err;
+    return err;
 }
 
 
-void
-func_for ()
+void func_for()
 {
-  int lp;
+    int lp;
 
-  /* #pragma omp for schedule(static,1) */
-  for (lp = 0; lp < thds; lp++)
-    {
-      buf[lp] += omp_get_num_threads ();
+    /* #pragma omp for schedule(static,1) */
+    for (lp = 0; lp < thds; lp++) {
+	buf[lp] += omp_get_num_threads();
     }
 }
 
 
-main ()
+main()
 {
-  int lp;
+    int lp;
 
-  int errors = 0;
+    int errors = 0;
 
 
-  thds = omp_get_max_threads ();
-  if (thds == 1)
-    {
-      printf ("should be run this program on multi threads.\n");
-      exit (0);
+    thds = omp_get_max_threads();
+    if (thds == 1) {
+	printf("should be run this program on multi threads.\n");
+	exit(0);
     }
-  buf = (int *) malloc (sizeof (int) * (thds + 1));
-  if (buf == NULL)
-    {
-      printf ("can not allocate memory.\n");
-      exit (1);
+    buf = (int *) malloc(sizeof(int) * (thds + 1));
+    if (buf == NULL) {
+	printf("can not allocate memory.\n");
+	exit(1);
     }
-  omp_set_dynamic (0);
+    omp_set_dynamic(0);
 
 
-  clear ();
+    clear();
 /*  #pragma omp parallel */
-  {
+    {
 /*    #pragma omp for schedule(static,1) */
-    for (lp = 0; lp < thds; lp++)
-      {
-	buf[lp] += omp_get_num_threads ();
-      }
-  }
-  errors += check_result (thds);
-
-  clear ();
-/*   #pragma omp parallel */
-  {
-    func_for ();
-  }
-  errors += check_result (thds);
-
-  clear ();
-  func_for ();
-  errors += check_result (1);
-
-
-  if (errors == 0)
-    {
-      printf ("for 001 : SUCCESS\n");
-      return 0;
+	for (lp = 0; lp < thds; lp++) {
+	    buf[lp] += omp_get_num_threads();
+	}
     }
-  else
+    errors += check_result(thds);
+
+    clear();
+/*   #pragma omp parallel */
     {
-      printf ("for 001 : FAILED\n");
-      return 1;
+	func_for();
+    }
+    errors += check_result(thds);
+
+    clear();
+    func_for();
+    errors += check_result(1);
+
+
+    if (errors == 0) {
+	printf("for 001 : SUCCESS\n");
+	return 0;
+    } else {
+	printf("for 001 : FAILED\n");
+	return 1;
     }
 }

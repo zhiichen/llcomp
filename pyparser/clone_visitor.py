@@ -11,6 +11,7 @@ class OffsetNodeVisitor(object):
 		method = 'visit_' + node.__class__.__name__
 		visitor = getattr(self, method, self.generic_visit)
 		return visitor(node, offset)
+
 	def generic_visit(self, node, offset = 0):
 		""" Called if no explicit visitor function exists for a 
 			node. Implements preorder visiting of the node.
@@ -89,9 +90,17 @@ class CloneVisitor(OffsetNodeVisitor):
 				# Array declarations are also different, you need to pass the node name attribute
 				decl_name = node.name + " ".join(['%s'%qual for qual in node.quals])
 				new_offset = offset
+				self.write_blank()
+				# ** TODO: Do not perform this search, change recursion order... ** 
+				tmp_node = node.type
+				while not isinstance(tmp_node, c_ast.TypeDecl) and tmp_node:
+					tmp_node = tmp_node.type
+
+				self.visit_TypeDecl(tmp_node, offset)
+				self.write(0, decl_name)
 				self.visit_ArrayDecl(node = node.type, node_name = decl_name, offset = new_offset)
 			else:
-				self.visit_TypeDecl(node.type, offset)
+				self.visit(node.type, offset) #_TypeDecl(node.type, offset)
 				string = node.name + " ".join(['%s'%qual for qual in node.quals])
 				self.write(offset, string)
 			if node.init:
@@ -117,10 +126,14 @@ class CloneVisitor(OffsetNodeVisitor):
 		if len(node.names) >= 1:
 			self.write(offset, node.names[0])
 		self.write_blank()
-
+	# ******************** Loops ********************
 	def visit_TypeDecl(self, node, offset = 0):
 		self.generic_visit(node)
 		self.write_blank()
+
+	def visit_PtrDecl(self, node, offset = 0):
+		self.visit(node.type)
+		self.write(offset, "*")
 
 	def visit_FuncCall(self, node, offset = 0):
 		self.visit_ID(node.name)
@@ -185,13 +198,14 @@ class CloneVisitor(OffsetNodeVisitor):
 
 	# ******************** Array ********************
 	def visit_ArrayDecl(self, node, node_name, offset = 0):
-		self.visit_TypeDecl(node.type)
-		self.write(0, node_name)
 		self.write(0, "[")
 		if node.dim:
 			self.visit_Constant(node.dim)
 		self.write(0, "]")
 		self.write_blank()
+		if isinstance(node.type, c_ast.ArrayDecl):
+			self.visit_ArrayDecl(node.type, node_name, offset)
+
 
 	def visit_ArrayRef(self, node, offset = 0):
 		self.visit(node.name)
@@ -201,4 +215,17 @@ class CloneVisitor(OffsetNodeVisitor):
 		self.write(0, "]")
 		self.write_blank()
 
+	# ******************** If ********************
+	def visit_If(self, node, offset = 0):
+		self.write(offset, "if");
+		self.write_blank();
+		self.write(offset, "(");
+		self.visit_BinaryOp(node.cond);
+		self.write(offset, ")");
+		self.write_blank();
+		self.visit_Compound(node.iftrue);
+		if node.iffalse:
+			self.write(offset, "else");
+			self.write_blank()
+			self.visit(node.iffalse)
 
