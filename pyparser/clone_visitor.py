@@ -116,7 +116,9 @@ class CloneVisitor(OffsetNodeVisitor):
 		self.visit_TypeDecl(node.type, offset = 0)
 		self.write(offset, name)
 		if node.args:
+			self.inside_compound = 1
 			self.visit_ParamList(node.args)
+			self.inside_compound = 0
 		else:
 			self.write(offset, "()")
 		self.write_blank()
