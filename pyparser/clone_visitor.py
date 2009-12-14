@@ -22,7 +22,7 @@ class OffsetNodeVisitor(object):
 
 
 class CloneVisitor(OffsetNodeVisitor):
-	inside_compound = False
+	inside = False
 
 	def __init__(self, filename = None):
 		self.filename = filename or sys.stdout
@@ -31,7 +31,7 @@ class CloneVisitor(OffsetNodeVisitor):
 		except TypeError:
 			self.file = sys.stdout
 
-		self.inside_compound = False
+		self.inside = False
 
 	def __del__(self):
 		self.file.close()
@@ -69,11 +69,11 @@ class CloneVisitor(OffsetNodeVisitor):
 	def visit_Compound(self, node, offset = 0):
 		self.writeLn(offset, "\n{\n")
 		new_offset = offset + 2
-		self.inside_compound = True
+		self.inside = True
 		for c in node.children():
 				self.visit(c, offset = new_offset)
 				self.writeLn(0, ";")
-		self.inside_compound = False
+		self.inside = False
 		self.writeLn(offset, "}\n")
 
 	def visit_Decl(self, node, offset = 0):
@@ -108,7 +108,7 @@ class CloneVisitor(OffsetNodeVisitor):
 				self.write(0, "=")
 				self.write_blank()
 				self.visit_Constant(node.init)
-			if not self.inside_compound:
+			if not self.inside:
 				self.write(0, ";\n")
 				self.write_blank()
 
@@ -116,9 +116,9 @@ class CloneVisitor(OffsetNodeVisitor):
 		self.visit_TypeDecl(node.type, offset = 0)
 		self.write(offset, name)
 		if node.args:
-			self.inside_compound = 1
+			self.inside = 1
 			self.visit_ParamList(node.args)
-			self.inside_compound = 0
+			self.inside = 0
 		else:
 			self.write(offset, "()")
 		self.write_blank()
