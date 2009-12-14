@@ -230,4 +230,9 @@ class CloneVisitor(OffsetNodeVisitor):
 			self.write(offset, "else");
 			self.write_blank()
 			self.visit(node.iffalse)
+	# ******************** If ********************
+	def visit_Pragma(self, node, offset = 0):
+		self.write(offset, "#pragma")
+		self.write_blank();
+		self.writeLn(offset, node.name)
 
