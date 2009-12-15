@@ -1,0 +1,17 @@
+*** README ***
+
+
+Patch adding pragma support to pycparser
+
+How to apply patch:
+
+- Download pycparser trunk
+
+svn checkout http://pycparser.googlecode.com/svn/trunk/ pycparser-read-only
+
+- Apply patch:
+
+cd pycparser-read-only
+
+patch -p 0 < ruyk_changes.diff 
+
