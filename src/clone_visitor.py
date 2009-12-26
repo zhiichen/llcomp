@@ -34,7 +34,11 @@ class CloneVisitor(OffsetNodeVisitor):
 		self.inside = False
 
 	def __del__(self):
+		""" Ensure closing the file when object dissapears """
 		self.file.close()
+
+
+	# ********** Writing support **********
 
 	def writeLn(self, offset, string):
 		self.write(offset, string)
@@ -52,9 +56,22 @@ class CloneVisitor(OffsetNodeVisitor):
 	def write_blank(self):
 		self.file.write(" ")
 
+	# ********** Support functions **********
+
+	def generic_visit_nodeList(self, nodeList, separator, offset):
+		""" Visit a list of nodes , writing values within a separator """
+		i = 0
+		for i in range(0, len(nodeList) - 1):
+			self.visit(nodeList[i])
+			self.write(offset, separator)
+		self.visit(nodeList[len(nodeList) - 1])
+
 	def visit_FileAST(self, node, offset = 0):
 		for elem in node.children():
 			self.visit(elem, offset)
+
+
+	# ********** Grammar **********
 
 	def visit_FuncDef(self, node, offset = 0):
 		self.visit_Decl(node.decl)
@@ -62,7 +79,7 @@ class CloneVisitor(OffsetNodeVisitor):
 
 	def visit_ParamList(self, node, offset = 0):
 		self.write(offset, "(")
-		self.generic_visit(node)
+		self.generic_visit_nodeList(node.children(), ',', offset)
 		self.write(offset, ")")
 		self.write_blank()
 
@@ -93,10 +110,10 @@ class CloneVisitor(OffsetNodeVisitor):
 				self.write_blank()
 				# ** TODO: Do not perform this search, change recursion order... ** 
 				tmp_node = node.type
-				while not isinstance(tmp_node, c_ast.TypeDecl) and tmp_node:
+				while not (isinstance(tmp_node, c_ast.TypeDecl) or isinstance(tmp_node, c_ast.PtrDecl)) and tmp_node:
 					tmp_node = tmp_node.type
 
-				self.visit_TypeDecl(tmp_node, offset)
+				self.visit(tmp_node, offset)
 				self.write(0, decl_name)
 				self.visit_ArrayDecl(node = node.type, node_name = decl_name, offset = new_offset)
 			else:
@@ -122,13 +139,7 @@ class CloneVisitor(OffsetNodeVisitor):
 		else:
 			self.write(offset, "()")
 		self.write_blank()
-
-	def visit_IdentifierType(self, node, offset = 0):
-		self.generic_visit(node, offset)
-		if len(node.names) >= 1:
-			self.write(offset, node.names[0])
-		self.write_blank()
-	# ******************** Loops ********************
+	
 	def visit_TypeDecl(self, node, offset = 0):
 		self.generic_visit(node)
 		self.write_blank()
@@ -137,10 +148,19 @@ class CloneVisitor(OffsetNodeVisitor):
 		self.visit(node.type)
 		self.write(offset, "*")
 
+
+	# ******************** Types ********************
+	def visit_IdentifierType(self, node, offset = 0):
+		self.generic_visit(node, offset)
+		if len(node.names) >= 1:
+			self.write(offset, node.names[0])
+		self.write_blank()
+
+
 	def visit_FuncCall(self, node, offset = 0):
 		self.visit_ID(node.name)
 		self.write(offset, "(")
-		self.visit_ExprList(node)
+		self.visit_ExprList(node.args)
 		self.write(offset, ")")
 		self.write_blank()
 
@@ -149,15 +169,18 @@ class CloneVisitor(OffsetNodeVisitor):
 		self.write_blank()
 
 	def visit_ExprList(self, node, offset = 0):
-		if node.args:
-			self.generic_visit(node.args, offset)
+		if node.exprs:
+			self.generic_visit_nodeList(node.exprs, ",", offset)
 		self.write_blank()
 
 	def visit_Constant(self, node, offset = 0):
 		if node:
 			self.write(offset, node.value)
-		# self.write_blank()
 
+	def visit_Return(self, node, offset = 0):
+		self.write(offset, "return")
+		self.write_blank()
+		self.visit(node.expr)
 
 	# ******************** Loops ********************
 	def visit_For(self, node, offset = 0):
@@ -187,7 +210,12 @@ class CloneVisitor(OffsetNodeVisitor):
 		self.write_blank()
 		self.write(0, node.op)
 		self.write_blank()
-		self.visit(node.right)
+		if (isinstance(node.right, c_ast.BinaryOp)):
+			self.write(offset, "(")
+			self.visit(node.right)
+			self.write(offset, ")")
+		else:
+			self.visit(node.right)
 		# self.write_blank()
 
 	def visit_UnaryOp(self, node, offset = 0):
@@ -217,7 +245,7 @@ class CloneVisitor(OffsetNodeVisitor):
 		self.write(0, "]")
 		self.write_blank()
 
-	# ******************** If ********************
+	# ******************** Conditionals ********************
 	def visit_If(self, node, offset = 0):
 		self.write(offset, "if");
 		self.write_blank();
@@ -230,7 +258,16 @@ class CloneVisitor(OffsetNodeVisitor):
 			self.write(offset, "else");
 			self.write_blank()
 			self.visit(node.iffalse)
-	# ******************** If ********************
+
+	# ******************** Typecast ********************
+	def visit_Cast(self, node, offset = 0):
+		self.write(offset, '(')
+		self.visit(node.to_type)
+#		self.generic_visit(node.childrens)
+		self.write(offset, ')')
+		self.visit(node.expr)
+
+	# ******************** Language Extensions ********************
 	def visit_Pragma(self, node, offset = 0):
 		self.write(offset, "#pragma")
 		self.write_blank();
