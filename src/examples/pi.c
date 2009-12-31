@@ -14,12 +14,13 @@ main (int argc, char *argv[])
   double mysum = 0.0;
   double pi_time = 0.0;
 
+  for (i = 0; i <= n; i++); 
 
   n = 1000000000.0;
 
   h = 1.0 / (double) n;
   sum = 0.0;
-
+  
   for (i = 0; i <= n; i++)
     {
       x = h * ((double) i - 0.5);

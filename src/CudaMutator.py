@@ -1,5 +1,5 @@
 from pycparser import c_parser, c_ast
-from generic_visitors import FilterVisitor
+from generic_visitors import FilterVisitor, NodeNotFound
 
 
 class CudaMutator(object):
@@ -15,20 +15,27 @@ class CudaMutator(object):
       """ Filter definition
          Returns the first node matching with the filter"""
       # Build a visitor , matching the Pragma node of the AST
-      f = FilterVisitor(match_node = c_ast.Pragma)
+      f = FilterVisitor(match_node_type = c_ast.Pragma)
       node = f.generic_visit(ast)
       return node
 
-   def mutatorFunction(self, ast):
+   def mutatorFunction(self, ast, prev_node):
       """ CUDA mutator, writes the for as a kernel
       """
-      # Look up a For node which previous brother is a Pragma
-      f = FilterVisitor(match_node = c_ast.For, prev_brother = c_ast.Pragma)
+      # Look up a For node which previous brother is the start_node
+      f = FilterVisitor(match_node_type = c_ast.For, prev_brother = prev_node)
+      f.generic_visit(ast)
       
 
    def apply(self, ast):
       """ Apply the mutation """
+      print " Searching node "
       start_node = self.filter(ast)
+      print "Matched node: "
       start_node.show()
-      self.mutatorFunction(start_node)
+      print " >>> Mutating tree <<<<"
+#      try: 
+#         self.mutatorFunction(ast, start_node)
+#      except NodeNotFound as nf:
+#         print nf
       return start_node

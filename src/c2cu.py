@@ -29,11 +29,11 @@ t = CudaMutator()
 
 new_ast = t.apply(ast)
 
-# Print the AST
-v = CloneVisitor(filename = output_file)
-v.visit(new_ast)
+## Print the AST
+#v = CloneVisitor(filename = output_file)
+#v.visit(new_ast)
 
-del v
+# del v
 
 # Call pretty printer over the file
 if output_file:
