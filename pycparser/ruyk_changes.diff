@@ -1,19 +1,22 @@
 Index: z_test.py
 ===================================================================
---- z_test.py	(revisión: 88)
-+++ z_test.py	(copia de trabajo)
-@@ -1,6 +1,10 @@
+--- z_test.py	(revision 88)
++++ z_test.py	(working copy)
+@@ -1,18 +1,30 @@
  from pycparser import c_parser, c_ast
  
  source_code = """
 +
-+# pragma omp
 +
 +
  int main()
  {
      int a;
-@@ -11,9 +15,14 @@
+     a=1;
+     b=a;
++#pragma omp
+     printf("%d", b);
+     return;
  }
  """
  
@@ -25,16 +28,17 @@ Index: z_test.py
 +)
 +
  ast = parser.parse(source_code)
--function_body = ast.ext[0].body #hardcoded to the main() function
-+function_body = ast.ext[1].body #hardcoded to the main() function
++
++ast.show()
++
+ function_body = ast.ext[0].body #hardcoded to the main() function
  
  for stmt in function_body.stmts:
-     print stmt.coord, stmt
 Index: pycparser/_build_tables.py
 ===================================================================
---- pycparser/_build_tables.py	(revisión: 88)
-+++ pycparser/_build_tables.py	(copia de trabajo)
-@@ -20,9 +20,9 @@
+--- pycparser/_build_tables.py	(revision 88)
++++ pycparser/_build_tables.py	(working copy)
+@@ -20,12 +20,12 @@
  # Generates the tables
  #
  c_parser.CParser(
@@ -47,10 +51,14 @@ Index: pycparser/_build_tables.py
  
  # Load to compile into .pyc
  #
+-import lextab
++# import lextab
+ import yacctab
+ import c_ast
 Index: pycparser/c_ast.py
 ===================================================================
---- pycparser/c_ast.py	(revisión: 88)
-+++ pycparser/c_ast.py	(copia de trabajo)
+--- pycparser/c_ast.py	(revision 88)
++++ pycparser/c_ast.py	(working copy)
 @@ -1,1163 +1,1217 @@
 -#-----------------------------------------------------------------
 -# ** ATTENTION **
@@ -2434,9 +2442,9 @@ Index: pycparser/c_ast.py
 +
 Index: pycparser/c_parser.py
 ===================================================================
---- pycparser/c_parser.py	(revisión: 88)
-+++ pycparser/c_parser.py	(copia de trabajo)
-@@ -1,1259 +1,1296 @@
+--- pycparser/c_parser.py	(revision 88)
++++ pycparser/c_parser.py	(working copy)
+@@ -1,1259 +1,1297 @@
 -#-----------------------------------------------------------------
 -# pycparser: cparse.py
 -#
@@ -3156,7 +3164,7 @@ Index: pycparser/c_parser.py
 -    # a declaration list, for old "K&R style" function definitios.
 -    #
 +        """
-+	print " external_declaration 3"
++        print " external_declaration 3"
 +        print str(p[1])
 +        p[0] = p[1]
 +
@@ -3167,9 +3175,6 @@ Index: pycparser/c_parser.py
 +    def p_pp_directive_1(self, p):
 +        """ pp_directive  : PPHASH pragma_directive
 +        """
-+	print " Pragma  "
-+	print str(dir(p[2]))
-+	print str(p[2])
 +        p[0] = p[2]
 +#        self._parse_error('Directives not supported yet', 
 +#            self._coord(p.lineno(1)))
@@ -3177,8 +3182,6 @@ Index: pycparser/c_parser.py
 +    def p_pp_directive_2(self, p):
 +        """ pp_directive  : PPHASH
 +        """
-+	print " ** "
-+	print str(dir(p))
 +        self._parse_error('Directives not supported yet', 
 +            self._coord(p.lineno(1)))
 +
@@ -3271,6 +3274,12 @@ Index: pycparser/c_parser.py
 +                        | jump_statement
 +        """
 +        p[0] = p[1]
++
++    def p_statement_1(self, p):
++        """ statement : pp_directive
++        """
++        p[0] = p[1][0]
++
 +
 +    # In C, declarations can come several in a line:
 +    #   int x, *px, romulo = 5;
@@ -4870,8 +4879,8 @@ Index: pycparser/c_parser.py
 +    t.show(showcoord=True)
 Index: pycparser/__init__.py
 ===================================================================
---- pycparser/__init__.py	(revisión: 88)
-+++ pycparser/__init__.py	(copia de trabajo)
+--- pycparser/__init__.py	(revision 88)
++++ pycparser/__init__.py	(working copy)
 @@ -65,7 +65,7 @@
      else:
          text = open(filename).read()
@@ -4883,8 +4892,8 @@ Index: pycparser/__init__.py
  
 Index: pycparser/_ast_gen.py
 ===================================================================
---- pycparser/_ast_gen.py	(revisión: 88)
-+++ pycparser/_ast_gen.py	(copia de trabajo)
+--- pycparser/_ast_gen.py	(revision 88)
++++ pycparser/_ast_gen.py	(working copy)
 @@ -1,249 +1,249 @@
 -#-----------------------------------------------------------------
 -# _ast_gen.py
@@ -5376,8 +5385,8 @@ Index: pycparser/_ast_gen.py
 +    
 Index: pycparser/c_lexer.py
 ===================================================================
---- pycparser/c_lexer.py	(revisión: 88)
-+++ pycparser/c_lexer.py	(copia de trabajo)
+--- pycparser/c_lexer.py	(revision 88)
++++ pycparser/c_lexer.py	(working copy)
 @@ -157,6 +157,11 @@
          
          # pre-processor 
@@ -5414,10 +5423,20 @@ Index: pycparser/c_lexer.py
      ##
      ## Rules for the ppline state
      ##
+@@ -410,7 +430,8 @@
+ 
+ 
+ if __name__ == "__main__":
+-    filename = '../zp.c'
++#    filename = '../z_test.c'
++    filename = '../examples/c_files/funky.c'
+     text = open(filename).read()
+     
+     #~ text = '"'+r"""ka \p ka"""+'"'
 Index: pycparser/_c_ast.yaml
 ===================================================================
---- pycparser/_c_ast.yaml	(revisión: 88)
-+++ pycparser/_c_ast.yaml	(copia de trabajo)
+--- pycparser/_c_ast.yaml	(revision 88)
++++ pycparser/_c_ast.yaml	(working copy)
 @@ -161,4 +161,8 @@
  While: [cond*, stmt*]
  
