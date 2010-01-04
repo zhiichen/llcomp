@@ -207,7 +207,13 @@ class CloneVisitor(OffsetNodeVisitor):
 		# self.write_blank()
 
 	def visit_BinaryOp(self, node, offset = 0):
-		self.visit(node.left)
+		if (isinstance(node.left, c_ast.BinaryOp)):
+			self.write(offset, "(")
+			self.visit(node.left)
+			self.write(offset, ")")
+		else:
+			self.visit(node.left)
+
 		self.write_blank()
 		self.write(0, node.op)
 		self.write_blank()
