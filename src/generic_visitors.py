@@ -5,7 +5,7 @@ class NodeNotFound(Exception):
       self.node = node
 
    def __str__(self):
-      return "Node " + type(self.node) + " not found "
+      return "Node " + str(self.node) + " not found "
 
 class FilterVisitor(object):
    """ Returns the first node matching the criteria 
@@ -15,6 +15,14 @@ class FilterVisitor(object):
        self.match_node_type = match_node_type;
        self.prev_brother = prev_brother;
        self.match = False
+
+   def apply(self, ast):
+      """ Apply filter to the ast """
+      self.match = False
+      node = self.generic_visit(ast)
+      if type(node) != self.match_node_type:
+         raise NodeNotFound(self.match_node_type)
+      return node
 
    def visit(self, node, prev, offset = 1):
         """ Visit a node. 
@@ -37,7 +45,7 @@ class FilterVisitor(object):
        prev = None;
        try:
           c = iter.next();
-          while type(c) != self.match_node_type:
+          while type(c) != self.match_node_type or (self.prev_brother != None and self.prev_brother != prev):
              r = self.visit(c, prev)
              if type(r) == self.match_node_type and (self.prev_brother != None and self.prev_brother == prev):
                 # Stop iterating, we've found the mathing node
@@ -53,8 +61,6 @@ class FilterVisitor(object):
              self.match = True
        except StopIteration:
           pass
-       if not self.match:
-          raise NodeNotFound(self.match_node_type)
        return r
 
 

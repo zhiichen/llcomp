@@ -193,7 +193,8 @@ class CloneVisitor(OffsetNodeVisitor):
 		self.write_blank()
 		self.visit(node.next)
 		self.write(0, ")")
-		self.visit_Compound(node.stmt, offset)
+		if node.stmt:
+			self.visit_Compound(node.stmt, offset)
 		self.write_blank()
 
 

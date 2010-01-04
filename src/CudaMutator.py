@@ -16,7 +16,7 @@ class CudaMutator(object):
          Returns the first node matching with the filter"""
       # Build a visitor , matching the Pragma node of the AST
       f = FilterVisitor(match_node_type = c_ast.Pragma)
-      node = f.generic_visit(ast)
+      node = f.apply(ast)
       return node
 
    def mutatorFunction(self, ast, prev_node):
@@ -24,18 +24,20 @@ class CudaMutator(object):
       """
       # Look up a For node which previous brother is the start_node
       f = FilterVisitor(match_node_type = c_ast.For, prev_brother = prev_node)
-      f.generic_visit(ast)
-      
+      node = f.apply(ast)
+      print " Found : "
+      node.show()
 
    def apply(self, ast):
       """ Apply the mutation """
-      print " Searching node "
-      start_node = self.filter(ast)
-      print "Matched node: "
-      start_node.show()
-      print " >>> Mutating tree <<<<"
-#      try: 
-#         self.mutatorFunction(ast, start_node)
-#      except NodeNotFound as nf:
-#         print nf
+      start_node = None
+      try: 
+         print " Searching pragma "
+         start_node = self.filter(ast)
+         print "Pragma found: "
+         start_node.show()
+         print " >>> Mutating tree <<<<"
+         self.mutatorFunction(ast, start_node)
+      except NodeNotFound as nf:
+         print nf
       return start_node

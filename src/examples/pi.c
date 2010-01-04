@@ -5,6 +5,8 @@ f (double a)
   return (4.0 / (1.0 + a * a));
 }
 
+
+
 int
 main (int argc, char *argv[])
 {
@@ -14,13 +16,15 @@ main (int argc, char *argv[])
   double mysum = 0.0;
   double pi_time = 0.0;
 
-  for (i = 0; i <= n; i++); 
+  for (i = 1; i <= n; i++); 
 
   n = 1000000000.0;
 
   h = 1.0 / (double) n;
   sum = 0.0;
-  
+ 
+ 
+#pragma omp
   for (i = 0; i <= n; i++)
     {
       x = h * ((double) i - 0.5);
