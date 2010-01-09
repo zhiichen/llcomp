@@ -1,6 +1,7 @@
 from pycparser import c_parser, c_ast
 from generic_visitors import FilterVisitor, InsertVisitor, NodeNotFound
 
+from string import Template
 
 class CudaMutator(object):
    """ This is mutator locates a Pragma node, and then
@@ -34,13 +35,14 @@ class CudaMutator(object):
       print " *** "
       print "Declaration template"
       template_code = """
-      int dimA = n;
+      int dimA = $numThreads;
       int numThreadsPerBlock = 512;
       int numBlocks = dimA / numThreadsPerBlock;
       int memSize = numBlocks * numThreadsPerBlock * sizeof (double);
       double *reduction_loc = (double *) malloc (memSize);
       double *reduction_cu;
       """
+      template_code = Template(template_code).substitute(numThreads = numThreads)
       declarations_subtree = None
       try:
          declarations_subtree = self.template_parser.parse(template_code, filename='declarations')
@@ -77,12 +79,15 @@ class CudaMutator(object):
       """ 
       retrieve_subtree = None
       try:
-         retrieve_subtree = self.template_parser.parse(template_code, filename='<stdin>').ext[0].body
+         retrieve_subtree = self.template_parser.parse(template_code, filename='Retrieve').ext[0].body
          print "Subtree: "
          retrieve_subtree.show()
       except c_parser.ParseError, e:
          print "Parse error:" + str(e)
 
+      return retrieve_subtree
+
+   def buildHostReduction(self):
       template_code = """
       int fake() {
       for (i = 0; i < dimA; i++) 
@@ -93,7 +98,7 @@ class CudaMutator(object):
       """
       reduction_subtree = None
       try:
-         reduction_subtree = self.template_parser.parse(template_code, filename='<stdin>').ext[0].body
+         reduction_subtree = self.template_parser.parse(template_code, filename='HostReduction').ext[0].body
          print "Subtree: "
          reduction_subtree.show()
       except c_parser.ParseError, e:
@@ -123,6 +128,8 @@ class CudaMutator(object):
       InsertVisitor(subtree = initialization_subtree, position = "begin").apply(parent_stmt, 'stmts')
       retrieve_subtree = self.buildRetrieve()
       InsertVisitor(subtree = retrieve_subtree, position = "end").apply(parent_stmt, 'stmts')
+      reduction_subtree = self.buildHostReduction()
+      InsertVisitor(subtree = reduction_subtree, position = "end").apply(parent_stmt, 'stmts')
 
 
    def apply(self, ast):
