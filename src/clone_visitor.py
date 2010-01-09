@@ -232,6 +232,11 @@ class CloneVisitor(OffsetNodeVisitor):
 			self.visit(node.expr)
 			self.write(0, ')')
 			self.write_blank()
+		if node.op == '&':
+			# dereference (&) is also an unary operator
+			self.write(0, '&')
+			self.visit(node.expr)
+			self.write_blank()
 		else:
 			# node.op is like p-- (always a p), we need to remove it
 			self.visit(node.expr)
