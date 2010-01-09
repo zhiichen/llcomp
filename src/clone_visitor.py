@@ -124,7 +124,7 @@ class CloneVisitor(OffsetNodeVisitor):
 				self.write_blank()
 				self.write(0, "=")
 				self.write_blank()
-				self.visit_Constant(node.init)
+				self.visit(node.init)
 			if not self.inside:
 				self.write(0, ";\n")
 				self.write_blank()
@@ -226,11 +226,17 @@ class CloneVisitor(OffsetNodeVisitor):
 		# self.write_blank()
 
 	def visit_UnaryOp(self, node, offset = 0):
-		# self.debug(node)
-		# node.op is like p-- (always a p), we need to remove it
-		self.visit(node.expr)
-		self.write(0, node.op[1:])
-		self.write_blank()
+		if node.op == 'sizeof':
+			# sizeof is considered as an UnaryOp
+			self.write(0, 'sizeof( ')
+			self.visit(node.expr)
+			self.write(0, ')')
+			self.write_blank()
+		else:
+			# node.op is like p-- (always a p), we need to remove it
+			self.visit(node.expr)
+			self.write(0, node.op[1:])
+			self.write_blank()
 
 
 	# ******************** Array ********************
