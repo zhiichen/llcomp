@@ -1,5 +1,5 @@
 from pycparser import c_parser, c_ast
-from generic_visitors import FilterVisitor, NodeNotFound
+from generic_visitors import FilterVisitor, InsertVisitor, NodeNotFound
 
 
 class CudaMutator(object):
@@ -98,6 +98,7 @@ class CudaMutator(object):
          reduction_subtree.show()
       except c_parser.ParseError, e:
          print "Parse error:" + str(e)
+      return reduction_subtree
 
 
 
@@ -106,15 +107,22 @@ class CudaMutator(object):
       """ CUDA mutator, writes the for as a kernel
       """
       # Look up a For node which previous brother is the start_node
-      
-      parallelFor = FilterVisitor(match_node_type = c_ast.For, prev_brother = prev_node).apply(ast)
+      filter = FilterVisitor(match_node_type = c_ast.For, prev_brother = prev_node)
+      parallelFor = filter.apply(ast)
       print " Found : "
       parallelFor.show()
+      # Parent of the node
+      parent_stmt = filter.parentOfMatch()
+      print "Parent "
+      parent_stmt.show()
       print "Number of threads:"
       maxThreadNumber_node = self.getThreadNum(parallelFor.cond)
       declarations_subtree = self.buildDeclarations(numThreads = maxThreadNumber_node.name)
+      InsertVisitor(subtree = declarations_subtree, position = "end").apply(parent_stmt, 'decls')
       initialization_subtree = self.buildInitializaton()
+      InsertVisitor(subtree = initialization_subtree, position = "begin").apply(parent_stmt, 'stmts')
       retrieve_subtree = self.buildRetrieve()
+      InsertVisitor(subtree = retrieve_subtree, position = "end").apply(parent_stmt, 'stmts')
 
 
    def apply(self, ast):
@@ -129,4 +137,4 @@ class CudaMutator(object):
          self.mutatorFunction(ast, start_node)
       except NodeNotFound as nf:
          print nf
-      return start_node
+      return ast

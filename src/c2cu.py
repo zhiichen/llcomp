@@ -31,8 +31,8 @@ t = CudaMutator()
 new_ast = t.apply(ast)
 
 ## Print the AST
-#v = CloneVisitor(filename = output_file)
-#v.visit(new_ast)
+v = CloneVisitor(filename = output_file)
+v.visit(new_ast)
 
 # del v
 

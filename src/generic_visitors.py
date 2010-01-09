@@ -7,6 +7,14 @@ class NodeNotFound(Exception):
    def __str__(self):
       return "Node " + str(self.node) + " not found "
 
+class NodeNotValid(Exception):
+   def __init__(self, node):
+      self.node = node
+
+   def __str__(self):
+      return "Node " + str(self.node) + " not valid "
+
+
 class FilterVisitor(object):
    """ Returns the first node matching the criteria 
    """
@@ -15,6 +23,7 @@ class FilterVisitor(object):
        self.match_node_type = match_node_type;
        self.prev_brother = prev_brother;
        self.match = False
+       self.parent_of_match = None
 
    def apply(self, ast):
       """ Apply filter to the ast """
@@ -40,6 +49,7 @@ class FilterVisitor(object):
        """ Called if no explicit visitor function exists for a 
            node. Implements preorder visiting of the node.
        """
+       # Store the parent node of the match
        iter = node.children().__iter__();
        r = node;
        prev = None;
@@ -61,6 +71,60 @@ class FilterVisitor(object):
              self.match = True
        except StopIteration:
           pass
+
+       if (self.match == True and self.parent_of_match == None):
+           self.parent_of_match = node
+           print " Parent: ";
+           node.show()
+
        return r
 
+   def parentOfMatch(self):
+       return self.parent_of_match
 
+
+# InsertVisitor(mark_node = parent_stmt, subtree = maxThreadNumber_subtree, position = "mark", method = "append").apply(ast)
+class InsertVisitor:
+    def __init__(self, subtree = None, position = "begin"):
+       """ Inserter visitor """
+#       self.mark_node = mark_node
+       self.subtree = subtree
+       self.position = position # Options: begin, end
+
+    def apply(self, target_node, attribute_name):
+       """ Insert the object subtree inside the attribute node of the target_node """
+       attr = getattr(target_node, attribute_name)
+       print " *** Target node *** " 
+       target_node.show()
+       print " ********************** "
+       print " Node to be grafted "
+       self.subtree.show()
+       print dir(self.subtree)
+       # 1. Check attribute is a list of nodes
+       if not type(attr) == type([]):
+           raise NodeNotValid(target_node)
+       if self.position == "begin":
+           # Funny trick to insert to the begin, first reverse, then insert on 0
+           childrens = list(self.subtree.children())
+           childrens.reverse()
+           for it in childrens:
+               attr.insert(0, it)
+       elif self.position == "end":
+           attr.extend(self.subtree.children())
+       print str(attr)
+       setattr(target_node, attribute_name, attr)
+       print " *** New subtree *** " 
+       target_node.show()
+       print " ********************** "
+       return target_node
+
+
+
+
+
+
+
+
+
+
+     
