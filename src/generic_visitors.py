@@ -14,6 +14,14 @@ class NodeNotValid(Exception):
    def __str__(self):
       return "Node " + str(self.node) + " not valid "
 
+class PositionNotValid(Exception):
+   def __init__(self):
+      pass
+
+   def __str__(self):
+      return "Position not valid (choose either begin or end ) "
+
+
 
 class FilterVisitor(object):
    """ Returns the first node matching the criteria 
@@ -84,7 +92,8 @@ class FilterVisitor(object):
 
 
 # InsertVisitor(mark_node = parent_stmt, subtree = maxThreadNumber_subtree, position = "mark", method = "append").apply(ast)
-class InsertVisitor:
+class InsertTool:
+    """ Inserts a subtree on the given order """
     def __init__(self, subtree = None, position = "begin"):
        """ Inserter visitor """
 #       self.mark_node = mark_node
@@ -111,6 +120,8 @@ class InsertVisitor:
                attr.insert(0, it)
        elif self.position == "end":
            attr.extend(self.subtree.children())
+       else:
+           raise PositionNotValid
        print str(attr)
        setattr(target_node, attribute_name, attr)
        print " *** New subtree *** " 
@@ -118,6 +129,44 @@ class InsertVisitor:
        print " ********************** "
        return target_node
 
+
+# ReplaceVisitor(subtree = kernelLaunch_subtree, relpaced_node = parent_stmt).apply(parent_stmt, 'stmts')
+class ReplaceTool:
+    """ Replace a subtree with another """
+    def __init__(self, new_node, old_node):
+       """ Replace visitor """
+       self.new_node = new_node
+       self.old_node = old_node 
+
+    def apply(self, target_node, attribute_name):
+       """ Replace self.old_node with self.new_node """
+       attr = getattr(target_node, attribute_name)
+       print " ********************** "
+       position = attr.index(self.old_node)
+       print " Element position: " + str(position)
+       # 1. Check attribute is a list of nodes
+       if not type(attr) == type([]):
+           raise NodeNotValid(target_node)
+       attr[position] = self.new_node
+       setattr(target_node, attribute_name, attr)
+       return target_node
+
+class RemoveTool:
+    """ Replace a subtree with another """
+    def __init__(self, target_node):
+       """ Replace visitor """
+       self.target_node = target_node
+
+    def apply(self, target_subtree, attribute_name):
+       """ Replace self.old_node with self.new_node """
+       attr = getattr(target_subtree, attribute_name)
+       position = attr.index(self.target_node)
+       # 1. Check attribute is a list of nodes
+       if not type(attr) == type([]):
+           raise NodeNotValid(target_subtree)
+       del attr[position] 
+       setattr(target_subtree, attribute_name, attr)
+       return target_subtree
 
 
 

@@ -19,8 +19,8 @@ else:
 
 # Parse file
 	
-ast = parse_file(filename, use_cpp=True, cpp_path='/usr/bin/cpp',
-	cpp_args=r'-I../utils/fake_libc_include'); #, lex_optimize=False, yacc_optimize=False, yacc_debug=True);
+ast = parse_file(filename, use_cpp=False, cpp_path='/usr/bin/cpp',
+	cpp_args=r'-ansi -fdirectives-only -I fake_libc_include/'); #, lex_optimize=False, yacc_optimize=False, yacc_debug=True);
 
 if not output_file:
 	ast.show(attrnames = True)

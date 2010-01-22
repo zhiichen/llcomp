@@ -1,5 +1,5 @@
 from pycparser import c_parser, c_ast
-from generic_visitors import FilterVisitor, InsertVisitor, NodeNotFound
+from generic_visitors import FilterVisitor, InsertTool, NodeNotFound, ReplaceTool, RemoveTool
 
 from string import Template
 
@@ -27,13 +27,31 @@ class CudaMutator(object):
       else:
           return node.left
 
+   def parse_snippet(self, template_code, subs_dir, name):
+      subtree = None
+      template_code = Template(template_code).substitute(subs_dir)
+      import subprocess
+      from cStringIO import StringIO
+      try:
+         p = subprocess.Popen("cpp -ansi -pedantic -CC -U __USE_GNU  -P", shell=True, bufsize=1, stdin=subprocess.PIPE, stdout=subprocess.PIPE, close_fds=True)
+         clean_source = p.communicate(template_code)[0]
+         process = subprocess.Popen("sed -nf nocomments.sed", shell = True, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+         stripped_code = process.communicate(clean_source)[0]
+         subtree = self.template_parser.parse(stripped_code, filename=name)
+         print "Subtree: "
+         subtree.show()
+      except c_parser.ParseError, e:
+         print "Parse error:" + str(e)
+      except IOError:
+         print "Pipe Error"
+      return subtree;
+
+
    def buildDeclarations(self, numThreads):
       """ Builds the declaration section 
           @param numThreads number of threads
-          @return Declaration subtree, ready for insert
+          @return Declarations subtree
       """ 
-      print " *** "
-      print "Declaration template"
       template_code = """
       int dimA = $numThreads;
       int numThreadsPerBlock = 512;
@@ -42,15 +60,7 @@ class CudaMutator(object):
       double *reduction_loc = (double *) malloc (memSize);
       double *reduction_cu;
       """
-      template_code = Template(template_code).substitute(numThreads = numThreads)
-      declarations_subtree = None
-      try:
-         declarations_subtree = self.template_parser.parse(template_code, filename='declarations')
-         print "Subtree: "
-         declarations_subtree.show()
-      except c_parser.ParseError, e:
-         print "Parse error:" + str(e)
-      return declarations_subtree;
+      return self.parse_snippet(template_code, dict(numThreads = numThreads), name = 'declarations')
 
    def buildInitializaton(self):
       """ Initialization """
@@ -59,16 +69,7 @@ class CudaMutator(object):
           cudaMalloc((void **) &reduction_cu, memSize);
       }
       """ 
-      initialization_subtree = None
-      parser = c_parser.CParser()
-      print " Initialization subtree "
-      try:
-         initialization_subtree = self.template_parser.parse(template_code, filename='initialization').ext[0].body
-         print "Subtree: "
-         initialization_subtree.show()
-      except c_parser.ParseError, e:
-         print "Parse error:" + str(e)
-      return initialization_subtree
+      return self.parse_snippet(template_code, None, name = 'SendData').ext[0].body
 
    def buildRetrieve(self):
       template_code = """
@@ -77,15 +78,36 @@ class CudaMutator(object):
       checkCUDAError("memcpy");
       }
       """ 
-      retrieve_subtree = None
-      try:
-         retrieve_subtree = self.template_parser.parse(template_code, filename='Retrieve').ext[0].body
-         print "Subtree: "
-         retrieve_subtree.show()
-      except c_parser.ParseError, e:
-         print "Parse error:" + str(e)
+      return self.parse_snippet(template_code, None, name = 'Retrieve').ext[0].body
+      
+   def buildKernelLaunch(self):
+       template_code = """
+#define  __attribute__(x)  /*NOTHING*/
 
-      return retrieve_subtree
+#define __const
+#define __addr
+#define __THROW
+#define __extension__
+
+# define __inline
+# define __THROW
+# define __P(args)   args
+# define __PMT(args) args
+# define __restrict__
+# define __restrict
+
+
+#include "/usr/local/cuda/include/cuda.h"
+#include "/usr/local/cuda/include/builtin_types.h"
+       int fake() {
+       dim3 dimGrid (numBlocks);
+       dim3 dimBlock (numThreadsPerBlock);
+       }
+       """
+       # The last element is the object function
+       tree = [ elem for elem in self.parse_snippet(template_code, None, name = 'KernelLaunch').ext  if type(elem) == c_ast.FuncDef  ][-1].body
+       return tree
+
 
    def buildHostReduction(self):
       template_code = """
@@ -96,15 +118,7 @@ class CudaMutator(object):
       }
       }
       """
-      reduction_subtree = None
-      try:
-         reduction_subtree = self.template_parser.parse(template_code, filename='HostReduction').ext[0].body
-         print "Subtree: "
-         reduction_subtree.show()
-      except c_parser.ParseError, e:
-         print "Parse error:" + str(e)
-      return reduction_subtree
-
+      return self.parse_snippet(template_code, None, name = 'HostReduction').ext[0].body
 
 
 
@@ -123,13 +137,18 @@ class CudaMutator(object):
       print "Number of threads:"
       maxThreadNumber_node = self.getThreadNum(parallelFor.cond)
       declarations_subtree = self.buildDeclarations(numThreads = maxThreadNumber_node.name)
-      InsertVisitor(subtree = declarations_subtree, position = "end").apply(parent_stmt, 'decls')
+      InsertTool(subtree = declarations_subtree, position = "end").apply(parent_stmt, 'decls')
       initialization_subtree = self.buildInitializaton()
-      InsertVisitor(subtree = initialization_subtree, position = "begin").apply(parent_stmt, 'stmts')
+      InsertTool(subtree = initialization_subtree, position = "begin").apply(parent_stmt, 'stmts')
       retrieve_subtree = self.buildRetrieve()
-      InsertVisitor(subtree = retrieve_subtree, position = "end").apply(parent_stmt, 'stmts')
+      InsertTool(subtree = retrieve_subtree, position = "end").apply(parent_stmt, 'stmts')
       reduction_subtree = self.buildHostReduction()
-      InsertVisitor(subtree = reduction_subtree, position = "end").apply(parent_stmt, 'stmts')
+      InsertTool(subtree = reduction_subtree, position = "end").apply(parent_stmt, 'stmts')
+      kernelLaunch_subtree = self.buildKernelLaunch()
+      ReplaceTool(new_node = kernelLaunch_subtree, old_node = parallelFor).apply(parent_stmt, 'stmts')
+      RemoveTool(target_node = prev_node).apply(parent_stmt, 'stmts')
+
+     
 
 
    def apply(self, ast):
@@ -139,9 +158,10 @@ class CudaMutator(object):
          print " Searching pragma "
          start_node = self.filter(ast)
          print "Pragma found: "
-         start_node.show()
+         # start_node.show()
          print " >>> Mutating tree <<<<"
          self.mutatorFunction(ast, start_node)
+         # Remove pragma from code
       except NodeNotFound as nf:
          print nf
       return ast
