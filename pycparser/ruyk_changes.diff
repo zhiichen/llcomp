@@ -2,7 +2,7 @@ Index: z_test.py
 ===================================================================
 --- z_test.py	(revision 88)
 +++ z_test.py	(working copy)
-@@ -1,23 +1,68 @@
+@@ -1,23 +1,74 @@
  from pycparser import c_parser, c_ast
  
  source_code = """
@@ -33,13 +33,17 @@ Index: z_test.py
 +#include "/usr/local/cuda/include/cuda.h"
 +#include "/usr/local/cuda/include/builtin_types.h"
 +
-+dim3 dimGrid (numBlocks);
-+dim3 tutu(numBlocks);
++
++void piLoop(int);
 +
 +int main() {
 +
-+    launch <<< dimGrid, tutu >>> (1,3,5);
++dim3 dimGrid (numBlocks);
++dim3 tutu(numBlocks);
 +
++int a, b, c;
++
++    piLoop <<< dimGrid, tutu >>> (a,b,c);
  }
 +
  """
@@ -74,7 +78,9 @@ Index: z_test.py
 +ast = parser.parse(stripped_code, filename = 'tutu')
 +ast.show()
 +
-+#function_body = ast.ext[0].body #hardcoded to the main() function
++# function_body = ast.ext[-1].body #hardcoded to the main() function
++
++print ast.ext[-1].body.stmts[0].show()
 +
 +#for stmt in function_body.stmts:
 +#    print stmt.coord, stmt
@@ -4798,7 +4804,7 @@ Index: pycparser/c_parser.py
 +                                | postfix_expression LKLAUNCH primary_expression COMMA primary_expression RKLAUNCH LPAREN  RPAREN
 +
 +        """
-+        p[0] = c_ast.CUDAKernelCall(p[1], p[3], p[5], p[7] if len(p) == 7 else None, p[1].coord)
++        p[0] = c_ast.CUDAKernelCall(p[1], p[3], p[5], p[8] if len(p) > 9 else None, p[1].coord)
 +
 +
      def p_primary_expression_1(self, p):
@@ -5618,7 +5624,7 @@ Index: pycparser/c_lexer.py
      )
  
      ##
-@@ -223,7 +229,22 @@
+@@ -223,7 +229,20 @@
          else:
              t.type = 'PPHASH'
              return t
@@ -5628,13 +5634,11 @@ Index: pycparser/c_lexer.py
 +    # Ruyk
 +    def t_PRAGMA(self, t):
 +        r'pragma'
-+	print " PRAGMA TOKEN "
 +        t.type = 'PRAGMA'
 +        return t
 +
 +    def t_OMP(self, t):
 +        r'omp'
-+	print " OPENMP TOKEN "
 +        t.type = 'OMP'
 +        return t
 +
@@ -5642,7 +5646,7 @@ Index: pycparser/c_lexer.py
      ##
      ## Rules for the ppline state
      ##
-@@ -298,7 +319,12 @@
+@@ -298,7 +317,12 @@
      t_GE                = r'>='
      t_EQ                = r'=='
      t_NE                = r'!='
@@ -5655,7 +5659,7 @@ Index: pycparser/c_lexer.py
      # Assignment operators
      t_EQUALS            = r'='
      t_TIMESEQUAL        = r'\*='
-@@ -337,7 +363,7 @@
+@@ -337,7 +361,7 @@
  
      t_STRING_LITERAL    = string_literal
      
@@ -5664,7 +5668,7 @@ Index: pycparser/c_lexer.py
      # functions to impose a strict order (otherwise, decimal
      # is placed before the others because its regex is longer,
      # and this is bad)
-@@ -410,7 +436,8 @@
+@@ -410,7 +434,8 @@
  
  
  if __name__ == "__main__":
