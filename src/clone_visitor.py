@@ -117,7 +117,7 @@ class CloneVisitor(OffsetNodeVisitor):
 				self.write(0, decl_name)
 				self.visit_ArrayDecl(node = node.type, node_name = decl_name, offset = new_offset)
 			else:
-				self.visit(node.type, offset) #_TypeDecl(node.type, offset)
+				self.visit(node.type, offset) 
 				string = node.name + " ".join(['%s'%qual for qual in node.quals])
 				self.write(offset, string)
 			if node.init:
@@ -232,7 +232,7 @@ class CloneVisitor(OffsetNodeVisitor):
 			self.visit(node.expr)
 			self.write(0, ')')
 			self.write_blank()
-		if node.op == '&':
+		elif node.op == '&':
 			# dereference (&) is also an unary operator
 			self.write(0, '&')
 			self.visit(node.expr)
