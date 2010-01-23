@@ -2,38 +2,87 @@ Index: z_test.py
 ===================================================================
 --- z_test.py	(revision 88)
 +++ z_test.py	(working copy)
-@@ -1,18 +1,30 @@
+@@ -1,23 +1,68 @@
  from pycparser import c_parser, c_ast
  
  source_code = """
+-int main()
+-{
+-    int a;
+-    a=1;
+-    b=a;
+-    printf("%d", b);
+-    return;
 +
 +
++#define  __attribute__(x)  /*NOTHING*/
 +
- int main()
- {
-     int a;
-     a=1;
-     b=a;
-+#pragma omp
-     printf("%d", b);
-     return;
++#define __const
++#define __addr
++#define __THROW
++#define __extension__
++
++# define __inline		
++# define __THROW
++# define __P(args)	args
++# define __PMT(args)	args
++# define __restrict__ 
++# define __restrict
++
++
++#include "/usr/local/cuda/include/cuda.h"
++#include "/usr/local/cuda/include/builtin_types.h"
++
++dim3 dimGrid (numBlocks);
++dim3 tutu(numBlocks);
++
++int main() {
++
++    launch <<< dimGrid, tutu >>> (1,3,5);
++
  }
++
  """
  
 -parser = c_parser.CParser()
+-ast = parser.parse(source_code)
+-function_body = ast.ext[0].body #hardcoded to the main() function
++import subprocess
++from cStringIO import StringIO
+ 
+-for stmt in function_body.stmts:
+-    print stmt.coord, stmt
++
++try:
++    p = subprocess.Popen("cpp -ansi -pedantic -CC -U __USE_GNU  -P", shell=True, bufsize=1, stdin=subprocess.PIPE, stdout=subprocess.PIPE, close_fds=True)
++except IOError:
++    exit(0)
++clean_source = p.communicate(source_code)[0]
++
++try:
++	process = subprocess.Popen("sed -nf /home/ruyk/workspace/pycparser-read-only/nocomments", shell = True, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
++except IOError:
++    exit(0)
++stripped_code = process.communicate(clean_source)[0]
++
++
 +parser = c_parser.CParser(
 +            lex_optimize=False,
 +            yacc_optimize=False,
 +            yacc_debug=True,
 +)
-+
- ast = parser.parse(source_code)
-+
++ast = parser.parse(stripped_code, filename = 'tutu')
 +ast.show()
 +
- function_body = ast.ext[0].body #hardcoded to the main() function
- 
- for stmt in function_body.stmts:
++#function_body = ast.ext[0].body #hardcoded to the main() function
++
++#for stmt in function_body.stmts:
++#    print stmt.coord, stmt
+     
++    
+ #~ class StructRefVisitor(c_ast.NodeVisitor):
+     #~ def visit_StructRef(self, node):
+         #~ print node.name.name, node.field.name
 Index: pycparser/_build_tables.py
 ===================================================================
 --- pycparser/_build_tables.py	(revision 88)
@@ -59,7 +108,7 @@ Index: pycparser/c_ast.py
 ===================================================================
 --- pycparser/c_ast.py	(revision 88)
 +++ pycparser/c_ast.py	(working copy)
-@@ -1,1163 +1,1217 @@
+@@ -1,1163 +1,1245 @@
 -#-----------------------------------------------------------------
 -# ** ATTENTION **
 -# This code was automatically generated from the file:
@@ -1571,6 +1620,34 @@ Index: pycparser/c_ast.py
 +            c.show(buf, offset + 2, attrnames, showcoord)
 +
 +
++class CUDAKernelCall(Node):
++    def __init__(self, name, grid, block, args, coord=None):
++        self.name = name
++        self.grid = grid
++        self.block = block
++        self.args = args
++        self.coord = coord
++
++    def children(self):
++        nodelist = []
++        if self.name is not None: nodelist.append(self.name)
++        if self.grid is not None: nodelist.append(self.grid)
++        if self.block is not None: nodelist.append(self.block)
++        if self.args is not None: nodelist.append(self.args)
++        return tuple(nodelist)
++
++    def show(self, buf=sys.stdout, offset=0, attrnames=False, showcoord=False):
++        lead = ' ' * offset
++        buf.write(lead + 'CUDAKernelCall: ')
++
++        if showcoord:
++            buf.write(' (at %s)' % self.coord)
++        buf.write('\n')
++
++        for c in self.children():
++            c.show(buf, offset + 2, attrnames, showcoord)
++
++
 +class Enumerator(Node):
 +    def __init__(self, name, value, coord=None):
 +        self.name = name
@@ -2444,7 +2521,7 @@ Index: pycparser/c_parser.py
 ===================================================================
 --- pycparser/c_parser.py	(revision 88)
 +++ pycparser/c_parser.py	(working copy)
-@@ -1,1259 +1,1297 @@
+@@ -1,1259 +1,1298 @@
 -#-----------------------------------------------------------------
 -# pycparser: cparse.py
 -#
@@ -3119,10 +3196,6 @@ Index: pycparser/c_parser.py
 -    # external_declaration homogenous.
 -    #
 +        """
-+        print "Translation unit 2 "
-+        print str(dir(p[1].ext))
-+        print str(p[1].ext)
-+
 +        p[1].ext.extend(p[2])
 +        p[0] = p[1]
 +    
@@ -3164,8 +3237,6 @@ Index: pycparser/c_parser.py
 -    # a declaration list, for old "K&R style" function definitios.
 -    #
 +        """
-+        print " external_declaration 3"
-+        print str(p[1])
 +        p[0] = p[1]
 +
 +####################
@@ -3187,8 +3258,6 @@ Index: pycparser/c_parser.py
 +
 +    def p_pragma_directive(self, p):
 +       """ pragma_directive : PRAGMA OMP """
-+       print " pragma omp "
-+       print str(dir(p))
 +       p[0] = [c_ast.Pragma(
 +            name='pragma', 
 +            coord=self._coord(p.lineno(1)))]
@@ -4723,6 +4792,15 @@ Index: pycparser/c_parser.py
 +        """
 +        p[0] = c_ast.UnaryOp('p' + p[2], p[1], p[1].coord)
 +
++# Ruyk
++    def p_postfix_exptession_6(self, p):
++        """ postfix_expression  : postfix_expression LKLAUNCH primary_expression COMMA primary_expression RKLAUNCH LPAREN argument_expression_list RPAREN
++                                | postfix_expression LKLAUNCH primary_expression COMMA primary_expression RKLAUNCH LPAREN  RPAREN
++
++        """
++        p[0] = c_ast.CUDAKernelCall(p[1], p[3], p[5], p[7] if len(p) == 7 else None, p[1].coord)
++
++
      def p_primary_expression_1(self, p):
 -        """ primary_expression  : identifier """
 -        p[0] = p[1]
@@ -4881,15 +4959,155 @@ Index: pycparser/__init__.py
 ===================================================================
 --- pycparser/__init__.py	(revision 88)
 +++ pycparser/__init__.py	(working copy)
-@@ -65,7 +65,7 @@
-     else:
-         text = open(filename).read()
-     
+@@ -1,75 +1,75 @@
+-#-----------------------------------------------------------------
+-# pycparser: __init__.py
+-#
+-# This package file exports some convenience functions for 
+-# interacting with pycparser
+-#
+-# Copyright (C) 2008-2009, Eli Bendersky
+-# License: LGPL
+-#-----------------------------------------------------------------
+-
+-__all__ = ['c_lexer', 'c_parser', 'c_ast']
+-__version__ = '1.05'
+-
+-from subprocess import Popen, PIPE
+-from types import ListType
+-
+-from c_parser import CParser
+-
+-
+-def parse_file( filename, use_cpp=False, 
+-                cpp_path='cpp', cpp_args=''):
+-    """ Parse a C file using pycparser.
+-    
+-        filename:
+-            Name of the file you want to parse.
+-        
+-        use_cpp:
+-            Set to True if you want to execute the C pre-processor
+-            on the file prior to parsing it.
+-        
+-        cpp_path:
+-            If use_cpp is True, this is the path to 'cpp' on your
+-            system. If no path is provided, it attempts to just
+-            execute 'cpp', so it must be in your PATH.
+-        
+-        cpp_args:
+-            If use_cpp is True, set this to the command line 
+-            arguments strings to cpp. Be careful with quotes - 
+-            it's best to pass a raw string (r'') here. 
+-            For example:
+-            r'-I../utils/fake_libc_include'
+-            If several arguments are required, pass a list of 
+-            strings.
+-        
+-        When successful, an AST is returned. ParseError can be 
+-        thrown if the file doesn't parse successfully.
+-        
++#-----------------------------------------------------------------
++# pycparser: __init__.py
++#
++# This package file exports some convenience functions for 
++# interacting with pycparser
++#
++# Copyright (C) 2008-2009, Eli Bendersky
++# License: LGPL
++#-----------------------------------------------------------------
++
++__all__ = ['c_lexer', 'c_parser', 'c_ast']
++__version__ = '1.05'
++
++from subprocess import Popen, PIPE
++from types import ListType
++
++from c_parser import CParser
++
++
++def parse_file( filename, use_cpp=False, 
++                cpp_path='cpp', cpp_args=''):
++    """ Parse a C file using pycparser.
++    
++        filename:
++            Name of the file you want to parse.
++        
++        use_cpp:
++            Set to True if you want to execute the C pre-processor
++            on the file prior to parsing it.
++        
++        cpp_path:
++            If use_cpp is True, this is the path to 'cpp' on your
++            system. If no path is provided, it attempts to just
++            execute 'cpp', so it must be in your PATH.
++        
++        cpp_args:
++            If use_cpp is True, set this to the command line 
++            arguments strings to cpp. Be careful with quotes - 
++            it's best to pass a raw string (r'') here. 
++            For example:
++            r'-I../utils/fake_libc_include'
++            If several arguments are required, pass a list of 
++            strings.
++        
++        When successful, an AST is returned. ParseError can be 
++        thrown if the file doesn't parse successfully.
++        
+         Errors from cpp will be printed out. 
+-    """
+-    if use_cpp:   
+-        path_list = [cpp_path]
+-        if isinstance(cpp_args, ListType):
+-            path_list += cpp_args
+-        elif cpp_args != '': 
+-            path_list += [cpp_args]
+-        path_list += [filename]
+-        
+-        # Note the use of universal_newlines to treat all newlines
+-        # as \n for Python's purpose
+-        #
+-        pipe = Popen(   path_list, 
+-                        stdout=PIPE, 
+-                        universal_newlines=True)
+-        text = pipe.communicate()[0]
+-    else:
+-        text = open(filename).read()
+-    
 -    parser = CParser()
-+    parser = CParser(lex_optimize=False,yacc_optimize=False,yacc_debug=False)
-     return parser.parse(text, filename)
+-    return parser.parse(text, filename)
+-    
+-
+-if __name__ == "__main__":
+-    pass
++    """
++    if use_cpp:   
++        path_list = [cpp_path]
++        if isinstance(cpp_args, ListType):
++            path_list += cpp_args
++        elif cpp_args != '': 
++            path_list += [cpp_args]
++        path_list += [filename]
++        
++        # Note the use of universal_newlines to treat all newlines
++        # as \n for Python's purpose
++        #
++        pipe = Popen(   path_list, 
++                        stdout=PIPE, 
++                        universal_newlines=True)
++        text = pipe.communicate()[0]
++    else:
++        text = open(filename).read()
      
- 
+-
++    parser = CParser(lex_optimize=False,yacc_optimize=False,yacc_debug=False)
++    return parser.parse(text, filename)
++    
++
++if __name__ == "__main__":
++    pass
++    
++
 Index: pycparser/_ast_gen.py
 ===================================================================
 --- pycparser/_ast_gen.py	(revision 88)
@@ -5387,7 +5605,7 @@ Index: pycparser/c_lexer.py
 ===================================================================
 --- pycparser/c_lexer.py	(revision 88)
 +++ pycparser/c_lexer.py	(working copy)
-@@ -157,6 +157,11 @@
+@@ -157,6 +157,12 @@
          
          # pre-processor 
          'PPHASH',      # '#'
@@ -5396,10 +5614,11 @@ Index: pycparser/c_lexer.py
 +	# Ruyk
 +	'PRAGMA', # pragma
 +	'OMP', # openmp
++   'LKLAUNCH', 'RKLAUNCH' # CUDA kernel launch
      )
  
      ##
-@@ -223,7 +228,22 @@
+@@ -223,7 +229,22 @@
          else:
              t.type = 'PPHASH'
              return t
@@ -5423,7 +5642,29 @@ Index: pycparser/c_lexer.py
      ##
      ## Rules for the ppline state
      ##
-@@ -410,7 +430,8 @@
+@@ -298,7 +319,12 @@
+     t_GE                = r'>='
+     t_EQ                = r'=='
+     t_NE                = r'!='
++    # *** Ruyk
++    # CUDA kernel launch
++    t_LKLAUNCH            = r'<<<'
++    t_RKLAUNCH            = r'>>>'
+ 
++
+     # Assignment operators
+     t_EQUALS            = r'='
+     t_TIMESEQUAL        = r'\*='
+@@ -337,7 +363,7 @@
+ 
+     t_STRING_LITERAL    = string_literal
+     
+-    # The following floating and integer constants are defined as 
++#    # The following floating and integer constants are defined as 
+     # functions to impose a strict order (otherwise, decimal
+     # is placed before the others because its regex is longer,
+     # and this is bad)
+@@ -410,7 +436,8 @@
  
  
  if __name__ == "__main__":
@@ -5437,7 +5678,22 @@ Index: pycparser/_c_ast.yaml
 ===================================================================
 --- pycparser/_c_ast.yaml	(revision 88)
 +++ pycparser/_c_ast.yaml	(working copy)
-@@ -161,4 +161,8 @@
+@@ -92,6 +92,14 @@
+ #
+ FuncCall: [name*, args*]
+ 
++
++# name: CUDA Kernel Lunch
++# args: <<< grid, block >>> ExprList
++#
++# Ruyk
++CUDAKernelCall: [name*, grid*, block*, args*]
++
++
+ # type <decl>(args)
+ #
+ FuncDecl: [args*, type*]
+@@ -161,4 +169,8 @@
  While: [cond*, stmt*]
  
  
@@ -5446,3 +5702,27 @@ Index: pycparser/_c_ast.yaml
 +Pragma: [name]
  
 +Omp: [name]
+Index: examples/c_files/funky.c
+===================================================================
+--- examples/c_files/funky.c	(revision 88)
++++ examples/c_files/funky.c	(working copy)
+@@ -1,3 +1,4 @@
++
+ char foo(void)
+ {
+     return '1';
+Index: examples/using_cpp_libc.py
+===================================================================
+--- examples/using_cpp_libc.py	(revision 88)
++++ examples/using_cpp_libc.py	(working copy)
+@@ -25,8 +25,8 @@
+         filename = 'c_files/year.c'
+ 
+     ast = parse_file(filename, use_cpp=True,
+-            cpp_path='../utils/cpp.exe', 
+-            cpp_args=r'-I../utils/fake_libc_include')
++            cpp_path='cpp', 
++            cpp_args=r'-ansi -pedantic -U __USE_GNU -I../utils/fake_libc_include')
+     
+     ast.show()
+ 
