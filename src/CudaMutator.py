@@ -10,7 +10,8 @@ class CudaMutator(object):
    """
    def __init__(self):
       " Constructor "
-      self.template_parser = c_parser.CParser()
+      # BUG: Don't work without optimize
+      self.template_parser = c_parser.CParser(lex_optimize = False, yacc_optimize = False)
 
    def filter(self, ast):
       """ Filter definition
@@ -38,8 +39,6 @@ class CudaMutator(object):
          process = subprocess.Popen("sed -nf nocomments.sed", shell = True, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
          stripped_code = process.communicate(clean_source)[0]
          subtree = self.template_parser.parse(stripped_code, filename=name)
-         print "Subtree: "
-         subtree.show()
       except c_parser.ParseError, e:
          print "Parse error:" + str(e)
       except IOError:
@@ -99,9 +98,11 @@ class CudaMutator(object):
 
 #include "/usr/local/cuda/include/cuda.h"
 #include "/usr/local/cuda/include/builtin_types.h"
+
        int fake() {
-       dim3 dimGrid (numBlocks);
-       dim3 dimBlock (numThreadsPerBlock);
+	       dim3 dimGrid (numBlocks);
+   	    dim3 dimBlock (numThreadsPerBlock);
+ 	 		 piLoop <<< dimGrid , dimBlock >>> (d_a); 
        }
        """
        # The last element is the object function
@@ -128,22 +129,23 @@ class CudaMutator(object):
       # Look up a For node which previous brother is the start_node
       filter = FilterVisitor(match_node_type = c_ast.For, prev_brother = prev_node)
       parallelFor = filter.apply(ast)
-      print " Found : "
-      parallelFor.show()
       # Parent of the node
       parent_stmt = filter.parentOfMatch()
-      print "Parent "
-      parent_stmt.show()
-      print "Number of threads:"
       maxThreadNumber_node = self.getThreadNum(parallelFor.cond)
+      # Build subtrees
+      # Declarations
       declarations_subtree = self.buildDeclarations(numThreads = maxThreadNumber_node.name)
       InsertTool(subtree = declarations_subtree, position = "end").apply(parent_stmt, 'decls')
+      # Initialization
       initialization_subtree = self.buildInitializaton()
       InsertTool(subtree = initialization_subtree, position = "begin").apply(parent_stmt, 'stmts')
+      # Retrieve data
       retrieve_subtree = self.buildRetrieve()
       InsertTool(subtree = retrieve_subtree, position = "end").apply(parent_stmt, 'stmts')
+      # Host reduction
       reduction_subtree = self.buildHostReduction()
       InsertTool(subtree = reduction_subtree, position = "end").apply(parent_stmt, 'stmts')
+      # Kernel Launch
       kernelLaunch_subtree = self.buildKernelLaunch()
       ReplaceTool(new_node = kernelLaunch_subtree, old_node = parallelFor).apply(parent_stmt, 'stmts')
       RemoveTool(target_node = prev_node).apply(parent_stmt, 'stmts')
@@ -155,11 +157,7 @@ class CudaMutator(object):
       """ Apply the mutation """
       start_node = None
       try: 
-         print " Searching pragma "
          start_node = self.filter(ast)
-         print "Pragma found: "
-         # start_node.show()
-         print " >>> Mutating tree <<<<"
          self.mutatorFunction(ast, start_node)
          # Remove pragma from code
       except NodeNotFound as nf:

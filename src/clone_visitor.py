@@ -21,7 +21,7 @@ class OffsetNodeVisitor(object):
 
 
 
-class CloneVisitor(OffsetNodeVisitor):
+class CloneWriter(OffsetNodeVisitor):
 	inside = False
 
 	def __init__(self, filename = None):
@@ -160,7 +160,10 @@ class CloneVisitor(OffsetNodeVisitor):
 	def visit_FuncCall(self, node, offset = 0):
 		self.visit_ID(node.name)
 		self.write(offset, "(")
-		self.visit_ExprList(node.args)
+		if node.args:
+			self.visit_ExprList(node.args)
+		else:
+			self.write_blank()
 		self.write(offset, ")")
 		self.write_blank()
 
@@ -290,4 +293,22 @@ class CloneVisitor(OffsetNodeVisitor):
 		self.write(offset, "#pragma")
 		self.write_blank();
 		self.writeLn(offset, node.name)
+
+
+class CUDAWriter(CloneWriter):
+	""" Specific CUDA writer """
+	def visit_CUDAKernelCall(self, node, offset = 0):
+		self.visit_ID(node.name)
+		self.write(offset, "<<<")
+		self.visit(node.grid)
+		self.write(offset, ",")
+		self.visit(node.block)
+		self.write(offset, ">>>")
+		self.write(offset, "(")
+		if node.args:
+			self.visit_ExprList(node.args)
+		else:
+			self.write_blank()
+		self.write(offset, ")")
+		self.write_blank()
 

@@ -1,6 +1,6 @@
 from pycparser import parse_file
 
-from clone_visitor import CloneVisitor
+from clone_visitor import CUDAWriter
 
 from CudaMutator import CudaMutator
 
@@ -23,15 +23,15 @@ else:
 ast = parse_file(filename, use_cpp=True, cpp_path='/usr/bin/cpp',
 	cpp_args=r'-ansi -I../utils/fake_libc_include'); #, lex_optimize=False, yacc_optimize=False, yacc_debug=True);
 
-if not output_file:
-	ast.show(attrnames = True)
+#if not output_file:
+#	ast.show(attrnames = True)
 
 t = CudaMutator()
 
 new_ast = t.apply(ast)
 
 ## Print the AST
-v = CloneVisitor(filename = output_file)
+v = CUDAWriter(filename = output_file)
 v.visit(new_ast)
 
 # del v

@@ -82,8 +82,6 @@ class FilterVisitor(object):
 
        if (self.match == True and self.parent_of_match == None):
            self.parent_of_match = node
-           print " Parent: ";
-           node.show()
 
        return r
 
@@ -103,12 +101,6 @@ class InsertTool:
     def apply(self, target_node, attribute_name):
        """ Insert the object subtree inside the attribute node of the target_node """
        attr = getattr(target_node, attribute_name)
-       print " *** Target node *** " 
-       target_node.show()
-       print " ********************** "
-       print " Node to be grafted "
-       self.subtree.show()
-       print dir(self.subtree)
        # 1. Check attribute is a list of nodes
        if not type(attr) == type([]):
            raise NodeNotValid(target_node)
@@ -122,11 +114,7 @@ class InsertTool:
            attr.extend(self.subtree.children())
        else:
            raise PositionNotValid
-       print str(attr)
        setattr(target_node, attribute_name, attr)
-       print " *** New subtree *** " 
-       target_node.show()
-       print " ********************** "
        return target_node
 
 
@@ -141,9 +129,7 @@ class ReplaceTool:
     def apply(self, target_node, attribute_name):
        """ Replace self.old_node with self.new_node """
        attr = getattr(target_node, attribute_name)
-       print " ********************** "
        position = attr.index(self.old_node)
-       print " Element position: " + str(position)
        # 1. Check attribute is a list of nodes
        if not type(attr) == type([]):
            raise NodeNotValid(target_node)
