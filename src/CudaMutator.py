@@ -6,7 +6,6 @@ from string import Template
 class CudaMutator(object):
    """ This is mutator locates a Pragma node, and then
       translate the original source to the pi cuda implementation 
-     (So, it only works with CUDA...)
    """
    def __init__(self):
       " Constructor "
@@ -122,6 +121,21 @@ class CudaMutator(object):
       return self.parse_snippet(template_code, None, name = 'HostReduction').ext[0].body
 
 
+	
+   def buildKernel(self):
+      template_code = """
+      #define __global__
+      int idx;
+      __global__ piLoop ($params)
+      {
+      /* int idx = blockIdx.x*blockDim.x + threadIdx.x; */
+      $operations
+      /* double x = $var_2 * ((double)idx - 0.5); */
+      $reduction_variable = $temp
+      in_var_2[idx]  = 4.0 / (1.0 + x * x);
+		}
+      """
+      return self.parse_snippet(template_code, None, name = 'KernelBuild').ext[1]
 
    def mutatorFunction(self, ast, prev_node):
       """ CUDA mutator, writes the for as a kernel
@@ -133,6 +147,9 @@ class CudaMutator(object):
       parent_stmt = filter.parentOfMatch()
       maxThreadNumber_node = self.getThreadNum(parallelFor.cond)
       # Build subtrees
+      # Kernel
+      kernel_subtree = self.buildKernel()
+      InsertTool(subtree = kernel_subtree, position = "end").apply(ast, 'ext')
       # Declarations
       declarations_subtree = self.buildDeclarations(numThreads = maxThreadNumber_node.name)
       InsertTool(subtree = declarations_subtree, position = "end").apply(parent_stmt, 'decls')
