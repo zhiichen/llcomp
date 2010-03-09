@@ -154,7 +154,7 @@ class CloneWriter(OffsetNodeVisitor):
 		self.generic_visit(node, offset)
 		if len(node.names) >= 1:
 			self.write(offset, node.names[0])
-		self.write_blank()
+		# self.write_blank()
 
 
 	def visit_FuncCall(self, node, offset = 0):
@@ -169,7 +169,7 @@ class CloneWriter(OffsetNodeVisitor):
 
 	def visit_ID(self, node, offset = 0):
 		self.write(offset, node.name)
-		self.write_blank()
+		# self.write_blank()
 
 	def visit_ExprList(self, node, offset = 0):
 		if node.exprs:
@@ -264,6 +264,12 @@ class CloneWriter(OffsetNodeVisitor):
 		if node.subscript:
 			self.visit(node.subscript, offset)
 		self.write(0, "]")
+		self.write_blank()
+
+	def visit_StructRef(self, node, offset = 0):
+		self.visit(node.name)
+		self.write(0, ".")
+		self.visit(node.field)
 		self.write_blank()
 
 	# ******************** Conditionals ********************

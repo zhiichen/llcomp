@@ -101,7 +101,7 @@ class CudaMutator(object):
        int fake() {
 	       dim3 dimGrid (numBlocks);
    	    dim3 dimBlock (numThreadsPerBlock);
- 	 		 piLoop <<< dimGrid , dimBlock >>> (d_a); 
+ 	 		 piLoop <<< dimGrid , dimBlock >>> (reduction_cu);
        }
        """
        # The last element is the object function
@@ -112,7 +112,7 @@ class CudaMutator(object):
    def buildHostReduction(self):
       template_code = """
       int fake() {
-      for (i = 0; i < dimA; i++) 
+      for (i = 0; i < dimA; i++)
       {
         sum += reduction_loc[i];
       }
@@ -121,21 +121,19 @@ class CudaMutator(object):
       return self.parse_snippet(template_code, None, name = 'HostReduction').ext[0].body
 
 
-	
-   def buildKernel(self):
+   def buildKernel(self, params):
       template_code = """
       #define __global__
       int idx;
-      __global__ piLoop ($params)
+      __global__ piLoop (double * reduction_cu, $params)
       {
-      /* int idx = blockIdx.x*blockDim.x + threadIdx.x; */
-      $operations
-      /* double x = $var_2 * ((double)idx - 0.5); */
-      $reduction_variable = $temp
-      in_var_2[idx]  = 4.0 / (1.0 + x * x);
-		}
+      int idx = blockIdx.x*blockDim.x + threadIdx.x;
+      double x = h * ((double)idx - 0.5);
+      reduction_cu[idx]  = 4.0 / (1.0 + x * x);
+      }
       """
-      return self.parse_snippet(template_code, None, name = 'KernelBuild').ext[1]
+      tree = self.parse_snippet(template_code, {'params' : params}, name = 'KernelBuild').ext[1]
+      return tree
 
    def mutatorFunction(self, ast, prev_node):
       """ CUDA mutator, writes the for as a kernel
@@ -148,7 +146,8 @@ class CudaMutator(object):
       maxThreadNumber_node = self.getThreadNum(parallelFor.cond)
       # Build subtrees
       # Kernel
-      kernel_subtree = self.buildKernel()
+      params = "double h";
+      kernel_subtree = self.buildKernel(params)
       InsertTool(subtree = kernel_subtree, position = "end").apply(ast, 'ext')
       # Declarations
       declarations_subtree = self.buildDeclarations(numThreads = maxThreadNumber_node.name)
@@ -167,7 +166,6 @@ class CudaMutator(object):
       ReplaceTool(new_node = kernelLaunch_subtree, old_node = parallelFor).apply(parent_stmt, 'stmts')
       RemoveTool(target_node = prev_node).apply(parent_stmt, 'stmts')
 
-     
 
 
    def apply(self, ast):

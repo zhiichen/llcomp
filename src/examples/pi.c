@@ -24,7 +24,7 @@ main (int argc, char *argv[])
   sum = 0.0;
  
  
-#pragma omp /* for reduction(+: sum) */
+#pragma omp /* for reduction(+: sum) private(x) shared(h)*/
   for (i = 0; i <= n; i++)
     {
       x = h * ((double) i - 0.5);
