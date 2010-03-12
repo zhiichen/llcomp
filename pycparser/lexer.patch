@@ -1,0 +1,83 @@
+Index: pycparser/c_lexer.py
+===================================================================
+--- pycparser/c_lexer.py	(revisión: 88)
++++ pycparser/c_lexer.py	(copia de trabajo)
+@@ -157,6 +157,14 @@
+         
+         # pre-processor 
+         'PPHASH',      # '#'
++
++	####################
++	# Ruyk
++	'PRAGMA', # pragma
++	'OMP', # openmp
++	'PARALLEL', # parallel
++	'SHARED',
++   'LKLAUNCH', 'RKLAUNCH' # CUDA kernel launch
+     )
+ 
+     ##
+@@ -223,7 +231,30 @@
+         else:
+             t.type = 'PPHASH'
+             return t
+-    
++
++    ####################
++    # Ruyk
++    def t_PRAGMA(self, t):
++        r'pragma'
++        t.type = 'PRAGMA'
++        return t
++
++    def t_OMP(self, t):
++        r'omp'
++        t.type = 'OMP'
++        return t
++
++    def t_PARALLEL(self, t):
++        r'parallel'
++        t.type = 'PARALLEL'
++        return t
++
++    def t_SHARED(self, t):
++        r'shared'
++        t.type = 'SHARED'
++        return t
++
++
+     ##
+     ## Rules for the ppline state
+     ##
+@@ -298,7 +329,12 @@
+     t_GE                = r'>='
+     t_EQ                = r'=='
+     t_NE                = r'!='
++    # *** Ruyk
++    # CUDA kernel launch
++    t_LKLAUNCH            = r'<<<'
++    t_RKLAUNCH            = r'>>>'
+ 
++
+     # Assignment operators
+     t_EQUALS            = r'='
+     t_TIMESEQUAL        = r'\*='
+@@ -337,7 +373,7 @@
+ 
+     t_STRING_LITERAL    = string_literal
+     
+-    # The following floating and integer constants are defined as 
++#    # The following floating and integer constants are defined as 
+     # functions to impose a strict order (otherwise, decimal
+     # is placed before the others because its regex is longer,
+     # and this is bad)
+@@ -410,7 +446,8 @@
+ 
+ 
+ if __name__ == "__main__":
+-    filename = '../zp.c'
++#    filename = '../z_test.c'
++    filename = '../examples/c_files/funky.c'
+     text = open(filename).read()
+     
+     #~ text = '"'+r"""ka \p ka"""+'"'

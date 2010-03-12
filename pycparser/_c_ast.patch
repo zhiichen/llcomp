@@ -1,0 +1,31 @@
+Index: pycparser/_c_ast.yaml
+===================================================================
+--- pycparser/_c_ast.yaml	(revisión: 88)
++++ pycparser/_c_ast.yaml	(copia de trabajo)
+@@ -92,6 +92,14 @@
+ #
+ FuncCall: [name*, args*]
+ 
++
++# name: CUDA Kernel Lunch
++# args: <<< grid, block >>> ExprList
++#
++# Ruyk
++CUDAKernelCall: [name*, grid*, block*, args*]
++
++
+ # type <decl>(args)
+ #
+ FuncDecl: [args*, type*]
+@@ -161,4 +169,11 @@
+ While: [cond*, stmt*]
+ 
+ 
++####################
++# Ruyk
++Pragma: [name, child*]
+ 
++Omp: [name, type, reduction**, shared**, private**]
++
++OmpClause : [name, type, identifiers**]
++
