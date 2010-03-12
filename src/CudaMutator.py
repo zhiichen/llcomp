@@ -40,8 +40,11 @@ class CudaMutator(object):
          subtree = self.template_parser.parse(stripped_code, filename=name)
       except c_parser.ParseError, e:
          print "Parse error:" + str(e)
+	 print " Code : " + str(stripped_code)
+	 return None
       except IOError:
          print "Pipe Error"
+	 return None
       return subtree;
 
 
@@ -99,9 +102,9 @@ class CudaMutator(object):
 #include "/usr/local/cuda/include/builtin_types.h"
 
        int fake() {
-	       dim3 dimGrid (numBlocks);
+	    dim3 dimGrid (numBlocks);
    	    dim3 dimBlock (numThreadsPerBlock);
- 	 		 piLoop <<< dimGrid , dimBlock >>> (reduction_cu);
+ 	    piLoop <<< dimGrid , dimBlock >>> (reduction_cu);
        }
        """
        # The last element is the object function
