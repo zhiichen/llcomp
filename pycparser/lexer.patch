@@ -2,7 +2,7 @@ Index: pycparser/c_lexer.py
 ===================================================================
 --- pycparser/c_lexer.py	(revision 91)
 +++ pycparser/c_lexer.py	(working copy)
-@@ -157,6 +157,14 @@
+@@ -157,6 +157,15 @@
          
          # pre-processor 
          'PPHASH',      # '#'
@@ -13,11 +13,12 @@ Index: pycparser/c_lexer.py
 +	'OMP', # openmp
 +	'PARALLEL', # parallel
 +	'SHARED',
-+   'LKLAUNCH', 'RKLAUNCH' # CUDA kernel launch
++        'LKLAUNCH', 'RKLAUNCH', # CUDA kernel launch
++        'GLOBAL',
      )
  
      ##
-@@ -209,6 +217,7 @@
+@@ -209,6 +218,7 @@
          # ppline: preprocessor line directives
          # 
          ('ppline', 'exclusive'),
@@ -25,7 +26,7 @@ Index: pycparser/c_lexer.py
      )
      
      def t_PPHASH(self, t):
-@@ -216,14 +225,52 @@
+@@ -216,14 +226,59 @@
          m = self.line_pattern.match(
              t.lexer.lexdata, pos=t.lexer.lexpos)
          
@@ -77,10 +78,17 @@ Index: pycparser/c_lexer.py
 +        self._error(msg, t)
 +
 +
++    # CUDA kernel class
++    def t_GLOBAL(self, t):
++        r'__global__'
++        t.type = 'GLOBAL'
++        return t
++
++
      ##
      ## Rules for the ppline state
      ##
-@@ -298,7 +345,12 @@
+@@ -298,7 +353,12 @@
      t_GE                = r'>='
      t_EQ                = r'=='
      t_NE                = r'!='
@@ -93,7 +101,7 @@ Index: pycparser/c_lexer.py
      # Assignment operators
      t_EQUALS            = r'='
      t_TIMESEQUAL        = r'\*='
-@@ -337,7 +389,7 @@
+@@ -337,7 +397,7 @@
  
      t_STRING_LITERAL    = string_literal
      
@@ -102,7 +110,7 @@ Index: pycparser/c_lexer.py
      # functions to impose a strict order (otherwise, decimal
      # is placed before the others because its regex is longer,
      # and this is bad)
-@@ -410,7 +462,8 @@
+@@ -410,7 +470,8 @@
  
  
  if __name__ == "__main__":

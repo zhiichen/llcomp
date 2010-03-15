@@ -2,12 +2,38 @@ Index: pycparser/c_parser.py
 ===================================================================
 --- pycparser/c_parser.py	(revision 91)
 +++ pycparser/c_parser.py	(working copy)
-@@ -362,12 +362,67 @@
+@@ -292,6 +292,7 @@
+             bitsize=None, 
+             coord=decl.coord)
+         
++
+         typename = spec['type']
+         declaration = self._fix_decl_name_type(declaration, typename)
+         return c_ast.FuncDef(
+@@ -350,6 +351,7 @@
+     def p_external_declaration_1(self, p):
+         """ external_declaration    : function_definition
+         """
++        print " **** definition **** "
+         p[0] = [p[1]]
+     
+     def p_external_declaration_2(self, p):
+@@ -362,12 +364,77 @@
          """
          p[0] = p[1]
  
 -    def p_pp_directive(self, p):
 -        """ pp_directive  : PPHASH 
++    def p_external_declaration_4(self, p):
++        """ external_declaration    : cuda_kernel 
+         """
++        p[0] = [p[1]]
++    
++    def p_cuda_kernel(self, p):
++       """ cuda_kernel : GLOBAL function_definition """
++       p[0] = p[2]
++
++
 +#    def p_pp_directive(self, p):
 +#        """ pp_directive  : PPHASH 
 +#        """
@@ -21,7 +47,7 @@ Index: pycparser/c_parser.py
 +
 +    def p_pp_directive_1(self, p):
 +        """ pp_directive  : PPHASH pragma_directive 
-         """
++        """
 +        p[0] = p[2]
 +#        self._parse_error('Directives not supported yet', 
 +#            self._coord(p.lineno(1)))
@@ -72,7 +98,7 @@ Index: pycparser/c_parser.py
      # In function definitions, the declarator can be followed by
      # a declaration list, for old "K&R style" function definitios.
      #
-@@ -404,6 +459,13 @@
+@@ -404,6 +471,13 @@
          """
          p[0] = p[1]
  
@@ -86,7 +112,7 @@ Index: pycparser/c_parser.py
      # In C, declarations can come several in a line:
      #   int x, *px, romulo = 5;
      #
-@@ -1176,6 +1238,15 @@
+@@ -1176,6 +1250,15 @@
          """
          p[0] = c_ast.UnaryOp('p' + p[2], p[1], p[1].coord)
  
