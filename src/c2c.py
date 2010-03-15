@@ -1,6 +1,6 @@
 from pycparser import parse_file
 
-from clone_visitor import CloneVisitor
+from clone_visitor import CloneWriter
 
 from SimpleMutator import SimpleMutator
 

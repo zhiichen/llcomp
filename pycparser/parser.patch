@@ -20,7 +20,7 @@ Index: pycparser/c_parser.py
 +# Adding support for OpenMP 3.0
 +
 +    def p_pp_directive_1(self, p):
-+        """ pp_directive  : PPHASH pragma_directive
++        """ pp_directive  : PPHASH pragma_directive 
          """
 +        p[0] = p[2]
 +#        self._parse_error('Directives not supported yet', 

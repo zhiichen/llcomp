@@ -9,7 +9,7 @@ class CudaMutator(object):
    """
    def __init__(self):
       " Constructor "
-      # BUG: Don't work without optimize
+      # BUG: Don't work with optimize
       self.template_parser = c_parser.CParser(lex_optimize = False, yacc_optimize = False)
 
    def filter(self, ast):
@@ -40,7 +40,7 @@ class CudaMutator(object):
          subtree = self.template_parser.parse(stripped_code, filename=name)
       except c_parser.ParseError, e:
          print "Parse error:" + str(e)
-	 print " Code : " + str(stripped_code)
+	#  print " Code : " + str(stripped_code)
 	 return None
       except IOError:
          print "Pipe Error"
@@ -84,6 +84,7 @@ class CudaMutator(object):
    def buildKernelLaunch(self):
        template_code = """
 #define  __attribute__(x)  /*NOTHING*/
+
 
 #define __const
 #define __addr
