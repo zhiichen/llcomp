@@ -18,7 +18,7 @@ Index: pycparser/c_parser.py
          p[0] = [p[1]]
      
      def p_external_declaration_2(self, p):
-@@ -362,12 +364,77 @@
+@@ -362,12 +364,83 @@
          """
          p[0] = p[1]
  
@@ -31,7 +31,13 @@ Index: pycparser/c_parser.py
 +    
 +    def p_cuda_kernel(self, p):
 +       """ cuda_kernel : GLOBAL function_definition """
-+       p[0] = p[2]
++#       p[0] = p[2]
++       p[0] = c_ast.CUDAKernel(
++                        name=p[2].decl.name,
++                        type='global',
++                        function = p[2],
++                        coord=p[2].coord)
++
 +
 +
 +#    def p_pp_directive(self, p):
@@ -98,7 +104,7 @@ Index: pycparser/c_parser.py
      # In function definitions, the declarator can be followed by
      # a declaration list, for old "K&R style" function definitios.
      #
-@@ -404,6 +471,13 @@
+@@ -404,6 +477,13 @@
          """
          p[0] = p[1]
  
@@ -112,7 +118,7 @@ Index: pycparser/c_parser.py
      # In C, declarations can come several in a line:
      #   int x, *px, romulo = 5;
      #
-@@ -1176,6 +1250,15 @@
+@@ -1176,6 +1256,15 @@
          """
          p[0] = c_ast.UnaryOp('p' + p[2], p[1], p[1].coord)
  

@@ -128,7 +128,6 @@ class CudaMutator(object):
 
    def buildKernel(self, params):
       template_code = """
-      #define __global__
       int idx;
       __global__ piLoop (double * reduction_cu, $params)
       {
@@ -154,6 +153,10 @@ class CudaMutator(object):
       params = "double h";
       kernel_subtree = self.buildKernel(params)
       InsertTool(subtree = kernel_subtree, position = "end").apply(ast, 'ext')
+      print "************************"
+      ast.show()
+      print "************************"
+      ast.show()
       # Declarations
       declarations_subtree = self.buildDeclarations(numThreads = maxThreadNumber_node.name)
       InsertTool(subtree = declarations_subtree, position = "end").apply(parent_stmt, 'decls')

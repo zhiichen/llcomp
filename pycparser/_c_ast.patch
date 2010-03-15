@@ -1,7 +1,7 @@
 Index: pycparser/_c_ast.yaml
 ===================================================================
---- pycparser/_c_ast.yaml	(revisión: 88)
-+++ pycparser/_c_ast.yaml	(copia de trabajo)
+--- pycparser/_c_ast.yaml	(revision 91)
++++ pycparser/_c_ast.yaml	(working copy)
 @@ -92,6 +92,14 @@
  #
  FuncCall: [name*, args*]
@@ -17,7 +17,7 @@ Index: pycparser/_c_ast.yaml
  # type <decl>(args)
  #
  FuncDecl: [args*, type*]
-@@ -161,4 +169,11 @@
+@@ -161,4 +169,14 @@
  While: [cond*, stmt*]
  
  
@@ -28,4 +28,7 @@ Index: pycparser/_c_ast.yaml
 +Omp: [name, type, reduction**, shared**, private**]
 +
 +OmpClause : [name, type, identifiers**]
++
++CUDAKernel: [name, type, function*]
++
 +
