@@ -1,8 +1,8 @@
 from pycparser import parse_file
 
-from clone_visitor import CloneWriter
+from Visitors.clone_visitor import CloneWriter
 
-from SimpleMutator import SimpleMutator
+from Mutators.Simple import SimpleMutator
 
 from sys import argv, exit
 

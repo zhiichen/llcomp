@@ -1,8 +1,8 @@
 from pycparser import parse_file
 
-from clone_visitor import CUDAWriter
+from Visitors.clone_visitor import CUDAWriter
 
-from CudaMutator import CudaMutator
+from Mutators.Cuda import CudaMutator
 
 
 from sys import argv, exit
