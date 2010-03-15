@@ -1,5 +1,6 @@
 from pycparser import c_parser, c_ast
-from generic_visitors import FilterVisitor, InsertTool, NodeNotFound, ReplaceTool, RemoveTool
+from Visitors.generic_visitors import FilterVisitor
+from Tools.tree import InsertTool, NodeNotFound, ReplaceTool, RemoveTool
 
 from string import Template
 
