@@ -22,7 +22,7 @@ main (int argc, char *argv[])
   sum = 0.0;
  
  /* reduction(+: sum) private(x) shared(h)*/
-#pragma omp parallel for shared(h, pi_time) 
+#pragma omp parallel for shared(h) 
   for (i = 0; i <= n; i++)
     {
       x = h * ((double) i - 0.5);

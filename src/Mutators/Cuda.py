@@ -64,14 +64,15 @@ class CudaMutator(object):
       """
       return self.parse_snippet(template_code, dict(numThreads = numThreads), name = 'declarations')
 
-   def buildInitializaton(self):
+   def buildInitializaton(self, shared_var, shared_size):
       """ Initialization """
       template_code = """
       int fake() {
           cudaMalloc((void **) &reduction_cu, memSize);
+          cudaMalloc((void **) &$shared_var, $shared_size);
       }
       """ 
-      return self.parse_snippet(template_code, None, name = 'SendData').ext[0].body
+      return self.parse_snippet(template_code, {'shared_var' : shared_var, 'shared_size' : shared_size}, name = 'SendData').ext[0].body
 
    def buildRetrieve(self):
       template_code = """
@@ -143,20 +144,22 @@ class CudaMutator(object):
       """
       # Look up a For node which previous brother is the start_node
       filter = FilterVisitor(match_node_type = c_ast.For, prev_brother = prev_node)
+      print " **** PREV NODE ****"
+      prev_node.show()
+      print " **** PREV NODE ****"
       parallelFor = filter.apply(ast)
       # Parent of the node
       parent_stmt = filter.parentOfMatch()
       maxThreadNumber_node = self.getThreadNum(parallelFor.cond)
       # Build subtrees
       # Kernel
-      params = "double h";
-      kernel_subtree = self.buildKernel(params)
+      kernel_subtree = self.buildKernel(params = "double h")
       InsertTool(subtree = kernel_subtree, position = "end").apply(ast, 'ext')
       # Declarations
       declarations_subtree = self.buildDeclarations(numThreads = maxThreadNumber_node.name)
       InsertTool(subtree = declarations_subtree, position = "end").apply(parent_stmt, 'decls')
       # Initialization
-      initialization_subtree = self.buildInitializaton()
+      initialization_subtree = self.buildInitializaton(shared_var = 'h', shared_size = 'sizeof(double)')
       InsertTool(subtree = initialization_subtree, position = "begin").apply(parent_stmt, 'stmts')
       # Retrieve data
       retrieve_subtree = self.buildRetrieve()
