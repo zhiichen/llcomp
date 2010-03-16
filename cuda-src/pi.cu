@@ -7,17 +7,6 @@
 // Simple utility function to check for CUDA runtime errors 
 void checkCUDAError (const char *msg);
 
-// Part3: implement the kernel 
-__global__ void
-piLoop (double *d_in, double h)
-{
-  int idx = blockIdx.x*blockDim.x + threadIdx.x;
-  double x = h * ((double)idx - 0.5);
- // printf ("** Parameters: %f, %f, %d **\n", h, tmp, idx);
-  d_in[idx]  = 4.0 / (1.0 + x * x);
- 
-}
-
 ///////////////////////////////////////////////////////////////////// 
 // Program main //
 /////////////////////////////////////////////////////////////////// 
@@ -26,17 +15,16 @@ int
 main (int argc, char **argv)
 {
 // pointer for host memory and size 
-  double *h_a;
   int n = N_ELEM;
-  int dimA = n;	// 256K elements (1MB total)
+  int dimA = n;			// 256K elements (1MB total)
   double h = 1.0 / (double) n;
 
 // pointer for device memory 
-  double  *d_a;
+  double *d_a;
   double sum = 0.0;
 
 // define grid and block size 
-  int numThreadsPerBlock = 512; // Blocks
+  int numThreadsPerBlock = 512;	// Blocks
 
 // Part 1: compute number of blocks needed based on 
 // array size and desired block size 
@@ -44,14 +32,15 @@ main (int argc, char **argv)
 
 // allocate host and device memory 
   size_t memSize = numBlocks * numThreadsPerBlock * sizeof (double);
-  h_a = (double *) malloc (memSize);
+  double *h_a = (double *) malloc (memSize);
   cudaMalloc ((void **) &d_a, memSize);
-  cudaMalloc ((void *) &h, sizeof(double));
+  cudaMalloc ((void *) &h, sizeof (double));
 
-  printf("** Array Size %d", memSize);
-  printf("** Num elem of array %d", memSize / sizeof(double));
+  printf ("** Array Size %d", memSize);
+  printf ("** Num elem of array %d", memSize / sizeof (double));
 //
-  printf("** Launch kernel (Grid: %d, Block: %d) **\n", numBlocks, numThreadsPerBlock);
+  printf ("** Launch kernel (Grid: %d, Block: %d) **\n", numBlocks,
+	  numThreadsPerBlock);
 
 // launch kernel 
   dim3 dimGrid (numBlocks);
@@ -65,7 +54,7 @@ main (int argc, char **argv)
 // Check for any CUDA errors 
   checkCUDAError ("kernel invocation");
 
-  printf("*** Get data *** \n");
+  printf ("*** Get data *** \n");
 // device to host copy 
   cudaMemcpy (h_a, d_a, memSize, cudaMemcpyDeviceToHost);
 
@@ -73,14 +62,14 @@ main (int argc, char **argv)
   checkCUDAError ("memcpy");
 
 // verify the data returned to the host is correct 
-  printf("*** Reduce ***\n");
+  printf ("*** Reduce ***\n");
   for (int i = 0; i < dimA; i++)
     {
       sum += h_a[i];
     }
 
 
-  printf("*** Pi: %f\n", sum * (1.0 / n));
+  printf ("*** Pi: %f\n", sum * (1.0 / n));
 
 // free device memory 
   cudaFree (d_a);
@@ -94,6 +83,20 @@ main (int argc, char **argv)
   return 0;
 }
 
+
+// Part3: implement the kernel 
+__global__ void
+piLoop (double *d_in, double h)
+{
+  int idx = blockIdx.x * blockDim.x + threadIdx.x;
+  double x = h * ((double) idx - 0.5);
+  // printf ("** Parameters: %f, %f, %d **\n", h, tmp, idx);
+  d_in[idx] = 4.0 / (1.0 + x * x);
+
+}
+
+
+
 void
 checkCUDAError (const char *msg)
 {
@@ -105,3 +108,5 @@ checkCUDAError (const char *msg)
       exit (EXIT_FAILURE);
     }
 }
+
+

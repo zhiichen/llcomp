@@ -304,9 +304,9 @@ class CloneWriter(OffsetNodeVisitor):
 class CUDAWriter(CloneWriter):
 	""" Specific CUDA writer """
 	def visit_CUDAKernel(self, node, offset = 0):
-		self.write(offset, "__global__")
+		self.write(offset, "__" + str(node.type) + "__")
 		self.write_blank();
-		self.visit(node.function)
+		self.visit(node.function, offset)
 
 	def visit_CUDAKernelCall(self, node, offset = 0):
 		self.visit_ID(node.name)

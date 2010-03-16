@@ -128,15 +128,14 @@ class CudaMutator(object):
 
    def buildKernel(self, params):
       template_code = """
-      int idx;
-      __global__ piLoop (double * reduction_cu, $params)
+      __global__ void piLoop (double * reduction_cu, $params)
       {
-      int idx = blockIdx.x*blockDim.x + threadIdx.x;
+      int idx = blockIdx.x * blockDim.x + threadIdx.x;
       double x = h * ((double)idx - 0.5);
       reduction_cu[idx]  = 4.0 / (1.0 + x * x);
       }
       """
-      tree = self.parse_snippet(template_code, {'params' : params}, name = 'KernelBuild').ext[1]
+      tree = self.parse_snippet(template_code, {'params' : params}, name = 'KernelBuild')
       return tree
 
    def mutatorFunction(self, ast, prev_node):
@@ -153,10 +152,6 @@ class CudaMutator(object):
       params = "double h";
       kernel_subtree = self.buildKernel(params)
       InsertTool(subtree = kernel_subtree, position = "end").apply(ast, 'ext')
-      print "************************"
-      ast.show()
-      print "************************"
-      ast.show()
       # Declarations
       declarations_subtree = self.buildDeclarations(numThreads = maxThreadNumber_node.name)
       InsertTool(subtree = declarations_subtree, position = "end").apply(parent_stmt, 'decls')
