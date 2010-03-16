@@ -1,6 +1,7 @@
 from pycparser import c_parser, c_ast
 from Visitors.generic_visitors import FilterVisitor
 from Tools.tree import InsertTool, NodeNotFound, ReplaceTool, RemoveTool
+from Tools.search import type_of_id
 
 from string import Template
 
@@ -64,15 +65,19 @@ class CudaMutator(object):
       """
       return self.parse_snippet(template_code, dict(numThreads = numThreads), name = 'declarations')
 
-   def buildInitializaton(self, shared_var, shared_size):
+   def buildInitializaton(self, shared_vars, ast):
       """ Initialization """
+      shared_dict = {} 
+      for elem in shared_vars:
+          # Only malloc / send if it is a complex type
+          if isinstance(elem, c_ast.ArrayDecl) or isinstance(elem, c_ast.Struct):
+	          shared_dict[elem.name] = "sizeof(" + " ".join(type_of_id(elem, ast).type.names) +  ")"
+      shared_malloc_lines = "\n".join(["cudaMalloc((void **) &" + str(key) + "," + str(value) + ");" for key,value in shared_dict.items()])
       template_code = """
       int fake() {
           cudaMalloc((void **) &reduction_cu, memSize);
-          cudaMalloc((void **) &$shared_var, $shared_size);
-      }
-      """ 
-      return self.parse_snippet(template_code, {'shared_var' : shared_var, 'shared_size' : shared_size}, name = 'SendData').ext[0].body
+      """ + shared_malloc_lines + "\n}"
+      return self.parse_snippet(template_code, None, name = 'SendData').ext[0].body
 
    def buildRetrieve(self):
       template_code = """
@@ -83,7 +88,7 @@ class CudaMutator(object):
       """ 
       return self.parse_snippet(template_code, None, name = 'Retrieve').ext[0].body
       
-   def buildKernelLaunch(self):
+   def buildKernelLaunch(self, shared_var_list):
        template_code = """
 #define  __attribute__(x)  /*NOTHING*/
 
@@ -107,11 +112,11 @@ class CudaMutator(object):
        int fake() {
 	    dim3 dimGrid (numBlocks);
    	    dim3 dimBlock (numThreadsPerBlock);
- 	    piLoop <<< dimGrid , dimBlock >>> (reduction_cu);
+ 	    piLoop <<< dimGrid , dimBlock >>> (reduction_cu, $sharedvars);
        }
        """
        # The last element is the object function
-       tree = [ elem for elem in self.parse_snippet(template_code, None, name = 'KernelLaunch').ext  if type(elem) == c_ast.FuncDef  ][-1].body
+       tree = [ elem for elem in self.parse_snippet(template_code, {'sharedvars' : shared_var_list}, name = 'KernelLaunch').ext  if type(elem) == c_ast.FuncDef  ][-1].body
        return tree
 
 
@@ -159,7 +164,8 @@ class CudaMutator(object):
       declarations_subtree = self.buildDeclarations(numThreads = maxThreadNumber_node.name)
       InsertTool(subtree = declarations_subtree, position = "end").apply(parent_stmt, 'decls')
       # Initialization
-      initialization_subtree = self.buildInitializaton(shared_var = 'h', shared_size = 'sizeof(double)')
+#      initialization_subtree = self.buildInitializaton(shared_var = prev_node.child.shared[0].identifiers[0].params[0].name, shared_size = 'sizeof(' + type_of_id( prev_node.child.shared[0].identifiers[0].params[0], ast).type.names[0] + ')')
+      initialization_subtree = self.buildInitializaton(shared_vars = prev_node.child.shared[0].identifiers[0].params, ast = ast)
       InsertTool(subtree = initialization_subtree, position = "begin").apply(parent_stmt, 'stmts')
       # Retrieve data
       retrieve_subtree = self.buildRetrieve()
@@ -168,7 +174,7 @@ class CudaMutator(object):
       reduction_subtree = self.buildHostReduction()
       InsertTool(subtree = reduction_subtree, position = "end").apply(parent_stmt, 'stmts')
       # Kernel Launch
-      kernelLaunch_subtree = self.buildKernelLaunch()
+      kernelLaunch_subtree = self.buildKernelLaunch(prev_node.child.shared[0].identifiers[0].params[0].name)
       ReplaceTool(new_node = kernelLaunch_subtree, old_node = parallelFor).apply(parent_stmt, 'stmts')
       RemoveTool(target_node = prev_node).apply(parent_stmt, 'stmts')
 
