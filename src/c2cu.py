@@ -27,7 +27,7 @@ def link_all_parents(ast):
                 """
                 Given a starting vertex, root, do a depth-first search.
                 """
-                to_visit = []  # a list can be used as a stack in Python
+                to_visit = [] 
                 if visited is None: visited = set()
 
                 to_visit.append(root) # Start with root
@@ -60,9 +60,14 @@ t = CudaMutator()
 
 new_ast = t.apply(ast)
 
+
+link_all_parents(ast)
+
 ## Print the AST
 v = CUDAWriter(filename = output_file)
 v.visit(new_ast)
+
+
 
 # del v
 

@@ -12,8 +12,9 @@ class DeclsToParamsMutator(object):
 
    def convert(self, decls):
       """ Transform a type declaration to a parameter declaration """
-      print "****"
-      print decls
+      # If ArrayDecl, change to PointerDecl
+      # If StructDecl, change to PointerDecl
+      # Else, do not touch
       return c_ast.ParamList(params = decls, coord = 0)
 
    def filter(self, ast):
