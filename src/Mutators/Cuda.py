@@ -1,7 +1,9 @@
 from pycparser import c_parser, c_ast
 from Visitors.generic_visitors import FilterVisitor
 from Tools.tree import InsertTool, NodeNotFound, ReplaceTool, RemoveTool
-from Tools.search import type_of_id
+from Tools.search import type_of_id, decl_of_id
+from Tools.Dump import Dump
+from Mutators.DeclsToParams import DeclsToParamsMutator
 
 from string import Template
 
@@ -132,16 +134,27 @@ class CudaMutator(object):
       return self.parse_snippet(template_code, None, name = 'HostReduction').ext[0].body
 
 
-   def buildKernel(self, params):
-      template_code = """
-      __global__ void piLoop (double * reduction_cu, $params)
-      {
-      int idx = blockIdx.x * blockDim.x + threadIdx.x;
-      double x = h * ((double)idx - 0.5);
-      reduction_cu[idx]  = 4.0 / (1.0 + x * x);
-      }
-      """
-      tree = self.parse_snippet(template_code, {'params' : params}, name = 'KernelBuild')
+   def buildKernel(self, params, ast):
+      if not Dump.exists('KernelBuild'):
+          template_code = """
+          __global__ void piLoop (double * reduction_cu)
+          {
+          int idx = blockIdx.x * blockDim.x + threadIdx.x;
+          double x = h * ((double)idx - 0.5);
+          reduction_cu[idx]  = 4.0 / (1.0 + x * x);
+          }
+          """
+          print " *** Parse *** "
+          tree = self.parse_snippet(template_code, None, name = 'KernelBuild')
+          Dump.save('KernelBuild', tree)
+      else:
+          print " *** Load *** "
+          tree = Dump.load('KernelBuild')
+      # Get the declarations
+      param_decls = [ decl_of_id(elem, ast) for elem in params ]
+      # Mutate the declaration subtree into a param declaration (ArrayRef to Pointer and so on...)
+      pm = DeclsToParamsMutator(decls = param_decls)
+      pm.apply(tree.ext[0].function.decl.type.args)
       return tree
 
    def mutatorFunction(self, ast, prev_node):
@@ -158,13 +171,12 @@ class CudaMutator(object):
       maxThreadNumber_node = self.getThreadNum(parallelFor.cond)
       # Build subtrees
       # Kernel
-      kernel_subtree = self.buildKernel(params = "double h")
+      kernel_subtree = self.buildKernel(params = prev_node.child.shared[0].identifiers[0].params, ast = ast)
       InsertTool(subtree = kernel_subtree, position = "end").apply(ast, 'ext')
       # Declarations
       declarations_subtree = self.buildDeclarations(numThreads = maxThreadNumber_node.name)
       InsertTool(subtree = declarations_subtree, position = "end").apply(parent_stmt, 'decls')
       # Initialization
-#      initialization_subtree = self.buildInitializaton(shared_var = prev_node.child.shared[0].identifiers[0].params[0].name, shared_size = 'sizeof(' + type_of_id( prev_node.child.shared[0].identifiers[0].params[0], ast).type.names[0] + ')')
       initialization_subtree = self.buildInitializaton(shared_vars = prev_node.child.shared[0].identifiers[0].params, ast = ast)
       InsertTool(subtree = initialization_subtree, position = "begin").apply(parent_stmt, 'stmts')
       # Retrieve data

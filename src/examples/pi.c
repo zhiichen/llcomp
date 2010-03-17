@@ -1,12 +1,4 @@
 
-double
-f (double a)
-{
-  return (4.0 / (1.0 + a * a));
-}
-
-
-
 int
 main (int argc, char *argv[])
 {
@@ -22,11 +14,11 @@ main (int argc, char *argv[])
   sum = 0.0;
  
  /* reduction(+: sum) private(x) shared(h)*/
-#pragma omp parallel for shared(h) 
+#pragma omp parallel for shared(h)
   for (i = 0; i <= n; i++)
     {
       x = h * ((double) i - 0.5);
-      sum += f (x);
+      sum += (4.0 / 1.0 + x * x);
     }
 
   pi = h * sum;

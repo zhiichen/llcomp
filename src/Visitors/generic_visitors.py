@@ -39,7 +39,9 @@ class FilterVisitor(object):
    def apply(self, ast):
       """ Apply filter to the ast """
       self.match = False
-      node = self.generic_visit(ast)
+      node = ast
+      if type(node) != self.match_node_type:
+         node = self.generic_visit(ast)
       if type(node) != self.match_node_type:
          raise NodeNotFound(self.match_node_type)
       return node
