@@ -1,7 +1,7 @@
 Index: pycparser/c_parser.py
 ===================================================================
---- pycparser/c_parser.py	(revision 91)
-+++ pycparser/c_parser.py	(working copy)
+--- pycparser/c_parser.py	(revisión: 91)
++++ pycparser/c_parser.py	(copia de trabajo)
 @@ -292,6 +292,7 @@
              bitsize=None, 
              coord=decl.coord)
@@ -10,7 +10,7 @@ Index: pycparser/c_parser.py
          typename = spec['type']
          declaration = self._fix_decl_name_type(declaration, typename)
          return c_ast.FuncDef(
-@@ -362,12 +363,83 @@
+@@ -362,12 +363,97 @@
          """
          p[0] = p[1]
  
@@ -75,8 +75,17 @@ Index: pycparser/c_parser.py
 +    def p_directive_2(self, p):
 +       """ directive : PARALLEL FOR omp_clause_list"""
 +       # Start of a parallel region within a for
-+       p[0] = c_ast.Omp(name='for', type = 'parallel', reduction = [],
-+          shared = p[3], private = [], coord = self._coord(p.lineno(1)))
++       reduction_list = []
++       shared_list = []
++       private_list = []
++       for clause in p[3]:
++          if clause.type == 'SHARED': shared_list.append(clause)
++          elif clause.type == 'PRIVATE' : private_list.append(clause)
++          elif clause.type == 'REDUCTION' : reduction_list.append(clause)
++          else:
++             print " Unknown " + clause.type + " clause in " + str(self._coord(p.lineno(1)))
++       p[0] = c_ast.Omp(name='for', type = 'parallel', reduction = reduction_list,
++          shared = shared_list, private = private_list, coord = self._coord(p.lineno(1)))
 +
 +
 +    def p_omp_clause_list(self, p):
@@ -84,9 +93,14 @@ Index: pycparser/c_parser.py
 +                           | clause """
 +       p[0] = p[1] if len(p) == 2 else p[1] + p[2]
 +
-+    def p_clause(self, p):
-+       """ clause : SHARED LPAREN identifier_list RPAREN """
-+       p[0] = [c_ast.OmpClause(name = 'shared', type = 'shared', identifiers = [p[3]], coord = self._coord(p.lineno(1)))]
++    def p_clause_1(self, p):
++       """ clause : SHARED LPAREN identifier_list RPAREN 
++                  | PRIVATE LPAREN identifier_list RPAREN """
++       p[0] = [c_ast.OmpClause(name = 'memory', type = str(p[1]).upper(), identifiers = [p[3]], coord = self._coord(p.lineno(1)))]
++    def p_clause_2(self, p):
++       """ clause : REDUCTION LPAREN identifier_list RPAREN """
++       p[0] = [c_ast.OmpClause(name = 'reduction', type = str(p[1]).upper(), identifiers = [p[3]], coord = self._coord(p.lineno(1)))]
++
 +
 +
 +# End of OpenMP
@@ -96,7 +110,7 @@ Index: pycparser/c_parser.py
      # In function definitions, the declarator can be followed by
      # a declaration list, for old "K&R style" function definitios.
      #
-@@ -404,6 +476,13 @@
+@@ -404,6 +490,13 @@
          """
          p[0] = p[1]
  
@@ -110,7 +124,7 @@ Index: pycparser/c_parser.py
      # In C, declarations can come several in a line:
      #   int x, *px, romulo = 5;
      #
-@@ -1176,6 +1255,15 @@
+@@ -1176,6 +1269,15 @@
          """
          p[0] = c_ast.UnaryOp('p' + p[2], p[1], p[1].coord)
  

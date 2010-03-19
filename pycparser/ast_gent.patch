@@ -1,7 +1,7 @@
 Index: pycparser/_ast_gen.py
 ===================================================================
---- pycparser/_ast_gen.py	(revision 91)
-+++ pycparser/_ast_gen.py	(working copy)
+--- pycparser/_ast_gen.py	(revisión: 91)
++++ pycparser/_ast_gen.py	(copia de trabajo)
 @@ -72,13 +72,13 @@
  
          if self.all_entries:

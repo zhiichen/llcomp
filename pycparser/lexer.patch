@@ -1,7 +1,7 @@
 Index: pycparser/c_lexer.py
 ===================================================================
---- pycparser/c_lexer.py	(revision 91)
-+++ pycparser/c_lexer.py	(working copy)
+--- pycparser/c_lexer.py	(revisión: 91)
++++ pycparser/c_lexer.py	(copia de trabajo)
 @@ -157,6 +157,15 @@
          
          # pre-processor 
@@ -12,7 +12,7 @@ Index: pycparser/c_lexer.py
 +	'PRAGMA', # pragma
 +	'OMP', # openmp
 +	'PARALLEL', # parallel
-+	'SHARED',
++	'SHARED', 'PRIVATE', 'REDUCTION',
 +        'LKLAUNCH', 'RKLAUNCH', # CUDA kernel launch
 +        'GLOBAL',
      )
@@ -26,7 +26,7 @@ Index: pycparser/c_lexer.py
      )
      
      def t_PPHASH(self, t):
-@@ -216,14 +226,59 @@
+@@ -216,14 +226,69 @@
          m = self.line_pattern.match(
              t.lexer.lexdata, pos=t.lexer.lexpos)
          
@@ -35,7 +35,7 @@ Index: pycparser/c_lexer.py
              t.lexer.begin('ppline')
              self.pp_line = self.pp_filename = None
 -            #~ print "ppline starts on line %s" % t.lexer.lineno
-+            print "ppline starts on line %s" % t.lexer.lineno
++            # print "ppline starts on line %s" % t.lexer.lineno
          else:
 +            t.lexer.begin('directive')
              t.type = 'PPHASH'
@@ -64,6 +64,16 @@ Index: pycparser/c_lexer.py
 +        t.type = 'SHARED'
 +        return t
 +
++    def t_directive_PRIVATE(self, t):
++        r'private'
++        t.type = 'PRIVATE'
++        return t
++    def t_directive_REDUCTION(self, t):
++        r'reduction'
++        t.type = 'REDUCTION'
++        return t
++
++
 +    def t_directive_NEWLINE(self, t):
 +        r'\n'
 +                       
@@ -88,7 +98,7 @@ Index: pycparser/c_lexer.py
      ##
      ## Rules for the ppline state
      ##
-@@ -298,7 +353,12 @@
+@@ -298,7 +363,12 @@
      t_GE                = r'>='
      t_EQ                = r'=='
      t_NE                = r'!='
@@ -101,7 +111,7 @@ Index: pycparser/c_lexer.py
      # Assignment operators
      t_EQUALS            = r'='
      t_TIMESEQUAL        = r'\*='
-@@ -337,7 +397,7 @@
+@@ -337,7 +407,7 @@
  
      t_STRING_LITERAL    = string_literal
      
@@ -110,7 +120,7 @@ Index: pycparser/c_lexer.py
      # functions to impose a strict order (otherwise, decimal
      # is placed before the others because its regex is longer,
      # and this is bad)
-@@ -410,7 +470,8 @@
+@@ -410,7 +480,8 @@
  
  
  if __name__ == "__main__":

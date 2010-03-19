@@ -1,7 +1,7 @@
 Index: pycparser/_c_ast.yaml
 ===================================================================
---- pycparser/_c_ast.yaml	(revision 91)
-+++ pycparser/_c_ast.yaml	(working copy)
+--- pycparser/_c_ast.yaml	(revisión: 91)
++++ pycparser/_c_ast.yaml	(copia de trabajo)
 @@ -92,6 +92,14 @@
  #
  FuncCall: [name*, args*]
