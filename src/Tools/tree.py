@@ -83,9 +83,7 @@ class RemoveTool:
        """ Remove a subtree """
        if self.target_node == None: return target_subtree
        attr = getattr(target_subtree, attribute_name)
-       print " Attr " + str(attr)
        position = attr.index(self.target_node)
-       print " Position " + str(position)
        # 1. Check attribute is a list of nodes
        if not type(attr) == type([]):
            raise NodeNotValid(target_subtree)

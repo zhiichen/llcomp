@@ -125,8 +125,6 @@ class AttributeFilter(object):
            return node
         # Continue the search....
         method = 'visit_' + node.__class__.__name__
-        print " Visiting .... " + node.__class__.__name__ + " Method : " + method
-        print " Node : " + str(node)
         visitor = getattr(self, method, self.generic_visit)
         return visitor(node, offset)
         
@@ -134,24 +132,17 @@ class AttributeFilter(object):
        """ Called if no explicit visitor function exists for a 
            node. Implements preorder visiting of the node.
        """
-       print " Generic visit of " + str(node)
        # Store the parent node of the match
        iter = None
        if type(node) == type([]):
-          print "Type : " + str(type(node)) + " == " + str(type([]))
-          print " Node attr : " + str(dir(node))
           iter = node.__iter__();
        else:
-          print "Type : Node "
-          print " Node attr : " + str(dir(node))
           iter = node.children().__iter__();
        r = node;
        prev = None;
        try:
           c = iter.next();
-          print  " Check " + str(c)  + " Attr " + str(dir(c))
           while not hasattr(c, self.match_attribute) or (self.prev_brother != None and self.prev_brother != prev):
-             print  " Check " + str(c)
              r = self.visit(c, prev)
              if hasattr(r, self.match_attribute) and (self.prev_brother != None and self.prev_brother == prev):
                 # Stop iterating, we've found the mathing node
@@ -170,7 +161,6 @@ class AttributeFilter(object):
 
        if (self.match == True and self.parent_of_match == None):
            self.parent_of_match = node
-       print "r : " + str(r)
 
        return r
 
