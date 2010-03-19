@@ -7,6 +7,36 @@ from Mutators.DeclsToParams import DeclsToParamsMutator
 
 from string import Template
 
+
+class KernelLoopVarMutator(object):
+   """ 1. Replace the loop var  to idx
+           -> Filter by ID node
+           -> change name to idx
+   """
+   def __init__(self, loop_var):
+      self.loop_var = loop_var
+ 
+   def filter(self, ast):
+      af = FilterVisitor(match_node_type = c_ast.ID)
+      id_node = af.apply(ast)
+      return [attr_node, af.parentOfMatch()]
+
+   def mutatorFunction(self, ast, parent):
+      del ast.init
+      ast.init = None
+      return ast
+
+   def apply(self, ast):
+      """ Apply the mutation """
+      start_node = None
+      try:
+         [start_node, parent] = self.filter(ast)
+         self.mutatorFunction(start_node, parent)
+      except NodeNotFound as nf:
+         print str(nf)
+      return start_node
+
+
 class CudaMutator(object):
    """ This is mutator locates a Pragma node, and then
       translate the original source to the pi cuda implementation 
@@ -122,26 +152,25 @@ class CudaMutator(object):
        return tree
 
 
-   def buildHostReduction(self):
+   def buildHostReduction(self, reduction_var_node):
       template_code = """
       int fake() {
       for (i = 0; i < dimA; i++)
       {
-        sum += reduction_loc[i];
+        $target += reduction_loc[i];
       }
       }
       """
-      return self.parse_snippet(template_code, None, name = 'HostReduction').ext[0].body
+      return self.parse_snippet(template_code, {'target' : reduction_var_node.name}, name = 'HostReduction').ext[0].body
 
 
-   def buildKernel(self, params, ast):
+   def buildKernel(self, params, private_list, reduction_list, loop, ast):
       if not Dump.exists('KernelBuild'):
           template_code = """
           __global__ void piLoop (double * reduction_cu)
           {
           int idx = blockIdx.x * blockDim.x + threadIdx.x;
-          double x = h * ((double)idx - 0.5);
-          reduction_cu[idx]  = 4.0 / (1.0 + x * x);
+          reduction_cu[idx]  = 1.0;
           }
           """
           print " *** Parse *** "
@@ -150,11 +179,19 @@ class CudaMutator(object):
       else:
           print " *** Load *** "
           tree = Dump.load('KernelBuild')
-      # Get the declarations
+      # OpenMP shared vars are parameters of the kernel function
+      # Note: we need to mutate the declaration subtree into a param declaration (ArrayRef to Pointer and so on...)
       param_decls = [ decl_of_id(elem, ast) for elem in params ]
-      # Mutate the declaration subtree into a param declaration (ArrayRef to Pointer and so on...)
       pm = DeclsToParamsMutator(decls = param_decls)
       pm.apply(tree.ext[0].function.decl.type.args)
+      # OpenMP Private vars need to be declared inside kernel
+      #    - we build a tmp Compound to group all declarations, and insert them once
+      tmp = c_ast.Compound(decls= [decl_of_id(elem, ast) for elem in private_list], stmts=None)
+      #    - Insert tool removes the parent node of the inserted subtree
+      InsertTool(subtree = tmp, position = "end").apply(tree.ext[0].function.body, 'decls')
+      # Add the loop statements, (but not the reduction)
+ #     km = KernelMutator(loop_var = dec_of_id(reduction_list[0]))
+ #     InsertTool(subtree = kernel_stmts, position = "begin").apply(tree.ext[0].function.body, 'stmts')
       return tree
 
    def mutatorFunction(self, ast, prev_node):
@@ -162,16 +199,16 @@ class CudaMutator(object):
       """
       # Look up a For node which previous brother is the start_node
       filter = FilterVisitor(match_node_type = c_ast.For, prev_brother = prev_node)
-      print " **** PREV NODE ****"
-      prev_node.show()
-      print " **** PREV NODE ****"
       parallelFor = filter.apply(ast)
       # Parent of the node
       parent_stmt = filter.parentOfMatch()
       maxThreadNumber_node = self.getThreadNum(parallelFor.cond)
       # Build subtrees
       # Kernel
-      kernel_subtree = self.buildKernel(params = prev_node.child.shared[0].identifiers[0].params, ast = ast)
+      kernel_subtree = self.buildKernel(params = prev_node.child.shared[0].identifiers[0].params, 
+			private_list = prev_node.child.private[0].identifiers[0].params, 
+                        reduction_list = prev_node.child.reduction[0].identifiers[0].params,
+                        loop = parallelFor, ast = ast)
       InsertTool(subtree = kernel_subtree, position = "end").apply(ast, 'ext')
       # Declarations
       declarations_subtree = self.buildDeclarations(numThreads = maxThreadNumber_node.name)
@@ -183,7 +220,7 @@ class CudaMutator(object):
       retrieve_subtree = self.buildRetrieve()
       InsertTool(subtree = retrieve_subtree, position = "end").apply(parent_stmt, 'stmts')
       # Host reduction
-      reduction_subtree = self.buildHostReduction()
+      reduction_subtree = self.buildHostReduction(reduction_var_node = prev_node.child.reduction[0].identifiers[0].params[0])
       InsertTool(subtree = reduction_subtree, position = "end").apply(parent_stmt, 'stmts')
       # Kernel Launch
       kernelLaunch_subtree = self.buildKernelLaunch(prev_node.child.shared[0].identifiers[0].params[0].name)

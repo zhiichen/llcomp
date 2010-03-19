@@ -13,8 +13,8 @@ main (int argc, char *argv[])
   h = 1.0 / (double) n;
   sum = 0.0;
  
- /* reduction(+: sum) private(x) shared(h)*/
-#pragma omp parallel for shared(h, pi_time)
+ /* reduction(+: sum) */
+#pragma omp parallel for shared(h) private(x) reduction(sum)
   for (i = 0; i <= n; i++)
     {
       x = h * ((double) i - 0.5);

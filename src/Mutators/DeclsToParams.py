@@ -11,9 +11,7 @@ class RemoveAttributeMutator(object):
  
    def filter(self, ast):
       af = AttributeFilter(match_attribute = self.attr)
-      print "Ast : " + str(ast)
       attr_node = af.apply(ast)
-      print " Node with " + self.attr + " is : " + str(attr_node)
       return [attr_node, af.parentOfMatch()]
 
    def mutatorFunction(self, ast, parent):
@@ -39,6 +37,7 @@ class DeclsToParamsMutator(object):
 
    def convert(self, decls):
       """ Transform a type declaration to a parameter declaration """
+      # TODO: Implement this !
       # If ArrayDecl, change to PointerDecl
       # If StructDecl, change to PointerDecl
       # Else, do not touch
