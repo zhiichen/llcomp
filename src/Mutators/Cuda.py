@@ -1,5 +1,5 @@
 from pycparser import c_parser, c_ast
-from Visitors.generic_visitors import FilterVisitor
+from Visitors.generic_visitors import FilterVisitor, IDFilter
 from Tools.tree import InsertTool, NodeNotFound, ReplaceTool, RemoveTool
 from Tools.search import type_of_id, decl_of_id
 from Tools.Dump import Dump
@@ -8,30 +8,35 @@ from Mutators.DeclsToParams import DeclsToParamsMutator
 from string import Template
 
 
-class KernelLoopVarMutator(object):
-   """ 1. Replace the loop var  to idx
-           -> Filter by ID node
-           -> change name to idx
-   """
-   def __init__(self, loop_var):
-      self.loop_var = loop_var
+class IDNameMutator(object):
+   """  Replace and ID name with another ID name """
+   def __init__(self, old, new):
+      self.old = old
+      self.new = new
  
    def filter(self, ast):
-      af = FilterVisitor(match_node_type = c_ast.ID)
-      id_node = af.apply(ast)
-      return [attr_node, af.parentOfMatch()]
+      id_node = None
+      try:
+         ast.show()
+         af = IDFilter(id = self.old)
+         id_node = af.apply(ast)
+      except NodeNotFound:
+         print " *** here *** "
+         return None
+      return id_node
 
-   def mutatorFunction(self, ast, parent):
-      del ast.init
-      ast.init = None
+   def mutatorFunction(self, ast):
+      delattr(ast, 'name')
+      setattr(ast, 'name', self.new.name)
       return ast
 
    def apply(self, ast):
       """ Apply the mutation """
       start_node = None
       try:
-         [start_node, parent] = self.filter(ast)
-         self.mutatorFunction(start_node, parent)
+         start_node = self.filter(ast)
+         if start_node:
+            self.mutatorFunction(start_node)
       except NodeNotFound as nf:
          print str(nf)
       return start_node
@@ -170,7 +175,7 @@ class CudaMutator(object):
           __global__ void piLoop (double * reduction_cu)
           {
           int idx = blockIdx.x * blockDim.x + threadIdx.x;
-          reduction_cu[idx]  = 1.0;
+          ;
           }
           """
           print " *** Parse *** "
@@ -190,8 +195,12 @@ class CudaMutator(object):
       #    - Insert tool removes the parent node of the inserted subtree
       InsertTool(subtree = tmp, position = "end").apply(tree.ext[0].function.body, 'decls')
       # Add the loop statements, (but not the reduction)
- #     km = KernelMutator(loop_var = dec_of_id(reduction_list[0]))
- #     InsertTool(subtree = kernel_stmts, position = "begin").apply(tree.ext[0].function.body, 'stmts')
+      print " Loop var : " + str(loop.init.lvalue)
+      km = IDNameMutator(old = loop.init.lvalue, new = c_ast.ID('idx'))
+      km.apply(loop.stmt)
+      km = IDNameMutator(old = c_ast.ID('sum'), new = c_ast.ID('reduction[idx]'))
+      km.apply(loop.stmt)
+      InsertTool(subtree = loop.stmt, position = "begin").apply(tree.ext[0].function.body, 'stmts')
       return tree
 
    def mutatorFunction(self, ast, prev_node):

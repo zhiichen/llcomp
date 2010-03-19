@@ -1,25 +1,8 @@
 
+from pycparser import c_ast
 
-class NodeNotFound(Exception):
-   def __init__(self, node):
-      self.node = node
+from Tools.tree import NodeNotFound, NodeNotValid
 
-   def __str__(self):
-      return "Node " + str(self.node) + " not found "
-
-class NodeNotValid(Exception):
-   def __init__(self, node):
-      self.node = node
-
-   def __str__(self):
-      return "Node " + str(self.node) + " not valid "
-
-class PositionNotValid(Exception):
-   def __init__(self):
-      pass
-
-   def __str__(self):
-      return "Position not valid (choose either begin or end ) "
 
 
 
@@ -40,12 +23,13 @@ class GenericFilterVisitor(object):
       if not self.condition_func(node):
          node = self.generic_visit(ast)
       if not self.condition_func(node):
-         raise NodeNotFound(self.match_node_type)
+         raise NodeNotFound("condition")
       return node
 
    def visit(self, node, prev, offset = 1):
         """ Visit a node. 
         """
+        if self.match: return node
         if self.condition_func(node) and (self.prev_brother != None and self.prev_brother == prev):
            self.match = True
            return node
@@ -59,17 +43,30 @@ class GenericFilterVisitor(object):
            node. Implements preorder visiting of the node.
        """
        # Store the parent node of the match
+       debug = False
        iter = node.children().__iter__();
        r = node;
+       c = None
        prev = None;
+       if debug:
+          print " Iterating the childs of node : " + str(node)
+          node.show()
+          print " Childs : " + str([ n for n in node.children()])
+          print " Visiting " + str(node)
+
        try:
           c = iter.next();
           while not self.condition_func(c) or (self.prev_brother != None and self.prev_brother != prev):
+             if self.match: 
+                break
+             if debug:
+                print " Act : " + str(c)
              r = self.visit(c, prev)
-             if self.condition_func(r) and (self.prev_brother != None and self.prev_brother == prev):
+             if self.condition_func(r) and (self.prev_brother != None and self.prev_brother == prev) and not self.match:
                 # Stop iterating, we've found the mathing node
                 # Do not execute the else code, we already have in r 
                 # the matching node
+                if debug: print " Act : " + str(c)
                 self.match = True
                 break
              prev = c
@@ -78,8 +75,14 @@ class GenericFilterVisitor(object):
              # r is always the matching node (even if its in the same level)
              r = c
              self.match = True
+             if debug: print " Level of matching node : " + str(c) + " == " + str(c.name)
        except StopIteration:
-          pass
+          if debug: 
+             print " Stop because : " + str(c)
+             node.show()
+
+       if debug: print " Final node : " + str(r) 
+       if debug: print "==" + str(r.name)
 
        if (self.match == True and self.parent_of_match == None):
            self.parent_of_match = node
@@ -99,12 +102,18 @@ class FilterVisitor(GenericFilterVisitor):
    def __init__(self, match_node_type, prev_brother = None):
        super(FilterVisitor, self).__init__(condition_func = lambda node : type(node) == match_node_type, prev_brother = prev_brother)
 
-
-
 class AttributeFilter(GenericFilterVisitor):
    """ Returns the first node with the given attribute
    """
 
    def __init__(self, match_attribute, prev_brother = None):
        super(AttributeFilter, self).__init__(condition_func = lambda node : hasattr(node, match_attribute), prev_brother = prev_brother)
+
+
+class IDFilter(GenericFilterVisitor):
+   """ Returns the first node with the given attribute
+   """
+
+   def __init__(self, id, prev_brother = None):
+       super(IDFilter, self).__init__(condition_func = lambda node : type(node) == c_ast.ID and node.name == id.name, prev_brother = prev_brother)
 
