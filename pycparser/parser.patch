@@ -10,15 +10,7 @@ Index: pycparser/c_parser.py
          typename = spec['type']
          declaration = self._fix_decl_name_type(declaration, typename)
          return c_ast.FuncDef(
-@@ -350,6 +351,7 @@
-     def p_external_declaration_1(self, p):
-         """ external_declaration    : function_definition
-         """
-+        print " **** definition **** "
-         p[0] = [p[1]]
-     
-     def p_external_declaration_2(self, p):
-@@ -362,12 +364,83 @@
+@@ -362,12 +363,83 @@
          """
          p[0] = p[1]
  
@@ -83,8 +75,8 @@ Index: pycparser/c_parser.py
 +    def p_directive_2(self, p):
 +       """ directive : PARALLEL FOR omp_clause_list"""
 +       # Start of a parallel region within a for
-+       p[0] = c_ast.Omp(name='for', type = 'parallel', reduction = p[3],
-+          shared = [], private = [], coord = self._coord(p.lineno(1)))
++       p[0] = c_ast.Omp(name='for', type = 'parallel', reduction = [],
++          shared = p[3], private = [], coord = self._coord(p.lineno(1)))
 +
 +
 +    def p_omp_clause_list(self, p):
@@ -104,7 +96,7 @@ Index: pycparser/c_parser.py
      # In function definitions, the declarator can be followed by
      # a declaration list, for old "K&R style" function definitios.
      #
-@@ -404,6 +477,13 @@
+@@ -404,6 +476,13 @@
          """
          p[0] = p[1]
  
@@ -118,7 +110,7 @@ Index: pycparser/c_parser.py
      # In C, declarations can come several in a line:
      #   int x, *px, romulo = 5;
      #
-@@ -1176,6 +1256,15 @@
+@@ -1176,6 +1255,15 @@
          """
          p[0] = c_ast.UnaryOp('p' + p[2], p[1], p[1].coord)
  

@@ -1,7 +1,7 @@
-Index: _ast_gen.py
+Index: pycparser/_ast_gen.py
 ===================================================================
---- _ast_gen.py	(revision 91)
-+++ _ast_gen.py	(working copy)
+--- pycparser/_ast_gen.py	(revision 91)
++++ pycparser/_ast_gen.py	(working copy)
 @@ -72,13 +72,13 @@
  
          if self.all_entries:
