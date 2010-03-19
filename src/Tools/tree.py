@@ -74,15 +74,18 @@ class ReplaceTool:
        return target_node
 
 class RemoveTool:
-    """ Replace a subtree with another """
+    """ Remove a subtree """
     def __init__(self, target_node):
-       """ Replace visitor """
+       """ Remove visitor """
        self.target_node = target_node
 
     def apply(self, target_subtree, attribute_name):
-       """ Replace self.old_node with self.new_node """
+       """ Remove a subtree """
+       if self.target_node == None: return target_subtree
        attr = getattr(target_subtree, attribute_name)
+       print " Attr " + str(attr)
        position = attr.index(self.target_node)
+       print " Position " + str(position)
        # 1. Check attribute is a list of nodes
        if not type(attr) == type([]):
            raise NodeNotValid(target_subtree)

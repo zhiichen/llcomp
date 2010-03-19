@@ -1,8 +1,35 @@
 
 from pycparser import c_parser, c_ast
-from Visitors.generic_visitors import FilterVisitor, NodeNotFound
-from Tools.tree import InsertTool
+from Visitors.generic_visitors import AttributeFilter, FilterVisitor, NodeNotFound
+from Tools.tree import InsertTool, RemoveTool
 
+
+class RemoveAttributeMutator(object):
+   """ Remove the child of the first apperance of an attribute inside a node """
+   def __init__(self, attr):
+      self.attr = attr
+ 
+   def filter(self, ast):
+      af = AttributeFilter(match_attribute = self.attr)
+      print "Ast : " + str(ast)
+      attr_node = af.apply(ast)
+      print " Node with " + self.attr + " is : " + str(attr_node)
+      return [attr_node, af.parentOfMatch()]
+
+   def mutatorFunction(self, ast, parent):
+      del ast.init
+      ast.init = None
+      return ast
+
+   def apply(self, ast):
+      """ Apply the mutation """
+      start_node = None
+      try:
+         [start_node, parent] = self.filter(ast)
+         self.mutatorFunction(start_node, parent)
+      except NodeNotFound as nf:
+         print str(nf)
+      return start_node
 
 class DeclsToParamsMutator(object):
    """ DeclsToParams """ 
@@ -15,7 +42,11 @@ class DeclsToParamsMutator(object):
       # If ArrayDecl, change to PointerDecl
       # If StructDecl, change to PointerDecl
       # Else, do not touch
-      return c_ast.ParamList(params = decls, coord = 0)
+      # Remove initialization
+      params_tmp = []
+      for decl in decls:
+         params_tmp += [RemoveAttributeMutator('init').apply(decl)]
+      return c_ast.ParamList(params = params_tmp, coord = 0)
 
    def filter(self, ast):
       """ Filter definition
