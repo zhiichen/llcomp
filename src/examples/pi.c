@@ -1,15 +1,21 @@
 
+/* #include <stdio.h> */
+
+#define N_ELEM 5120000
+
+
+
 int
 main (int argc, char *argv[])
 {
-  int done = 0, n, i;
+  int done = 0, i;
+  int n = N_ELEM;
   double PI25DT = 3.141592653589793238462643;
   double pi, h, sum, x;
   double mysum = 0.0;
   double pi_time = 0.0;
 
 
-  n = 1000000000.0;
   h = 1.0 / (double) n;
   sum = 0.0;
  

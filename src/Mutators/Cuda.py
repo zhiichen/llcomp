@@ -7,6 +7,9 @@ from Mutators.DeclsToParams import DeclsToParamsMutator
 
 from string import Template
 
+import subprocess
+from cStringIO import StringIO
+
 
 class IDNameMutator(object):
    """  Replace and ID name with another ID name """
@@ -17,11 +20,11 @@ class IDNameMutator(object):
    def filter(self, ast):
       id_node = None
       try:
-         ast.show()
+         # ast.show()
          af = IDFilter(id = self.old)
          id_node = af.apply(ast)
       except NodeNotFound:
-         print " *** here *** "
+         # print " *** here *** "
          return None
       return id_node
 
@@ -69,10 +72,8 @@ class CudaMutator(object):
    def parse_snippet(self, template_code, subs_dir, name):
       subtree = None
       template_code = Template(template_code).substitute(subs_dir)
-      import subprocess
-      from cStringIO import StringIO
       try:
-         p = subprocess.Popen("cpp -ansi -pedantic -CC -U __USE_GNU  -P", shell=True, bufsize=1, stdin=subprocess.PIPE, stdout=subprocess.PIPE, close_fds=True)
+         p = subprocess.Popen("cpp -ansi -pedantic -CC -U __USE_GNU  -P -I /home/rreyes/llcomp/src/include/ 2>/dev/null", shell=True, bufsize=1, stdin=subprocess.PIPE, stdout=subprocess.PIPE, close_fds=True)
          clean_source = p.communicate(template_code)[0]
          process = subprocess.Popen("sed -nf nocomments.sed", shell = True, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
          stripped_code = process.communicate(clean_source)[0]
@@ -127,24 +128,7 @@ class CudaMutator(object):
       
    def buildKernelLaunch(self, shared_var_list):
        template_code = """
-#define  __attribute__(x)  /*NOTHING*/
-
-
-#define __const
-#define __addr
-#define __THROW
-#define __extension__
-
-# define __inline
-# define __THROW
-# define __P(args)   args
-# define __PMT(args) args
-# define __restrict__
-# define __restrict
-
-
-#include "/usr/local/cuda/include/cuda.h"
-#include "/usr/local/cuda/include/builtin_types.h"
+	#include "llcomp_cuda.h"
 
        int fake() {
 	    dim3 dimGrid (numBlocks);
@@ -168,40 +152,65 @@ class CudaMutator(object):
       """
       return self.parse_snippet(template_code, {'target' : reduction_var_node.name}, name = 'HostReduction').ext[0].body
 
+   def buildSupport(self):
+      """ CUDA Support subroutines """
+      if not Dump.exists('SupportRoutines'):
+         template_code = """
+         #include "llcomp_cuda.h"
+
+void checkCUDAError (const char *msg)
+{
+	cudaError_t err = cudaGetLastError ();
+	if (cudaSuccess != err)
+	{
+		fprintf (stderr, "Cuda error: %s: %s.\\n", msg,
+				cudaGetErrorString (err));
+		exit (EXIT_FAILURE);
+	}
+}
+"""
+         print " Parsing template of Support Routines "
+         tree = self.parse_snippet(template_code, None, name = 'SupportRoutines')
+         Dump.save('SupportRoutines', tree)
+      else:
+         print " Loading frozen template of SupportRoutines "
+         tree = Dump.load('SupportRoutines')
+
+      return tree.ext[-1]
 
    def buildKernel(self, params, private_list, reduction_list, loop, ast):
       if not Dump.exists('KernelBuild'):
           template_code = """
+          #include "llcomp_cuda.h"
           __global__ void piLoop (double * reduction_cu)
           {
           int idx = blockIdx.x * blockDim.x + threadIdx.x;
           ;
           }
           """
-          print " *** Parse *** "
+          print " Parsing template of KernelBuild "
           tree = self.parse_snippet(template_code, None, name = 'KernelBuild')
           Dump.save('KernelBuild', tree)
       else:
-          print " *** Load *** "
+          print " Loading frozen template of KernelBuild "
           tree = Dump.load('KernelBuild')
       # OpenMP shared vars are parameters of the kernel function
       # Note: we need to mutate the declaration subtree into a param declaration (ArrayRef to Pointer and so on...)
       param_decls = [ decl_of_id(elem, ast) for elem in params ]
       pm = DeclsToParamsMutator(decls = param_decls)
-      pm.apply(tree.ext[0].function.decl.type.args)
+      pm.apply(tree.ext[-1].function.decl.type.args)
       # OpenMP Private vars need to be declared inside kernel
       #    - we build a tmp Compound to group all declarations, and insert them once
       tmp = c_ast.Compound(decls= [decl_of_id(elem, ast) for elem in private_list], stmts=None)
       #    - Insert tool removes the parent node of the inserted subtree
-      InsertTool(subtree = tmp, position = "end").apply(tree.ext[0].function.body, 'decls')
+      InsertTool(subtree = tmp, position = "end").apply(tree.ext[-1].function.body, 'decls')
       # Add the loop statements, (but not the reduction)
-      print " Loop var : " + str(loop.init.lvalue)
       km = IDNameMutator(old = loop.init.lvalue, new = c_ast.ID('idx'))
       km.apply(loop.stmt)
-      km = IDNameMutator(old = c_ast.ID('sum'), new = c_ast.ID('reduction[idx]'))
+      km = IDNameMutator(old = c_ast.ID('sum'), new = c_ast.ID('reduction_cu[idx]'))
       km.apply(loop.stmt)
-      InsertTool(subtree = loop.stmt, position = "begin").apply(tree.ext[0].function.body, 'stmts')
-      return tree
+      InsertTool(subtree = loop.stmt, position = "begin").apply(tree.ext[-1].function.body, 'stmts')
+      return tree.ext[-1]
 
    def mutatorFunction(self, ast, prev_node):
       """ CUDA mutator, writes the for as a kernel
@@ -211,6 +220,7 @@ class CudaMutator(object):
       parallelFor = filter.apply(ast)
       # Parent of the node
       parent_stmt = filter.parentOfMatch()
+      # Maximum number of parallel threads
       maxThreadNumber_node = self.getThreadNum(parallelFor.cond)
       # Build subtrees
       # Kernel
@@ -218,7 +228,9 @@ class CudaMutator(object):
 			private_list = prev_node.child.private[0].identifiers[0].params, 
                         reduction_list = prev_node.child.reduction[0].identifiers[0].params,
                         loop = parallelFor, ast = ast)
-      InsertTool(subtree = kernel_subtree, position = "end").apply(ast, 'ext')
+      InsertTool(subtree = kernel_subtree, position = "begin").apply(ast, 'ext')
+      support_subtree = self.buildSupport()
+      InsertTool(subtree = support_subtree, position = "begin").apply(ast, 'ext')
       # Declarations
       declarations_subtree = self.buildDeclarations(numThreads = maxThreadNumber_node.name)
       InsertTool(subtree = declarations_subtree, position = "end").apply(parent_stmt, 'decls')
@@ -233,7 +245,9 @@ class CudaMutator(object):
       InsertTool(subtree = reduction_subtree, position = "end").apply(parent_stmt, 'stmts')
       # Kernel Launch
       kernelLaunch_subtree = self.buildKernelLaunch(prev_node.child.shared[0].identifiers[0].params[0].name)
+      # Replace for by the kernel launch
       ReplaceTool(new_node = kernelLaunch_subtree, old_node = parallelFor).apply(parent_stmt, 'stmts')
+      # Remove the pragma from the destination code
       RemoveTool(target_node = prev_node).apply(parent_stmt, 'stmts')
 
 

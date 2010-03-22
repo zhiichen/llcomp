@@ -1,5 +1,5 @@
 from pycparser import c_parser, c_ast
-from generic_visitors import FilterVisitor, NodeNotFound
+from Visitors.generic_visitors import FilterVisitor, NodeNotFound
 
 
 

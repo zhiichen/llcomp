@@ -88,12 +88,13 @@ class CloneWriter(OffsetNodeVisitor):
 		new_offset = offset + 2
 		self.inside = True
 		for c in node.children():
-				self.visit(c, offset = new_offset)
-				self.writeLn(0, ";")
+			self.visit(c, offset = new_offset)
+			self.writeLn(0, ";")
 		self.inside = False
 		self.writeLn(offset, "}\n")
 
 	def visit_Decl(self, node, offset = 0):
+
 		storage = " ".join(['%s'%stor for stor in node.storage]) 
 		self.write(offset, storage);
 		self.write_blank()
@@ -117,9 +118,10 @@ class CloneWriter(OffsetNodeVisitor):
 				self.write(0, decl_name)
 				self.visit_ArrayDecl(node = node.type, node_name = decl_name, offset = new_offset)
 			else:
+				self.write(offset, " ".join(['%s'%qual for qual in node.quals]))
+				self.write_blank()
 				self.visit(node.type, offset) 
-				string = node.name + " ".join(['%s'%qual for qual in node.quals])
-				self.write(offset, string)
+				self.write(offset, node.name)
 			if node.init:
 				self.write_blank()
 				self.write(0, "=")
@@ -131,7 +133,7 @@ class CloneWriter(OffsetNodeVisitor):
 
 	def visit_FuncDecl(self, node, name = "None", offset = 0 ):
 		self.visit_TypeDecl(node.type, offset = 0)
-		self.write(offset, name)
+		self.write(offset, str(name))
 		if node.args:
 			self.inside = 1
 			self.visit_ParamList(node.args)
@@ -143,6 +145,21 @@ class CloneWriter(OffsetNodeVisitor):
 	def visit_TypeDecl(self, node, offset = 0):
 		self.generic_visit(node)
 		self.write_blank()
+
+	def visit_Typedef(self, node, offset = 0):
+#		self.generic_visit(node)
+		# Storage is always typedef
+		self.write(0, str(node.storage[0]))
+		self.write_blank()
+		self.generic_visit(node.type)
+		self.write_blank()
+		if node.quals:
+			self.write(0, str(node.quals))
+			self.write_blank()
+		self.write(0, str(node.name))
+		self.write_blank()
+		self.writeLn(0, ";")
+
 
 	def visit_PtrDecl(self, node, offset = 0):
 		self.visit(node.type)
@@ -183,7 +200,8 @@ class CloneWriter(OffsetNodeVisitor):
 	def visit_Return(self, node, offset = 0):
 		self.write(offset, "return")
 		self.write_blank()
-		self.visit(node.expr)
+		if node.expr:
+			self.visit(node.expr)
 
 	# ******************** Loops ********************
 	def visit_For(self, node, offset = 0):

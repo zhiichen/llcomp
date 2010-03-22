@@ -7,6 +7,8 @@ from Mutators.Cuda import CudaMutator
 
 from sys import argv, exit
 
+import config
+
 output_file = None
 
 if len(argv) > 1:
@@ -47,34 +49,72 @@ def link_all_parents(ast):
 
 # Parse file
 	
-ast = parse_file(filename, use_cpp=True, cpp_path='/usr/bin/cpp',
-	cpp_args=r'-ansi -I../utils/fake_libc_include'); #, lex_optimize=False, yacc_optimize=False, yacc_debug=True);
+# ast = parse_file(filename, use_cpp=True, cpp_path='/usr/bin/cpp', cpp_args='-ansi -pedantic -CC -U __USE_GNU -P -std=c89 -U__STRICT_ANSI__ -I /home/rreyes/llcomp/src/include/fake_libc_include/');
 
+
+# ast = parse_file(filename, use_cpp=True, cpp_path='/usr/bin/cpp', cpp_args='-I /home/rreyes/llcomp/src/include/fake_libc_include/');
+import subprocess
+from cStringIO import StringIO
+
+from pycparser import c_parser, c_ast
+
+print "Translating " + filename + " .... ", 
+template_code = " ".join(open(filename, 'r').readlines())
+p = subprocess.Popen("cpp -ansi -pedantic -CC -U __USE_GNU  -P -I /home/rreyes/llcomp/src/include/fake_libc_include/", shell=True, bufsize=1, stdin=subprocess.PIPE, stdout=subprocess.PIPE, close_fds=True)
+clean_source = p.communicate(template_code)[0]
+process = subprocess.Popen("sed -nf nocomments.sed", shell = True, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+stripped_code = process.communicate(clean_source)[0]
+ast = c_parser.CParser(lex_optimize = False, yacc_optimize = False).parse(stripped_code, filename = filename)
+
+print " OK "
+
+
+print " Backward link ....",
 
 link_all_parents(ast)
 
+
+print " OK "
+
 #if not output_file:
 #	ast.show(attrnames = True)
+
+print "Mutating ..."
 
 t = CudaMutator()
 
 new_ast = t.apply(ast)
 
+if new_ast:
+	print " OK "
+else:
+	print " ERROR "
+	import sys
+	sys.exit(-1)
+
+print " Update backward link ....",
 
 link_all_parents(ast)
 
+
+print " OK "
+
 ## Print the AST
+
+print " Writing result ...",
+
 v = CUDAWriter(filename = output_file)
 v.visit(new_ast)
 
+print " OK "
 
 
-# del v
 
 # Call pretty printer over the file
 if output_file:
+	del v  # Close files opened by CUDA Writer
 	import os
-	if os.system("indent -kr " + output_file) != 0:
+	if os.system("indent -kr " + config.WORKDIR + output_file) != 0:
 		print " You need to install the indent tool to pretty print ouput files "
 
 
