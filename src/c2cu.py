@@ -106,6 +106,8 @@ print " Writing result ...",
 v = CUDAWriter(filename = output_file)
 v.visit(new_ast)
 
+
+
 print " OK "
 
 

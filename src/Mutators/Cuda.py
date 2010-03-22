@@ -207,10 +207,11 @@ void checkCUDAError (const char *msg)
       # Add the loop statements, (but not the reduction)
       km = IDNameMutator(old = loop.init.lvalue, new = c_ast.ID('idx'))
       km.apply(loop.stmt)
+      # TODO: This is incorrect, we should write a subtree instead of a bare string...
       km = IDNameMutator(old = c_ast.ID('sum'), new = c_ast.ID('reduction_cu[idx]'))
       km.apply(loop.stmt)
       InsertTool(subtree = loop.stmt, position = "begin").apply(tree.ext[-1].function.body, 'stmts')
-      return tree.ext[-1]
+      return c_ast.FileAST(ext = [tree.ext[-1]])
 
    def mutatorFunction(self, ast, prev_node):
       """ CUDA mutator, writes the for as a kernel
