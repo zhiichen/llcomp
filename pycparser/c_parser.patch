@@ -10,7 +10,7 @@ Index: pycparser/c_parser.py
          typename = spec['type']
          declaration = self._fix_decl_name_type(declaration, typename)
          return c_ast.FuncDef(
-@@ -362,12 +363,97 @@
+@@ -362,12 +363,102 @@
          """
          p[0] = p[1]
  
@@ -79,9 +79,9 @@ Index: pycparser/c_parser.py
 +       shared_list = []
 +       private_list = []
 +       for clause in p[3]:
-+          if clause.type == 'SHARED': shared_list.append(clause)
-+          elif clause.type == 'PRIVATE' : private_list.append(clause)
-+          elif clause.type == 'REDUCTION' : reduction_list.append(clause)
++          if clause.name == 'SHARED': shared_list.append(clause)
++          elif clause.name == 'PRIVATE' : private_list.append(clause)
++          elif clause.name == 'REDUCTION' : reduction_list.append(clause)
 +          else:
 +             print " Unknown " + clause.type + " clause in " + str(self._coord(p.lineno(1)))
 +       p[0] = c_ast.Omp(name='for', type = 'parallel', reduction = reduction_list,
@@ -96,11 +96,16 @@ Index: pycparser/c_parser.py
 +    def p_clause_1(self, p):
 +       """ clause : SHARED LPAREN identifier_list RPAREN 
 +                  | PRIVATE LPAREN identifier_list RPAREN """
-+       p[0] = [c_ast.OmpClause(name = 'memory', type = str(p[1]).upper(), identifiers = [p[3]], coord = self._coord(p.lineno(1)))]
++       p[0] = [c_ast.OmpClause(type = 'memory', name = str(p[1]).upper(), identifiers = [p[3]], coord = self._coord(p.lineno(1)))]
 +    def p_clause_2(self, p):
-+       """ clause : REDUCTION LPAREN identifier_list RPAREN """
-+       p[0] = [c_ast.OmpClause(name = 'reduction', type = str(p[1]).upper(), identifiers = [p[3]], coord = self._coord(p.lineno(1)))]
++       """ clause : REDUCTION LPAREN reduction_operator  COLON identifier_list RPAREN """
++       p[0] = [c_ast.OmpClause(type = p[3] , name = str(p[1]).upper(), identifiers = [p[5]], coord = self._coord(p.lineno(1)))]
 +
++    def p_reduction_operator(self, p):
++       """ reduction_operator  : PLUS 
++                               | MINUS
++                               | TIMES """
++       p[0] = p[1]
 +
 +
 +# End of OpenMP
@@ -110,7 +115,7 @@ Index: pycparser/c_parser.py
      # In function definitions, the declarator can be followed by
      # a declaration list, for old "K&R style" function definitios.
      #
-@@ -404,6 +490,13 @@
+@@ -404,6 +495,13 @@
          """
          p[0] = p[1]
  
@@ -124,7 +129,7 @@ Index: pycparser/c_parser.py
      # In C, declarations can come several in a line:
      #   int x, *px, romulo = 5;
      #
-@@ -1176,6 +1269,15 @@
+@@ -1176,6 +1274,15 @@
          """
          p[0] = c_ast.UnaryOp('p' + p[2], p[1], p[1].coord)
  
