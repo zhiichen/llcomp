@@ -11,6 +11,8 @@ class RemoveAttributeMutator(object):
  
    def filter(self, ast):
       af = AttributeFilter(match_attribute = self.attr)
+#      print " *********** "
+#      ast.show()
       attr_node = af.apply(ast)
       return [attr_node, af.parentOfMatch()]
 

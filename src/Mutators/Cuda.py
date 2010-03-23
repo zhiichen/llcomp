@@ -196,7 +196,9 @@ void checkCUDAError (const char *msg)
           tree = Dump.load('KernelBuild')
       # OpenMP shared vars are parameters of the kernel function
       # Note: we need to mutate the declaration subtree into a param declaration (ArrayRef to Pointer and so on...)
+      print "Params : " + str(params)
       param_decls = [ decl_of_id(elem, ast) for elem in params ]
+      print "Param decls : " + str(param_decls)
       pm = DeclsToParamsMutator(decls = param_decls)
       pm.apply(tree.ext[-1].function.decl.type.args)
       # OpenMP Private vars need to be declared inside kernel

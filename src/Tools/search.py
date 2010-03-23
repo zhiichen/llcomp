@@ -8,11 +8,11 @@ def decl_of_id(id, ast):
                 if hasattr(act, 'decls') and act.decls:
                         # look on the decls section 
                         for decl in act.decls:
-                                if decl.name == id.name:
+                                if hasattr(decl, 'name') and decl.name == id.name:
                                         return decl
                 if hasattr(act, 'ext') and act.ext:
                         for decl in act.ext:
-                                if decl.name == id.name:
+                                if hasattr(decl, 'name') and decl.name == id.name:
                                         return decl
                 # Keep going up
 #               print str(type(act)) + "==" + str(dir(act)) + " ==> " + str(type(act.parent))
