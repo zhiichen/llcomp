@@ -1,6 +1,6 @@
 from pycparser import parse_file
 
-from Visitors.clone_visitor import CloneWriter
+from Visitors.clone_visitor import CloneWriter, OmpWriter
 
 from Mutators.Simple import SimpleMutator
 
@@ -46,7 +46,7 @@ new_ast = ast # t.apply(ast)
 
 
 # Print the AST
-v = CloneWriter(filename = output_file)
+v = OmpWriter(filename = output_file)
 v.visit(new_ast)
 
 del v

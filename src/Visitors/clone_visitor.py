@@ -122,7 +122,7 @@ class CloneWriter(OffsetNodeVisitor):
 				self.write_blank()
 				self.visit(node.type, offset) 
 				self.write(offset, node.name)
-			if node.init:
+			if hasattr(node, 'init') and node.init:
 				self.write_blank()
 				self.write(0, "=")
 				self.write_blank()
@@ -147,18 +147,8 @@ class CloneWriter(OffsetNodeVisitor):
 		self.write_blank()
 
 	def visit_Typedef(self, node, offset = 0):
-#		self.generic_visit(node)
-		# Storage is always typedef
-		self.write(0, str(node.storage[0]))
-		self.write_blank()
-		self.generic_visit(node.type)
-		self.write_blank()
-		if node.quals:
-			self.write(0, str(node.quals))
-			self.write_blank()
-		self.write(0, str(node.name))
-		self.write_blank()
-		self.writeLn(0, ";")
+		# A Typedef is almost like any other Decl
+		self.visit_Decl(node, offset)
 
 
 	def visit_PtrDecl(self, node, offset = 0):
@@ -316,7 +306,34 @@ class CloneWriter(OffsetNodeVisitor):
 	def visit_Pragma(self, node, offset = 0):
 		self.write(offset, "#pragma")
 		self.write_blank();
-		self.writeLn(offset, node.name)
+		self.visit(node.child)
+	#	self.writeLn(offset, node.name)
+
+# Omp: [name, type, reduction**, shared**, private**]
+# OmpClause : [name, type, identifiers**]
+class OmpWriter(CloneWriter):
+	""" OpenMP code writer """
+	def visit_Omp(self, node, offset):
+		self.write(offset, "omp")
+		self.write_blank();
+		self.write(offset, node.type)
+		self.write_blank();
+		self.write(offset, node.name)
+		self.write_blank();
+		for elem in node.reduction + node.shared + node.private:
+			self.visit(elem)
+			self.write_blank();
+
+	def visit_OmpClause(self, node, offset):
+		self.write(offset, node.name.lower())
+		self.write(0, '(');
+		if node.name == 'REDUCTION':
+			self.write(0, node.type)
+			self.write(0, ':')
+		for elem in node.identifiers:
+			self.visit(elem)
+		self.write(0, ')');
+
 
 
 class CUDAWriter(CloneWriter):
