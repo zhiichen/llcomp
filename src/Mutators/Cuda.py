@@ -251,6 +251,7 @@ void checkCUDAError (const char *msg)
       cuda_stmts = c_ast.Compound(stmts = [], decls = []);
       # Kernel Launch
       kernelLaunch_subtree = self.buildKernelLaunch(prev_node.child.shared[0].identifiers[0].params[0].name)
+      InsertTool(subtree = kernelLaunch_subtree, position = "end").apply(cuda_stmts, 'stmts')
       # Retrieve data
       retrieve_subtree = self.buildRetrieve()
       InsertTool(subtree = retrieve_subtree, position = "end").apply(cuda_stmts, 'stmts')
