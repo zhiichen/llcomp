@@ -24,7 +24,7 @@ main (int argc, char *argv[])
   for (i = 0; i <= n; i++)
     {
       x = h * ((double) i - 0.5);
-      sum += (4.0 / 1.0 + x * x);
+      sum += 4.0 / (1.0 + x * x);
     }
 
   pi = h * sum;

@@ -223,31 +223,46 @@ void checkCUDAError (const char *msg)
       parent_stmt = filter.parentOfMatch()
       # Maximum number of parallel threads
       maxThreadNumber_node = self.getThreadNum(parallelFor.cond)
-      # Build subtrees
-      # Kernel
-      kernel_subtree = self.buildKernel(params = prev_node.child.shared[0].identifiers[0].params, 
-			private_list = prev_node.child.private[0].identifiers[0].params, 
-                        reduction_list = prev_node.child.reduction[0].identifiers[0].params,
-                        loop = parallelFor, ast = ast)
-      InsertTool(subtree = kernel_subtree, position = "begin").apply(ast, 'ext')
-      support_subtree = self.buildSupport()
-      InsertTool(subtree = support_subtree, position = "begin").apply(ast, 'ext')
+
+      ##################### Cuda parameters on host
+
       # Declarations
       declarations_subtree = self.buildDeclarations(numThreads = maxThreadNumber_node.name)
       InsertTool(subtree = declarations_subtree, position = "end").apply(parent_stmt, 'decls')
       # Initialization
       initialization_subtree = self.buildInitializaton(shared_vars = prev_node.child.shared[0].identifiers[0].params, ast = ast)
       InsertTool(subtree = initialization_subtree, position = "begin").apply(parent_stmt, 'stmts')
-      # Retrieve data
-      retrieve_subtree = self.buildRetrieve()
-      InsertTool(subtree = retrieve_subtree, position = "end").apply(parent_stmt, 'stmts')
-      # Host reduction
-      reduction_subtree = self.buildHostReduction(reduction_var_node = prev_node.child.reduction[0].identifiers[0].params[0])
-      InsertTool(subtree = reduction_subtree, position = "end").apply(parent_stmt, 'stmts')
+
+      ##################### Cuda Kernel 
+
+      # Kernel
+      kernel_subtree = self.buildKernel(params = prev_node.child.shared[0].identifiers[0].params, 
+                        private_list = prev_node.child.private[0].identifiers[0].params, 
+                        reduction_list = prev_node.child.reduction[0].identifiers[0].params,
+                        loop = parallelFor, ast = ast)
+      InsertTool(subtree = kernel_subtree, position = "begin").apply(ast, 'ext')
+      # Support subtree
+      support_subtree = self.buildSupport()
+      InsertTool(subtree = support_subtree, position = "begin").apply(ast, 'ext')
+
+
+      ##################### Loop substitution 
+      
+      cuda_stmts = c_ast.Compound(stmts = [], decls = []);
       # Kernel Launch
       kernelLaunch_subtree = self.buildKernelLaunch(prev_node.child.shared[0].identifiers[0].params[0].name)
-      # Replace for by the kernel launch
-      ReplaceTool(new_node = kernelLaunch_subtree, old_node = parallelFor).apply(parent_stmt, 'stmts')
+      # Retrieve data
+      retrieve_subtree = self.buildRetrieve()
+      InsertTool(subtree = retrieve_subtree, position = "end").apply(cuda_stmts, 'stmts')
+      # Host reduction
+      reduction_subtree = self.buildHostReduction(reduction_var_node = prev_node.child.reduction[0].identifiers[0].params[0])
+      InsertTool(subtree = reduction_subtree, position = "end").apply(cuda_stmts, 'stmts')
+      # Replace for by a CompoundStatement with all the new statements
+      ReplaceTool(new_node = cuda_stmts, old_node = parallelFor).apply(parent_stmt, 'stmts')
+
+
+      ##################### Final tree operations
+
       # Remove the pragma from the destination code
       RemoveTool(target_node = prev_node).apply(parent_stmt, 'stmts')
 
