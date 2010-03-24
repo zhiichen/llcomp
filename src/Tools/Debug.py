@@ -25,7 +25,7 @@ class DotDebugTool(object):
       def debug_node(self, node):
          DotWriter(filename = self.tmpfile, highlight = self.select_node).visit(node)
          size =  len(open(self.tmpfile).readlines())
-         print str(type(node)) + " --> " + str(size)
+ #        print str(type(node)) + " --> " + str(size)
          if not (size > self.MAX_LINES):
             p = subprocess.Popen("python /home/rreyes/llcomp/src/xdot.py " + "/tmp/dotfile.dot", shell=True)
             sts = os.waitpid(p.pid, 0)[1]

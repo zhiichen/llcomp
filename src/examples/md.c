@@ -8,9 +8,7 @@
  * Parallelism is implemented via OpenMP directives.
  ***********************************************************************/
 
-#include <assert.h>
 #include <math.h>
-#include <stdio.h>
 
 #ifndef RAND_MAX
 #define RAND_MAX 0x7fff

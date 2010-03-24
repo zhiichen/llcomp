@@ -62,7 +62,7 @@ class DeclsToParamsMutator(object):
 
    def mutatorFunction(self, ast):
       """ Mutator code """
-      self.params.show()
+#      self.params.show()
       InsertTool(subtree = self.params, position = "end").apply(ast, 'params')
       
 

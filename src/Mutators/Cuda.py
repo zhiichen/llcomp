@@ -247,10 +247,8 @@ void checkCUDAError (const char *msg)
                         reduction_list = prev_node.child.reduction[0].identifiers[0].params,
                         loop = parallelFor, ast = ast)
 
-      from Tools.Debug import DotDebugTool
-      DotDebugTool().apply(kernel_subtree)
-
-
+#      from Tools.Debug import DotDebugTool
+#      DotDebugTool().apply(kernel_subtree)
       InsertTool(subtree = kernel_subtree, position = "begin").apply(ast, 'ext')
       # Support subtree
       support_subtree = self.buildSupport()

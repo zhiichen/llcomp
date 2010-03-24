@@ -29,7 +29,6 @@ def decl_of_id(id, ast):
                         pass
     
                 if type(decl) == c_ast.Decl:
-                  print " *** end!"
                   return decl
 
                 # Keep going up
