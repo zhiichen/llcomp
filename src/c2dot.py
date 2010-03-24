@@ -76,7 +76,7 @@ link_all_parents(ast)
 new_ast = ast 
 
 # Print the AST
-v = DotWriter(filename = output_file)
+v = DotWriter(filename = output_file, highlight = [ast])
 v.visit(new_ast)
 
 del v

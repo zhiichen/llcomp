@@ -6,8 +6,9 @@ import sys
 class DotWriter(object):
    inside = False
 
-   def __init__(self, filename = None):
+   def __init__(self, filename = None, highlight = None):
       self.act_id = 0
+      self.highlight = highlight
       self.node_dir = { }
       self.filename = filename or sys.stdout
       try:
@@ -18,6 +19,8 @@ class DotWriter(object):
       self.inside = False
       
       self.writeLn(0, "digraph G {")
+      if self.highlight:
+         self.write_highlights()
 
    def __del__(self):
       """ Ensure closing the file when object dissapears """
@@ -47,11 +50,15 @@ class DotWriter(object):
    # ********** Dot language **********
 
    def write_line(self, begin, name, end):
-      self.write(0, begin  + "-> " + end + "[label = \"" + name + "\"]" + ";")
+      self.writeLn(0, begin  + "-> " + end + "[label = \"" + name + "\"]" + ";")
 
    def write_label(self, node, name):
-      self.write(0, node + "[label = \"" + name + "\"]" + ";")
+      self.writeLn(0, node + "[label = \"" + name + "\"]" + ";")
 
+   def write_highlights(self):
+      for node in self.highlight:
+         dot_name = self.get_name(node)
+         self.writeLn(0, dot_name +" [shape=box, color=red, style=filled];")
 
    def get_name(self, node):
       """ Get the name of a node """
@@ -59,11 +66,14 @@ class DotWriter(object):
          return self.node_dir[node]
       if 'name' in dir(node) and getattr(node, 'name'):
          if type(node.name) != type(""):
-            dot_name = self.get_name(node.name) # node.name.name + "_" + str(self.act_id)
+            dot_name = self.get_name(node.name) 
             self.write_label(dot_name, dot_name.split('__DOT__')[0])
          else:
             dot_name = node.name + "_" + str(self.act_id)
             self.write_label(dot_name, node.name)
+      elif 'names' in dir(node) and getattr(node, 'names'):
+            dot_name = "_".join(node.names) + "_" + str(self.act_id)
+            self.write_label(dot_name, " ".join(node.names))
       else:
          dot_name = node.__class__.__name__ + "__DOT__" + str(self.act_id)
          self.write_label(dot_name, node.__class__.__name__)
@@ -80,6 +90,7 @@ class DotWriter(object):
       method = 'visit_' + node.__class__.__name__
       visitor = getattr(self, method, self.generic_visit)
       return visitor(node, offset)
+
 
    def generic_visit(self, node, offset = 0):
       """ Called if no explicit visitor function exists for a 

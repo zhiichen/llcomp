@@ -111,9 +111,18 @@ class AttributeFilter(GenericFilterVisitor):
 
 
 class IDFilter(GenericFilterVisitor):
-   """ Returns the first node with the given attribute
+   """ Returns the first node with an ID
    """
 
    def __init__(self, id, prev_brother = None):
        super(IDFilter, self).__init__(condition_func = lambda node : type(node) == c_ast.ID and node.name == id.name, prev_brother = prev_brother)
+
+
+class DeclFilter(GenericFilterVisitor):
+   """ Returns the first node with a TypeDecl
+   """
+
+   def __init__(self, attribute, value, prev_brother = None):
+       super(DeclFilter, self).__init__(condition_func = lambda node : type(node) == c_ast.Decl and (getattr(node, attribute) == value), prev_brother = prev_brother)
+
 

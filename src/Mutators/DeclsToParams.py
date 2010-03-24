@@ -13,6 +13,9 @@ class RemoveAttributeMutator(object):
       af = AttributeFilter(match_attribute = self.attr)
 #      print " *********** "
 #      ast.show()
+
+#      from Tools.Debug import DotDebugTool
+#      DotDebugTool().apply(ast)
       attr_node = af.apply(ast)
       return [attr_node, af.parentOfMatch()]
 

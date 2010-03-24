@@ -3,6 +3,7 @@ from Visitors.generic_visitors import FilterVisitor, IDFilter
 from Tools.tree import InsertTool, NodeNotFound, ReplaceTool, RemoveTool
 from Tools.search import type_of_id, decl_of_id
 from Tools.Dump import Dump
+from Tools.Debug import DotDebugTool
 from Mutators.DeclsToParams import DeclsToParamsMutator
 
 from string import Template
@@ -198,6 +199,7 @@ void checkCUDAError (const char *msg)
       # Note: we need to mutate the declaration subtree into a param declaration (ArrayRef to Pointer and so on...)
       print "Params : " + str(params)
       param_decls = [ decl_of_id(elem, ast) for elem in params ]
+#      DotDebugTool().apply(param_decls)
       print "Param decls : " + str(param_decls)
       pm = DeclsToParamsMutator(decls = param_decls)
       pm.apply(tree.ext[-1].function.decl.type.args)
@@ -226,6 +228,7 @@ void checkCUDAError (const char *msg)
       # Maximum number of parallel threads
       maxThreadNumber_node = self.getThreadNum(parallelFor.cond)
 
+
       ##################### Cuda parameters on host
 
       # Declarations
@@ -234,6 +237,7 @@ void checkCUDAError (const char *msg)
       # Initialization
       initialization_subtree = self.buildInitializaton(shared_vars = prev_node.child.shared[0].identifiers[0].params, ast = ast)
       InsertTool(subtree = initialization_subtree, position = "begin").apply(parent_stmt, 'stmts')
+      
 
       ##################### Cuda Kernel 
 
@@ -242,6 +246,11 @@ void checkCUDAError (const char *msg)
                         private_list = prev_node.child.private[0].identifiers[0].params, 
                         reduction_list = prev_node.child.reduction[0].identifiers[0].params,
                         loop = parallelFor, ast = ast)
+
+      from Tools.Debug import DotDebugTool
+      DotDebugTool().apply(kernel_subtree)
+
+
       InsertTool(subtree = kernel_subtree, position = "begin").apply(ast, 'ext')
       # Support subtree
       support_subtree = self.buildSupport()

@@ -1,21 +1,38 @@
 
+from pycparser import c_ast
+from Tools.Debug import DotDebugTool
+
+from Tools.tree import NodeNotFound
+
+from Visitors.generic_visitors import DeclFilter
+
 def decl_of_id(id, ast):
         """ Returns the TypeDecl node of a given ID node """
+        # TODO: Clean this code...
         act = id.parent
+        decl = None
         while act != None:
                 # Taking advantage of lazy boolean evaluation, if the first part is false, 
                 #    the second is not executed, so, we won't have an exception
                 if hasattr(act, 'decls') and act.decls:
-                        # look on the decls section 
-                        for decl in act.decls:
-                                if hasattr(decl, 'name') and decl.name == id.name:
-                                        return decl
+                  for elem in act.decls:
+                     try:
+                        decl = DeclFilter(attribute = "name", value = id.name).apply(elem)
+                     except NodeNotFound:
+                        pass
+
                 if hasattr(act, 'ext') and act.ext:
-                        for decl in act.ext:
-                                if hasattr(decl, 'name') and decl.name == id.name:
-                                        return decl
+                  for elem in act.ext:
+                     try:
+                        decl = DeclFilter(attribute = "name", value = id.name).apply(elem)
+                     except NodeNotFound:
+                        pass
+    
+                if type(decl) == c_ast.Decl:
+                  print " *** end!"
+                  return decl
+
                 # Keep going up
-#               print str(type(act)) + "==" + str(dir(act)) + " ==> " + str(type(act.parent))
                 act = act.parent
         # Identifier not declared
         return None
