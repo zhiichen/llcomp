@@ -47,13 +47,14 @@ class IDNameMutator(object):
 
 
 class CudaMutator(object):
-   """ This is mutator locates a Pragma node, and then
-      translate the original source to the pi cuda implementation 
+   """ This  mutator locates a omp parallel for reduction, and then
+      translate the original source to an equivalent cuda implementation 
    """
    def __init__(self):
       " Constructor "
       # BUG: Don't work with optimize
       self.template_parser = c_parser.CParser(lex_optimize = False, yacc_optimize = False)
+      self.kernel_name = 'reductionKernel'
 
    def filter(self, ast):
       """ Filter definition
@@ -81,7 +82,7 @@ class CudaMutator(object):
          subtree = self.template_parser.parse(stripped_code, filename=name)
       except c_parser.ParseError, e:
          print "Parse error:" + str(e)
-	#  print " Code : " + str(stripped_code)
+
 	 return None
       except IOError:
          print "Pipe Error"
@@ -132,13 +133,13 @@ class CudaMutator(object):
 	#include "llcomp_cuda.h"
 
        int fake() {
-	    dim3 dimGrid (numBlocks);
+   	    dim3 dimGrid (numBlocks);
    	    dim3 dimBlock (numThreadsPerBlock);
- 	    piLoop <<< dimGrid , dimBlock >>> (reduction_cu, $sharedvars);
+ 	       $kernelName <<< dimGrid , dimBlock >>> (reduction_cu, $sharedvars);
        }
        """
        # The last element is the object function
-       tree = [ elem for elem in self.parse_snippet(template_code, {'sharedvars' : shared_var_list}, name = 'KernelLaunch').ext  if type(elem) == c_ast.FuncDef  ][-1].body
+       tree = [ elem for elem in self.parse_snippet(template_code, {'sharedvars' : shared_var_list, 'kernelName' : self.kernel_name}, name = 'KernelLaunch').ext  if type(elem) == c_ast.FuncDef  ][-1].body
        return tree
 
 
@@ -180,27 +181,24 @@ void checkCUDAError (const char *msg)
       return tree.ext[-1]
 
    def buildKernel(self, params, private_list, reduction_list, loop, ast):
-      if not Dump.exists('KernelBuild'):
+      if not Dump.exists(self.kernel_name):
           template_code = """
           #include "llcomp_cuda.h"
-          __global__ void piLoop (double * reduction_cu)
+          __global__ void $kernelName (double * reduction_cu)
           {
           int idx = blockIdx.x * blockDim.x + threadIdx.x;
           ;
           }
           """
           print " Parsing template of KernelBuild "
-          tree = self.parse_snippet(template_code, None, name = 'KernelBuild')
-          Dump.save('KernelBuild', tree)
+          tree = self.parse_snippet(template_code, {'kernelName' : self.kernel_name}, name = 'KernelBuild')
+          Dump.save(self.kernel_name, tree)
       else:
           print " Loading frozen template of KernelBuild "
-          tree = Dump.load('KernelBuild')
+          tree = Dump.load(self.kernel_name)
       # OpenMP shared vars are parameters of the kernel function
       # Note: we need to mutate the declaration subtree into a param declaration (ArrayRef to Pointer and so on...)
-      print "Params : " + str(params)
       param_decls = [ decl_of_id(elem, ast) for elem in params ]
-#      DotDebugTool().apply(param_decls)
-      print "Param decls : " + str(param_decls)
       pm = DeclsToParamsMutator(decls = param_decls)
       pm.apply(tree.ext[-1].function.decl.type.args)
       # OpenMP Private vars need to be declared inside kernel
