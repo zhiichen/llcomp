@@ -43,8 +43,11 @@ class InsertTool:
        if not type(attr) == type([]):
            raise NodeNotValid(target_node)
        # Find the insert place
+#       from Tools.Debug import DotDebugTool
+#       DotDebugTool(select_node = self.subtree).apply(target_node)
+
        if self.node:
-           self.place = list.index(self.node)
+           self.place = attr.index(self.node)
        # Insert the node
        if self.position == "begin":
            # Funny trick to insert as first element: first reverse, then insert on 0

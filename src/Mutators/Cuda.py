@@ -244,13 +244,17 @@ void checkCUDAError (const char *msg)
                         private_list = prev_node.child.private[0].identifiers[0].params, 
                         reduction_list = prev_node.child.reduction[0].identifiers[0].params,
                         loop = parallelFor, ast = ast)
+      from Tools.Debug import DotDebugTool
+      DotDebugTool().apply(kernel_subtree)
+      kernel_decl = c_ast.Compound(stmts = [], decls = [kernel_subtree.ext[0].function.decl])
+      # Function declaration
+      InsertTool(subtree = kernel_decl, position = "begin" ).apply(ast, 'ext')
+      # Function definition
+      InsertTool(subtree = kernel_subtree, position = "end" ).apply(ast, 'ext')
 
-#      from Tools.Debug import DotDebugTool
-#      DotDebugTool().apply(kernel_subtree)
-      InsertTool(subtree = kernel_subtree, position = "begin").apply(ast, 'ext')
       # Support subtree
       support_subtree = self.buildSupport()
-      InsertTool(subtree = support_subtree, position = "begin").apply(ast, 'ext')
+      InsertTool(subtree = support_subtree, position = "end").apply(ast, 'ext')
 
 
       ##################### Loop substitution 
