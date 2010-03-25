@@ -178,7 +178,7 @@ void checkCUDAError (const char *msg)
          print " Loading frozen template of SupportRoutines "
          tree = Dump.load('SupportRoutines')
 
-      return tree.ext[-1]
+      return c_ast.Compound(stmts = [tree.ext[-1]], decls = [tree.ext[-1].decl])
 
    def buildKernel(self, params, private_list, reduction_list, loop, ast):
       if not Dump.exists(self.kernel_name):
@@ -244,17 +244,20 @@ void checkCUDAError (const char *msg)
                         private_list = prev_node.child.private[0].identifiers[0].params, 
                         reduction_list = prev_node.child.reduction[0].identifiers[0].params,
                         loop = parallelFor, ast = ast)
-      from Tools.Debug import DotDebugTool
-      DotDebugTool().apply(kernel_subtree)
-      kernel_decl = c_ast.Compound(stmts = [], decls = [kernel_subtree.ext[0].function.decl])
+
       # Function declaration
+      # - Build a node withouth body
+      tmp = c_ast.CUDAKernel(function = kernel_subtree.ext[0].function, type = 'global', name = kernel_subtree.ext[0].name)
+      tmp.function.body = c_ast.Compound(stmts = None, decls = None); # If both of stmts and decls are none, it won't be printed
+      kernel_decl = c_ast.Compound(stmts = [tmp], decls = None)
       InsertTool(subtree = kernel_decl, position = "begin" ).apply(ast, 'ext')
       # Function definition
       InsertTool(subtree = kernel_subtree, position = "end" ).apply(ast, 'ext')
 
       # Support subtree
       support_subtree = self.buildSupport()
-      InsertTool(subtree = support_subtree, position = "end").apply(ast, 'ext')
+      InsertTool(subtree = c_ast.Compound(stmts = support_subtree.stmts, decls = None), position = "end").apply(ast, 'ext')
+      InsertTool(subtree = c_ast.Compound(decls = support_subtree.decls, stmts = None), position = "begin").apply(ast, 'ext')
 
 
       ##################### Loop substitution 
