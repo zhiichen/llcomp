@@ -28,11 +28,13 @@ class PositionNotValid(Exception):
 # InsertVisitor(mark_node = parent_stmt, subtree = maxThreadNumber_subtree, position = "mark", method = "append").apply(ast)
 class InsertTool:
     """ Inserts the childs of a node (a subtree) on the given order. It doesn't insert the parent node of the subtree. """
-    def __init__(self, subtree = None, position = "begin"):
+    def __init__(self, subtree = None, position = "begin", node = None):
        """ Inserter visitor """
 #       self.mark_node = mark_node
        self.subtree = subtree
        self.position = position # Options: begin, end
+       self.node = node
+       self.place = 0
 
     def apply(self, target_node, attribute_name):
        """ Insert the object subtree inside the attribute node of the target_node """
@@ -40,12 +42,16 @@ class InsertTool:
        # 1. Check attribute is a list of nodes
        if not type(attr) == type([]):
            raise NodeNotValid(target_node)
+       # Find the insert place
+       if self.node:
+           self.place = list.index(self.node)
+       # Insert the node
        if self.position == "begin":
            # Funny trick to insert as first element: first reverse, then insert on 0
            childrens = list(self.subtree.children())
            childrens.reverse()
            for it in childrens:
-               attr.insert(0, it)
+               attr.insert(self.place, it)
        elif self.position == "end":
            attr.extend(self.subtree.children())
        else:
