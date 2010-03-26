@@ -247,7 +247,8 @@ void checkCUDAError (const char *msg)
 
       # Function declaration
       # - Build a node withouth body
-      tmp = c_ast.CUDAKernel(function = kernel_subtree.ext[0].function, type = 'global', name = kernel_subtree.ext[0].name)
+      import copy
+      tmp = c_ast.CUDAKernel(function = copy.deepcopy(kernel_subtree.ext[0].function), type = 'global', name = kernel_subtree.ext[0].name)
       tmp.function.body = c_ast.Compound(stmts = None, decls = None); # If both of stmts and decls are none, it won't be printed
       kernel_decl = c_ast.Compound(stmts = [tmp], decls = None)
       InsertTool(subtree = kernel_decl, position = "begin" ).apply(ast, 'ext')
