@@ -1,5 +1,7 @@
 
 
+from pycparser import c_ast
+
 class NodeNotFound(Exception):
    def __init__(self, node):
       self.node = node
@@ -12,7 +14,7 @@ class NodeNotValid(Exception):
       self.node = node
 
    def __str__(self):
-      return "Node " + str(self.node) + " not valid "
+      return "Node " + str(self.node) + " not valid (type: " + str(type(self.node)) + ")"
 
 class PositionNotValid(Exception):
    def __init__(self):
@@ -74,10 +76,10 @@ class ReplaceTool:
     def apply(self, target_node, attribute_name):
        """ Replace self.old_node with self.new_node """
        attr = getattr(target_node, attribute_name)
-       position = attr.index(self.old_node)
        # 1. Check attribute is a list of nodes
        if not type(attr) == type([]):
            raise NodeNotValid(target_node)
+       position = attr.index(self.old_node)
        attr[position] = self.new_node
        setattr(target_node, attribute_name, attr)
        return target_node

@@ -126,3 +126,22 @@ class DeclFilter(GenericFilterVisitor):
        super(DeclFilter, self).__init__(condition_func = lambda node : type(node) == c_ast.Decl and (getattr(node, attribute) == value), prev_brother = prev_brother)
 
 
+
+class FuncCallFilter(GenericFilterVisitor):
+   """ Returns the first node with a FuncCall
+   """
+
+   def __init__(self, prev_brother = None):
+       super(FuncCallFilter, self).__init__(condition_func = lambda node : type(node) == c_ast.FuncCall , prev_brother = prev_brother)
+
+class FuncDeclOfNameFilter(GenericFilterVisitor):
+   """ Returns the first node with a FuncCall
+   """
+
+   def __init__(self, name, prev_brother = None):
+       def condition(node):
+           if type(node) == c_ast.FuncDecl:
+               print "Looking for : " + name.name
+           return type(node) == c_ast.FuncDecl and getattr(node.parent, 'name') == name.name
+       super(FuncDeclOfNameFilter, self).__init__(condition_func = condition , prev_brother = prev_brother)
+

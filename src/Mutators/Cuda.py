@@ -1,5 +1,5 @@
 from pycparser import c_parser, c_ast
-from Visitors.generic_visitors import FilterVisitor, IDFilter
+from Visitors.generic_visitors import FilterVisitor, IDFilter, FuncCallFilter, FuncDeclOfNameFilter
 from Tools.tree import InsertTool, NodeNotFound, ReplaceTool, RemoveTool
 from Tools.search import type_of_id, decl_of_id
 from Tools.Dump import Dump
@@ -33,6 +33,45 @@ class IDNameMutator(object):
       delattr(ast, 'name')
       setattr(ast, 'name', self.new.name)
       return ast
+
+   def apply(self, ast):
+      """ Apply the mutation """
+      start_node = None
+      try:
+         start_node = self.filter(ast)
+         if start_node:
+            self.mutatorFunction(start_node)
+      except NodeNotFound as nf:
+         print str(nf)
+      return start_node
+
+
+class FuncToDeviceMutator(object):
+   """  Replace the definition of a FuncCall with a CUDAKernel with type __device__ """
+   def __init__(self, func_call):
+      self.func_call = func_call
+ 
+   def filter(self, ast):
+      """ Find the declaration of the """
+      id_node = None
+      try:
+         # ast.show()
+         af = FuncDeclOfNameFilter(name = self.func_call.name)
+         id_node = af.apply(ast)
+         print " Definition of " + str(self.func_call.name) + " is " + str(ast) 
+      except NodeNotFound:
+         print " *** Node not found *** "
+         return None
+      return id_node
+
+   def mutatorFunction(self, ast):
+      file_ast = ast
+      while type(file_ast) != c_ast.FileAST:
+         file_ast = file_ast.parent
+      cuda_node = c_ast.CUDAKernel(name = self.func_call.name.name, type = 'device', function = ast, parent=file_ast)
+      ast.parent = cuda_node
+      ReplaceTool(new_node = cuda_node, old_node = ast.parent.parent).apply(file_ast, 'ext')
+      return cuda_node
 
    def apply(self, ast):
       """ Apply the mutation """
@@ -209,6 +248,8 @@ void checkCUDAError (const char *msg)
       # Add the loop statements, (but not the reduction)
       km = IDNameMutator(old = loop.init.lvalue, new = c_ast.ID('idx'))
       km.apply(loop.stmt)
+      # Identify function calls inside kernel and replace the definitions to __device__ 
+      fcm = FuncToDeviceMutator(func_call = FuncCallFilter().apply(loop.stmt)).apply(ast)
       # TODO: This is incorrect, we should write a subtree instead of a bare string...
       km = IDNameMutator(old = c_ast.ID('sum'), new = c_ast.ID('reduction_cu[idx]'))
       km.apply(loop.stmt)
@@ -244,6 +285,8 @@ void checkCUDAError (const char *msg)
                         private_list = prev_node.child.private[0].identifiers[0].params, 
                         reduction_list = prev_node.child.reduction[0].identifiers[0].params,
                         loop = parallelFor, ast = ast)
+#      from Tools.Debug import DotDebugTool 
+#      DotDebugTool(select_node = ast).apply(kernel_subtree.ext[0])
 
       # Function declaration
       # - Build a node withouth body
