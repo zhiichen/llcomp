@@ -69,7 +69,8 @@ class CloneWriter(OffsetNodeVisitor):
 	def visit_FileAST(self, node, offset = 0):
 		for elem in node.children():
 			self.visit(elem, offset)
-			self.writeLn(0, ";")
+			if type(elem) != c_ast.Pragma:
+				self.writeLn(0, ";")
 
 
 	# ********** Grammar **********
@@ -85,7 +86,7 @@ class CloneWriter(OffsetNodeVisitor):
 		self.write_blank()
 
 	def visit_Compound(self, node, offset = 0):
-		if not node.stmts and not node.decls:
+		if (hasattr(node, "stmts") and not node.stmts) and (hasattr(node, "decls") and not node.decls):
 			return
 		self.writeLn(offset, "\n{\n")
 		new_offset = offset + 2
