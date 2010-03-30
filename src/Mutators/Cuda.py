@@ -249,7 +249,15 @@ void checkCUDAError (const char *msg)
       km = IDNameMutator(old = loop.init.lvalue, new = c_ast.ID('idx'))
       km.apply(loop.stmt)
       # Identify function calls inside kernel and replace the definitions to __device__ 
-      fcm = FuncToDeviceMutator(func_call = FuncCallFilter().apply(loop.stmt)).apply(ast)
+      from Tools.Debug import DotDebugTool
+      try:
+         DotDebugTool().apply(loop.stmt)
+         func_call = FuncCallFilter().apply(loop.stmt)
+         fcm = FuncToDeviceMutator(func_call = func_call).apply(ast)
+         DotDebugTool().apply(fcm)
+      except NodeNotFound:
+         # There are not function calls on the loop.stmt
+         pass
       # TODO: This is incorrect, we should write a subtree instead of a bare string...
       km = IDNameMutator(old = c_ast.ID('sum'), new = c_ast.ID('reduction_cu[idx]'))
       km.apply(loop.stmt)

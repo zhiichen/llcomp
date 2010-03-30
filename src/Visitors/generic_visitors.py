@@ -23,7 +23,7 @@ class GenericFilterVisitor(object):
       if not self.condition_func(node):
          node = self.generic_visit(ast)
       if not self.condition_func(node):
-         raise NodeNotFound("condition")
+         raise NodeNotFound(self.condition_func.__doc__)
       return node
 
    def visit(self, node, prev, offset = 1):
@@ -132,14 +132,20 @@ class FuncCallFilter(GenericFilterVisitor):
    """
 
    def __init__(self, prev_brother = None):
-       super(FuncCallFilter, self).__init__(condition_func = lambda node : type(node) == c_ast.FuncCall , prev_brother = prev_brother)
+       # The condition __doc__ is used as exception information
+       def condition(node):
+          """ FuncCall """
+          return type(node) == c_ast.FuncCall
+       super(FuncCallFilter, self).__init__(condition_func = condition , prev_brother = prev_brother)
 
 class FuncDeclOfNameFilter(GenericFilterVisitor):
    """ Returns the first node with a FuncCall
    """
 
    def __init__(self, name, prev_brother = None):
+       # The condition __doc__ is used as exception information
        def condition(node):
+           """ FuncDecl """
            if type(node) == c_ast.FuncDecl:
                print "Looking for : " + name.name
            return type(node) == c_ast.FuncDecl and getattr(node.parent, 'name') == name.name
