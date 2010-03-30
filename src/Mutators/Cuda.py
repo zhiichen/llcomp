@@ -58,19 +58,22 @@ class FuncToDeviceMutator(object):
          # ast.show()
          af = FuncDeclOfNameFilter(name = self.func_call.name)
          id_node = af.apply(ast)
-         print " Definition of " + str(self.func_call.name) + " is " + str(ast) 
+#         print " Definition of " + str(self.func_call.name) + " is " + str(ast) 
       except NodeNotFound:
          print " *** Node not found *** "
          return None
-      return id_node
+      # Return the FuncDef instead of the FuncDecl (always the same structure )
+      return id_node.parent.parent
 
    def mutatorFunction(self, ast):
       file_ast = ast
       while type(file_ast) != c_ast.FileAST:
          file_ast = file_ast.parent
+
+      print " *** Nodo a reemplazar "
       cuda_node = c_ast.CUDAKernel(name = self.func_call.name.name, type = 'device', function = ast, parent=file_ast)
       ast.parent = cuda_node
-      ReplaceTool(new_node = cuda_node, old_node = ast.parent.parent).apply(file_ast, 'ext')
+      ReplaceTool(new_node = cuda_node, old_node = ast).apply(file_ast, 'ext')
       return cuda_node
 
    def apply(self, ast):
@@ -249,12 +252,9 @@ void checkCUDAError (const char *msg)
       km = IDNameMutator(old = loop.init.lvalue, new = c_ast.ID('idx'))
       km.apply(loop.stmt)
       # Identify function calls inside kernel and replace the definitions to __device__ 
-      from Tools.Debug import DotDebugTool
       try:
-         DotDebugTool().apply(loop.stmt)
          func_call = FuncCallFilter().apply(loop.stmt)
          fcm = FuncToDeviceMutator(func_call = func_call).apply(ast)
-         DotDebugTool().apply(fcm)
       except NodeNotFound:
          # There are not function calls on the loop.stmt
          pass
@@ -275,6 +275,9 @@ void checkCUDAError (const char *msg)
       # Maximum number of parallel threads
       maxThreadNumber_node = self.getThreadNum(parallelFor.cond)
 
+
+      ##################### Statement for cuda
+      cuda_stmts = c_ast.Compound(stmts = [], decls = []);
 
       ##################### Cuda parameters on host
 
@@ -297,7 +300,7 @@ void checkCUDAError (const char *msg)
 #      DotDebugTool(select_node = ast).apply(kernel_subtree.ext[0])
 
       # Function declaration
-      # - Build a node withouth body
+      # - Build a node without body
       import copy
       tmp = c_ast.CUDAKernel(function = copy.deepcopy(kernel_subtree.ext[0].function), type = 'global', name = kernel_subtree.ext[0].name)
       tmp.function.body = c_ast.Compound(stmts = None, decls = None); # If both of stmts and decls are none, it won't be printed
@@ -314,7 +317,6 @@ void checkCUDAError (const char *msg)
 
       ##################### Loop substitution 
       
-      cuda_stmts = c_ast.Compound(stmts = [], decls = []);
       # Kernel Launch
       kernelLaunch_subtree = self.buildKernelLaunch(prev_node.child.shared[0].identifiers[0].params[0].name)
       InsertTool(subtree = kernelLaunch_subtree, position = "end").apply(cuda_stmts, 'stmts')

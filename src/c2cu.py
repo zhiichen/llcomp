@@ -49,10 +49,6 @@ def link_all_parents(ast):
 
 # Parse file
 	
-# ast = parse_file(filename, use_cpp=True, cpp_path='/usr/bin/cpp', cpp_args='-ansi -pedantic -CC -U __USE_GNU -P -std=c89 -U__STRICT_ANSI__ -I /home/rreyes/llcomp/src/include/fake_libc_include/');
-
-
-# ast = parse_file(filename, use_cpp=True, cpp_path='/usr/bin/cpp', cpp_args='-I /home/rreyes/llcomp/src/include/fake_libc_include/');
 import subprocess
 from cStringIO import StringIO
 
