@@ -29,7 +29,7 @@ class PositionNotValid(Exception):
 
 # InsertVisitor(mark_node = parent_stmt, subtree = maxThreadNumber_subtree, position = "mark", method = "append").apply(ast)
 class InsertTool:
-    """ Inserts the childs of a node (a subtree) on the given order. It doesn't insert the parent node of the subtree. """
+    """ Inserts the childs of a node (a subtree) on the given position. It doesn't insert the parent node of the new subtree. """
     def __init__(self, subtree = None, position = "begin", node = None):
        """ Inserter visitor """
 #       self.mark_node = mark_node

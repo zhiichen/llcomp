@@ -4,88 +4,15 @@ from Tools.tree import InsertTool, NodeNotFound, ReplaceTool, RemoveTool
 from Tools.search import type_of_id, decl_of_id
 from Tools.Dump import Dump
 from Tools.Debug import DotDebugTool
-from Mutators.DeclsToParams import DeclsToParamsMutator
+from Mutators.AstSupport import DeclsToParamsMutator, IDNameMutator, FuncToDeviceMutator, PointerMutator
 
 from string import Template
 
 import subprocess
 from cStringIO import StringIO
 
-
-class IDNameMutator(object):
-   """  Replace and ID name with another ID name """
-   def __init__(self, old, new):
-      self.old = old
-      self.new = new
- 
-   def filter(self, ast):
-      id_node = None
-      try:
-         # ast.show()
-         af = IDFilter(id = self.old)
-         id_node = af.apply(ast)
-      except NodeNotFound:
-         # print " *** here *** "
-         return None
-      return id_node
-
-   def mutatorFunction(self, ast):
-      delattr(ast, 'name')
-      setattr(ast, 'name', self.new.name)
-      return ast
-
-   def apply(self, ast):
-      """ Apply the mutation """
-      start_node = None
-      try:
-         start_node = self.filter(ast)
-         if start_node:
-            self.mutatorFunction(start_node)
-      except NodeNotFound as nf:
-         print str(nf)
-      return start_node
-
-
-class FuncToDeviceMutator(object):
-   """  Replace the definition of a FuncCall with a CUDAKernel with type __device__ """
-   def __init__(self, func_call):
-      self.func_call = func_call
- 
-   def filter(self, ast):
-      """ Find the declaration of the """
-      id_node = None
-      try:
-         # ast.show()
-         af = FuncDeclOfNameFilter(name = self.func_call.name)
-         id_node = af.apply(ast)
-#         print " Definition of " + str(self.func_call.name) + " is " + str(ast) 
-      except NodeNotFound:
-         print " *** Node not found *** "
-         return None
-      # Return the FuncDef instead of the FuncDecl (always the same structure )
-      return id_node.parent.parent
-
-   def mutatorFunction(self, ast):
-      file_ast = ast
-      while type(file_ast) != c_ast.FileAST:
-         file_ast = file_ast.parent
-
-      print " *** Nodo a reemplazar "
-      cuda_node = c_ast.CUDAKernel(name = self.func_call.name.name, type = 'device', function = ast, parent=file_ast)
-      ast.parent = cuda_node
-      ReplaceTool(new_node = cuda_node, old_node = ast).apply(file_ast, 'ext')
-      return cuda_node
-
-   def apply(self, ast):
-      """ Apply the mutation """
-      start_node = None
-      try:
-         start_node = self.filter(ast)
-         if start_node:
-            self.mutatorFunction(start_node)
-      except NodeNotFound as nf:
-         print str(nf)
-      return start_node
+# Copy substructures
+import copy
 
 
 class CudaMutator(object):
@@ -132,20 +59,30 @@ class CudaMutator(object):
       return subtree;
 
 
-   def buildDeclarations(self, numThreads):
+   def buildDeclarations(self, numThreads, reduction_node_list):
       """ Builds the declaration section 
           @param numThreads number of threads
           @return Declarations subtree
       """ 
-      template_code = """
+      constant_template_code = """
       int dimA = $numThreads;
       int numThreadsPerBlock = 512;
       int numBlocks = dimA / numThreadsPerBlock;
       int memSize = numBlocks * numThreadsPerBlock * sizeof (double);
-      double *reduction_loc = (double *) malloc (memSize);
-      double *reduction_cu;
+/*    double *reduction_loc_varname;
+      double *reduction_cu_varname;  
+      */
       """
-      return self.parse_snippet(template_code, dict(numThreads = numThreads), name = 'declarations')
+      declarations =  self.parse_snippet(constant_template_code, dict(numThreads = numThreads), name = 'declarations')
+      declarations.show()
+      print " List of decls : "+ str(reduction_node_list)
+      reduction_pointer_decls = copy.deepcopy(reduction_node_list)
+      for elem in reduction_pointer_decls:
+         PointerMutator().apply(elem)
+      declarations.ext.extend(reduction_pointer_decls)
+      declarations.show()
+      return declarations 
+
 
    def buildInitializaton(self, shared_vars, ast):
       """ Initialization """
@@ -157,6 +94,7 @@ class CudaMutator(object):
       shared_malloc_lines = "\n".join(["cudaMalloc((void **) &" + str(key) + "," + str(value) + ");" for key,value in shared_dict.items()])
       template_code = """
       int fake() {
+          reduction_loc = (double *) malloc (memSize);
           cudaMalloc((void **) &reduction_cu, memSize);
       """ + shared_malloc_lines + "\n}"
       return self.parse_snippet(template_code, None, name = 'SendData').ext[0].body
@@ -185,7 +123,7 @@ class CudaMutator(object):
        return tree
 
 
-   def buildHostReduction(self, reduction_var_node):
+   def buildHostReduction(self, reduction_var_node_list):
       template_code = """
       int fake() {
       for (i = 0; i < dimA; i++)
@@ -194,7 +132,7 @@ class CudaMutator(object):
       }
       }
       """
-      return self.parse_snippet(template_code, {'target' : reduction_var_node.name}, name = 'HostReduction').ext[0].body
+      return self.parse_snippet(template_code, {'target' : reduction_var_node_list[0].name}, name = 'HostReduction').ext[0].body
 
    def buildSupport(self):
       """ CUDA Support subroutines """
@@ -240,12 +178,11 @@ void checkCUDAError (const char *msg)
           tree = Dump.load(self.kernel_name)
       # OpenMP shared vars are parameters of the kernel function
       # Note: we need to mutate the declaration subtree into a param declaration (ArrayRef to Pointer and so on...)
-      param_decls = [ decl_of_id(elem, ast) for elem in params ]
-      pm = DeclsToParamsMutator(decls = param_decls)
+      pm = DeclsToParamsMutator(decls = params)
       pm.apply(tree.ext[-1].function.decl.type.args)
       # OpenMP Private vars need to be declared inside kernel
       #    - we build a tmp Compound to group all declarations, and insert them once
-      tmp = c_ast.Compound(decls= [decl_of_id(elem, ast) for elem in private_list], stmts=None)
+      tmp = c_ast.Compound(decls= private_list, stmts=None)
       #    - Insert tool removes the parent node of the inserted subtree
       InsertTool(subtree = tmp, position = "end").apply(tree.ext[-1].function.body, 'decls')
       # Add the loop statements, (but not the reduction)
@@ -281,8 +218,15 @@ void checkCUDAError (const char *msg)
 
       ##################### Cuda parameters on host
 
+      shared_params = [ decl_of_id(elem, ast) for elem in prev_node.child.shared[0].identifiers[0].params ]
+      private_params = [ decl_of_id(elem, ast) for elem in prev_node.child.private[0].identifiers[0].params ]
+      reduction_params = [ decl_of_id(elem, ast) for elem in prev_node.child.reduction[0].identifiers[0].params ]
+
+
+
+
       # Declarations
-      declarations_subtree = self.buildDeclarations(numThreads = maxThreadNumber_node.name)
+      declarations_subtree = self.buildDeclarations(numThreads = maxThreadNumber_node.name, reduction_node_list = reduction_params)
       InsertTool(subtree = declarations_subtree, position = "end").apply(parent_stmt, 'decls')
       # Initialization
       initialization_subtree = self.buildInitializaton(shared_vars = prev_node.child.shared[0].identifiers[0].params, ast = ast)
@@ -292,8 +236,8 @@ void checkCUDAError (const char *msg)
       ##################### Cuda Kernel 
 
       # Kernel
-      kernel_subtree = self.buildKernel(params = prev_node.child.shared[0].identifiers[0].params, 
-                        private_list = prev_node.child.private[0].identifiers[0].params, 
+      kernel_subtree = self.buildKernel(params = shared_params, 
+                        private_list = private_params, 
                         reduction_list = prev_node.child.reduction[0].identifiers[0].params,
                         loop = parallelFor, ast = ast)
 #      from Tools.Debug import DotDebugTool 
@@ -301,7 +245,6 @@ void checkCUDAError (const char *msg)
 
       # Function declaration
       # - Build a node without body
-      import copy
       tmp = c_ast.CUDAKernel(function = copy.deepcopy(kernel_subtree.ext[0].function), type = 'global', name = kernel_subtree.ext[0].name)
       tmp.function.body = c_ast.Compound(stmts = None, decls = None); # If both of stmts and decls are none, it won't be printed
       kernel_decl = c_ast.Compound(stmts = [tmp], decls = None)
@@ -324,7 +267,7 @@ void checkCUDAError (const char *msg)
       retrieve_subtree = self.buildRetrieve()
       InsertTool(subtree = retrieve_subtree, position = "end").apply(cuda_stmts, 'stmts')
       # Host reduction
-      reduction_subtree = self.buildHostReduction(reduction_var_node = prev_node.child.reduction[0].identifiers[0].params[0])
+      reduction_subtree = self.buildHostReduction(reduction_var_node_list = prev_node.child.reduction[0].identifiers[0].params)
       InsertTool(subtree = reduction_subtree, position = "end").apply(cuda_stmts, 'stmts')
       # Replace for by a CompoundStatement with all the new statements
       ReplaceTool(new_node = cuda_stmts, old_node = parallelFor).apply(parent_stmt, 'stmts')
@@ -342,6 +285,8 @@ void checkCUDAError (const char *msg)
       start_node = None
       try: 
          start_node = self.filter(ast)
+         from Tools.Debug import DotDebugTool
+         DotDebugTool().apply(ast)
          self.mutatorFunction(ast, start_node)
          # Remove pragma from code
       except NodeNotFound as nf:
