@@ -1,10 +1,10 @@
 
 from pycparser import c_parser, c_ast
 from Visitors.generic_visitors import AttributeFilter, FilterVisitor, NodeNotFound
-from Tools.tree import InsertTool, RemoveTool
+from Tools.tree import InsertTool, RemoveTool, ReplaceTool
 
 
-from Visitors.generic_visitors import FilterVisitor, IDFilter, FuncCallFilter, FuncDeclOfNameFilter
+from Visitors.generic_visitors import FilterVisitor, IDFilter, FuncCallFilter, FuncDeclOfNameFilter, StrFilter
 
 class AbstractMutator(object):
    def __init__(self):
@@ -99,12 +99,14 @@ class IDNameMutator(AbstractMutator):
    def filter(self, ast):
       id_node = None
       try:
-         # ast.show()
          af = IDFilter(id = self.old)
          id_node = af.apply(ast)
       except NodeNotFound:
-         # print " *** here *** "
-         return None
+         # Try to recover looking for No ID name attribute
+         af = StrFilter(id = self.old)
+         id_node = af.apply(ast)
+         return id_node
+         # Otherwise , raise exception and stop
       return id_node
 
    def mutatorFunction(self, ast):
@@ -139,7 +141,7 @@ class FuncToDeviceMutator(AbstractMutator):
       while type(file_ast) != c_ast.FileAST:
          file_ast = file_ast.parent
 
-      print " *** Nodo a reemplazar "
+ #     print " *** Nodo a reemplazar "
       cuda_node = c_ast.CUDAKernel(name = self.func_call.name.name, type = 'device', function = ast, parent=file_ast)
       ast.parent = cuda_node
       ReplaceTool(new_node = cuda_node, old_node = ast).apply(file_ast, 'ext')
@@ -152,12 +154,8 @@ class PointerMutator(AbstractMutator):
      return ast
 
    def mutatorFunction(self, ast):
-     from Tools.Debug import DotDebugTool
-     print " ===>  Node : " + str(ast)
-     ast.show()
      pointer_node = c_ast.PtrDecl(type = ast.type, quals = [], parent = ast)
      ast.type.parent = pointer_node
      ast.type = pointer_node
-     DotDebugTool(select_node = pointer_node).apply(ast)
      return ast
 

@@ -118,6 +118,14 @@ class IDFilter(GenericFilterVisitor):
        super(IDFilter, self).__init__(condition_func = lambda node : type(node) == c_ast.ID and node.name == id.name, prev_brother = prev_brother)
 
 
+class StrFilter(GenericFilterVisitor):
+   """ Returns the first node with an ID
+   """
+
+   def __init__(self, id, prev_brother = None):
+       super(StrFilter, self).__init__(condition_func = lambda node : hasattr(node, 'name') and type(node.name) == type("") and node.name == id.name, prev_brother = prev_brother)
+
+
 class DeclFilter(GenericFilterVisitor):
    """ Returns the first node with a TypeDecl
    """
@@ -147,7 +155,8 @@ class FuncDeclOfNameFilter(GenericFilterVisitor):
        def condition(node):
            """ FuncDecl """
            if type(node) == c_ast.FuncDecl:
-               print "Looking for : " + name.name
+#               print "Looking for : " + name.name
+                pass
            return type(node) == c_ast.FuncDecl and getattr(node.parent, 'name') == name.name
        super(FuncDeclOfNameFilter, self).__init__(condition_func = condition , prev_brother = prev_brother)
 

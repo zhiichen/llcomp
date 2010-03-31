@@ -78,6 +78,7 @@ class CudaMutator(object):
       print " List of decls : "+ str(reduction_node_list)
       reduction_pointer_decls = copy.deepcopy(reduction_node_list)
       for elem in reduction_pointer_decls:
+         IDNameMutator(old = c_ast.ID(elem.name), new = c_ast.ID('reduction_loc_' + elem.name)).apply(elem)
          PointerMutator().apply(elem)
       declarations.ext.extend(reduction_pointer_decls)
       declarations.show()
@@ -285,8 +286,6 @@ void checkCUDAError (const char *msg)
       start_node = None
       try: 
          start_node = self.filter(ast)
-         from Tools.Debug import DotDebugTool
-         DotDebugTool().apply(ast)
          self.mutatorFunction(ast, start_node)
          # Remove pragma from code
       except NodeNotFound as nf:
