@@ -77,10 +77,17 @@ class CudaMutator(object):
       declarations.show()
       print " List of decls : "+ str(reduction_node_list)
       reduction_pointer_decls = copy.deepcopy(reduction_node_list)
+      # Build local reduction vars
       for elem in reduction_pointer_decls:
          IDNameMutator(old = c_ast.ID(elem.name), new = c_ast.ID('reduction_loc_' + elem.name)).apply(elem)
          PointerMutator().apply(elem)
+      # Build cuda reduction arrays
+      reduction_cu_pointer_decls = copy.deepcopy(reduction_node_list)
+      for elem in reduction_cu_pointer_decls:
+         IDNameMutator(old = c_ast.ID(elem.name), new = c_ast.ID('reduction_cu_' + elem.name)).apply(elem)
+         PointerMutator().apply(elem)
       declarations.ext.extend(reduction_pointer_decls)
+      declarations.ext.extend(reduction_cu_pointer_decls)
       declarations.show()
       return declarations 
 
