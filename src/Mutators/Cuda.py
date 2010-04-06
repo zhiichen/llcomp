@@ -143,16 +143,20 @@ class CudaMutator(object):
        return tree
 
 
-   def buildHostReduction(self, reduction_var_node_list):
+   def buildHostReduction(self, reduction_vars):
+      reduction_lines = ""
+      for elem in reduction_vars:
+         reduction_lines += elem.name + "+= reduction_loc_" + (elem.name) + "[i];\n"
+
       template_code = """
       int fake() {
       for (i = 0; i < dimA; i++)
       {
-        $target += reduction_loc[i];
+          $reduction_lines
       }
       }
       """
-      return self.parse_snippet(template_code, {'target' : reduction_var_node_list[0].name}, name = 'HostReduction').ext[0].body
+      return self.parse_snippet(template_code, {'reduction_lines' : reduction_lines}, name = 'HostReduction').ext[0].body
 
    def buildSupport(self):
       """ CUDA Support subroutines """
@@ -274,7 +278,7 @@ void checkCUDAError (const char *msg)
       tmp = c_ast.CUDAKernel(function = copy.deepcopy(kernel_subtree.ext[0].function), type = 'global', name = kernel_subtree.ext[0].name)
       tmp.function.body = c_ast.Compound(stmts = None, decls = None); # If both of stmts and decls are none, it won't be printed
       kernel_decl = c_ast.Compound(stmts = [tmp], decls = None)
-      InsertTool(subtree = kernel_decl, position = "begin" ).apply(ast, 'ext')
+      InsertTool(subtree = kernel_decl, position = "begin", node = parent_stmt.parent ).apply(ast, 'ext')
       # Function definition
       InsertTool(subtree = kernel_subtree, position = "end" ).apply(ast, 'ext')
 
@@ -294,7 +298,7 @@ void checkCUDAError (const char *msg)
       retrieve_subtree = self.buildRetrieve(reduction_vars = reduction_vars)
       InsertTool(subtree = retrieve_subtree, position = "end").apply(cuda_stmts, 'stmts')
       # Host reduction
-      reduction_subtree = self.buildHostReduction(reduction_var_node_list = prev_node.child.reduction[0].identifiers[0].params)
+      reduction_subtree = self.buildHostReduction(reduction_vars = prev_node.child.reduction[0].identifiers[0].params)
       InsertTool(subtree = reduction_subtree, position = "end").apply(cuda_stmts, 'stmts')
       # Replace for by a CompoundStatement with all the new statements
       ReplaceTool(new_node = cuda_stmts, old_node = parallelFor).apply(parent_stmt, 'stmts')
