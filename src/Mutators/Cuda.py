@@ -94,8 +94,8 @@ class CudaMutator(object):
       """ Initialization """
       reduction_dict = {} 
       for elem in reduction_vars:
-         reduction_dict["reduction_loc_" + str(elem.name)] = "sizeof(" + "reduction_loc_".join(type_of_id(elem, ast).type.names) +")"
-      reduction_malloc_lines = "\n".join([str(key) + " = malloc(numElems * " + str(value) + ");" for key,value in reduction_dict.items()])
+         reduction_dict[str(elem.name)] = type_of_id(elem, ast).type.names[0]
+      reduction_malloc_lines = "\n".join(["reduction_loc_" + str(key) + " = (" + str(value) +"*) malloc(numElems * sizeof(" + str(value) + "));" for key,value in reduction_dict.items()])
       reduction_dict = {} 
       for elem in reduction_vars:
          reduction_dict["reduction_cu_" + str(elem.name)] = "sizeof(" + "reduction_cu_".join(type_of_id(elem, ast).type.names) +")"
