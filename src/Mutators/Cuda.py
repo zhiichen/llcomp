@@ -68,7 +68,8 @@ class CudaMutator(object):
       int dimA = $numThreads;
       int numThreadsPerBlock = 512;
       int numBlocks = dimA / numThreadsPerBlock;
-      int memSize = numBlocks * numThreadsPerBlock * sizeof (double);
+      int numElems = numBlocks * numThreadsPerBlock;
+      int memSize = numElems * sizeof(double);
 /*    double *reduction_loc_varname;
       double *reduction_cu_varname;  
       */
@@ -92,19 +93,26 @@ class CudaMutator(object):
       return declarations 
 
 
-   def buildInitializaton(self, shared_vars, ast):
+   def buildInitializaton(self, reduction_vars, shared_vars, ast):
       """ Initialization """
+      reduction_dict = {} 
+      for elem in reduction_vars:
+         reduction_dict["reduction_loc_" + str(elem.name)] = "sizeof(" + "reduction_loc_".join(type_of_id(elem, ast).type.names) +")"
+      reduction_malloc_lines = "\n".join([str(key) + " = malloc(numElems * " + str(value) + ");" for key,value in reduction_dict.items()])
+      reduction_dict = {} 
+      for elem in reduction_vars:
+         reduction_dict["reduction_cu_" + str(elem.name)] = "sizeof(" + "reduction_cu_".join(type_of_id(elem, ast).type.names) +")"
+      reduction_malloc_lines += "\n".join(["cudaMalloc((void **) &" + str(key) + ", numElems * " + str(value) + ");" for key,value in reduction_dict.items()])
+
       shared_dict = {} 
       for elem in shared_vars:
-          # Only malloc / send if it is a complex type
-          if isinstance(elem, c_ast.ArrayDecl) or isinstance(elem, c_ast.Struct):
-	          shared_dict[elem.name] = "sizeof(" + " ".join(type_of_id(elem, ast).type.names) +  ")"
+         # Only malloc / send if it is a complex type
+         if isinstance(elem, c_ast.ArrayDecl) or isinstance(elem, c_ast.Struct):
+            shared_dict[elem.name] = "sizeof(" + " ".join(type_of_id(elem, ast).type.names) +  ")"
       shared_malloc_lines = "\n".join(["cudaMalloc((void **) &" + str(key) + "," + str(value) + ");" for key,value in shared_dict.items()])
       template_code = """
       int fake() {
-          reduction_loc = (double *) malloc (memSize);
-          cudaMalloc((void **) &reduction_cu, memSize);
-      """ + shared_malloc_lines + "\n}"
+      """ + shared_malloc_lines  + reduction_malloc_lines + "\n}"
       return self.parse_snippet(template_code, None, name = 'SendData').ext[0].body
 
    def buildRetrieve(self):
@@ -237,8 +245,10 @@ void checkCUDAError (const char *msg)
       declarations_subtree = self.buildDeclarations(numThreads = maxThreadNumber_node.name, reduction_node_list = reduction_params)
       InsertTool(subtree = declarations_subtree, position = "end").apply(parent_stmt, 'decls')
       # Initialization
-      initialization_subtree = self.buildInitializaton(shared_vars = prev_node.child.shared[0].identifiers[0].params, ast = ast)
-      InsertTool(subtree = initialization_subtree, position = "begin").apply(parent_stmt, 'stmts')
+#      initialization_subtree = self.buildInitializaton(reduction_vars = reduction_params, shared_vars = prev_node.child.shared[0].identifiers[0].params, ast = ast)
+      initialization_subtree = self.buildInitializaton(reduction_vars = reduction_params, shared_vars = shared_params, ast = ast)
+
+      InsertTool(subtree = initialization_subtree, position = "begin").apply(cuda_stmts, 'stmts')
       
 
       ##################### Cuda Kernel 
