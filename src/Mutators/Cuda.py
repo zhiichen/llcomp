@@ -75,8 +75,6 @@ class CudaMutator(object):
       */
       """
       declarations =  self.parse_snippet(constant_template_code, dict(numThreads = numThreads), name = 'declarations')
-      declarations.show()
-      print " List of decls : "+ str(reduction_node_list)
       reduction_pointer_decls = copy.deepcopy(reduction_node_list)
       # Build local reduction vars
       for elem in reduction_pointer_decls:
@@ -89,7 +87,6 @@ class CudaMutator(object):
          PointerMutator().apply(elem)
       declarations.ext.extend(reduction_pointer_decls)
       declarations.ext.extend(reduction_cu_pointer_decls)
-      declarations.show()
       return declarations 
 
 
@@ -115,27 +112,34 @@ class CudaMutator(object):
       """ + shared_malloc_lines  + reduction_malloc_lines + "\n}"
       return self.parse_snippet(template_code, None, name = 'SendData').ext[0].body
 
-   def buildRetrieve(self):
+   def buildRetrieve(self, reduction_vars):
+      memcpy_lines = ""
+      for elem in reduction_vars:
+         memcpy_lines += "cudaMemcpy(reduction_loc_" + (elem.name) + ", reduction_cu_" + elem.name + ", cudaMemcpyDeviceToHost);\n"
       template_code = """
       int fake() {
-      cudaMemcpy(reduction_loc, reduction_cu, memSize, cudaMemcpyDeviceToHost);
+/*      cudaMemcpy(reduction_loc, reduction_cu, memSize, cudaMemcpyDeviceToHost); */
+        $cudaMemcpyLines
       checkCUDAError("memcpy");
       }
       """ 
-      return self.parse_snippet(template_code, None, name = 'Retrieve').ext[0].body
+      return self.parse_snippet(template_code, {'cudaMemcpyLines' : memcpy_lines}, name = 'Retrieve').ext[0].body
       
-   def buildKernelLaunch(self, shared_var_list):
+   def buildKernelLaunch(self, reduction_vars, shared_vars):
+       reduction_var_list = ",".join("reduction_cu_" + elem.name for elem in reduction_vars)
+       shared_var_list = ",".join(elem.name for elem in shared_vars)
+
        template_code = """
 	#include "llcomp_cuda.h"
 
        int fake() {
    	    dim3 dimGrid (numBlocks);
    	    dim3 dimBlock (numThreadsPerBlock);
- 	       $kernelName <<< dimGrid , dimBlock >>> (reduction_cu, $sharedvars);
+ 	       $kernelName <<< dimGrid , dimBlock >>> ($reductionvars, $sharedvars);
        }
        """
        # The last element is the object function
-       tree = [ elem for elem in self.parse_snippet(template_code, {'sharedvars' : shared_var_list, 'kernelName' : self.kernel_name}, name = 'KernelLaunch').ext  if type(elem) == c_ast.FuncDef  ][-1].body
+       tree = [ elem for elem in self.parse_snippet(template_code, {'reductionvars' : reduction_var_list, 'sharedvars' : shared_var_list, 'kernelName' : self.kernel_name}, name = 'KernelLaunch').ext  if type(elem) == c_ast.FuncDef  ][-1].body
        return tree
 
 
@@ -233,10 +237,14 @@ void checkCUDAError (const char *msg)
       cuda_stmts = c_ast.Compound(stmts = [], decls = []);
 
       ##################### Cuda parameters on host
+      
+      reduction_vars = prev_node.child.reduction[0].identifiers[0].params
+      shared_vars =  prev_node.child.shared[0].identifiers[0].params
+      private_vars = prev_node.child.private[0].identifiers[0].params 
 
-      shared_params = [ decl_of_id(elem, ast) for elem in prev_node.child.shared[0].identifiers[0].params ]
-      private_params = [ decl_of_id(elem, ast) for elem in prev_node.child.private[0].identifiers[0].params ]
-      reduction_params = [ decl_of_id(elem, ast) for elem in prev_node.child.reduction[0].identifiers[0].params ]
+      shared_params = [ decl_of_id(elem, ast) for elem in shared_vars ]
+      private_params = [ decl_of_id(elem, ast) for elem in private_vars ]
+      reduction_params = [ decl_of_id(elem, ast) for elem in reduction_vars ]
 
 
 
@@ -277,12 +285,13 @@ void checkCUDAError (const char *msg)
 
 
       ##################### Loop substitution 
-      
+   
+
       # Kernel Launch
-      kernelLaunch_subtree = self.buildKernelLaunch(prev_node.child.shared[0].identifiers[0].params[0].name)
+      kernelLaunch_subtree = self.buildKernelLaunch(reduction_vars = reduction_vars, shared_vars = shared_vars)
       InsertTool(subtree = kernelLaunch_subtree, position = "end").apply(cuda_stmts, 'stmts')
       # Retrieve data
-      retrieve_subtree = self.buildRetrieve()
+      retrieve_subtree = self.buildRetrieve(reduction_vars = reduction_vars)
       InsertTool(subtree = retrieve_subtree, position = "end").apply(cuda_stmts, 'stmts')
       # Host reduction
       reduction_subtree = self.buildHostReduction(reduction_var_node_list = prev_node.child.reduction[0].identifiers[0].params)
