@@ -26,6 +26,21 @@ class AbstractMutator(object):
          print str(nf)
       return start_node
  
+   def filter_iterator(self, ast):
+      raise NotImplemented
+
+   def apply_all(self, ast):
+      """ Apply mutation to all matches """
+      start_node = None
+      self.ast = ast
+      try:
+#         print " Looking for node ... " 
+         for elem in self.filter_iterator(ast):
+            start_node = self.mutatorFunction(elem)
+#         print " Finishing node search ... " 
+      except NodeNotFound as nf:
+         print str(nf)
+      return start_node
 
 
 class RemoveAttributeMutator(AbstractMutator):
@@ -109,6 +124,32 @@ class IDNameMutator(AbstractMutator):
          return id_node
          # Otherwise , raise exception and stop
       return id_node
+
+   def filter_iterator(self, ast):
+      id_node = None
+      af = IDFilter(id = self.old)
+#      print " IDNameMutator iterator ast: " + str(ast)
+      try:
+         for id_node in af.iterate(ast):
+      #      print " Node : " + str(id_node)
+            yield id_node
+         else:
+            af = StrFilter(id = self.old)
+            for id_node in af.iterate(ast):
+               yield id_node
+            # Otherwise , raise exception and stop
+            raise StopIteration
+      except NodeNotFound:
+         # Try to recover looking for No ID name attribute
+         af = StrFilter(id = self.old)
+         for id_node in af.iterate(ast):
+            yield id_node
+         # Otherwise , raise exception and stop
+         raise StopIteration
+
+      print " You shouldn't see this " 
+#      return id_node
+
 
    def mutatorFunction(self, ast):
       delattr(ast, 'name')

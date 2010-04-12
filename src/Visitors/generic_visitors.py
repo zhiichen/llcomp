@@ -91,13 +91,15 @@ class GenericFilterVisitor(object):
        return self.parent_of_match
 
    def iterate(self, ast):
-       """ Iterate throught matching nodes """
+       """ Iterate through matching nodes """
        visited_nodes = []
        try:
          while 1:
             visited_nodes.append(self.apply(ast, ignore = visited_nodes))
             yield visited_nodes[-1]
        except NodeNotFound:
+#         print "   *** Node not found on iterate, will raise StopIteration *** "
+#         raise NodeNotFound("Not")
          raise StopIteration
 
 

@@ -78,12 +78,15 @@ class CudaMutator(object):
       reduction_pointer_decls = copy.deepcopy(reduction_node_list)
       # Build local reduction vars
       for elem in reduction_pointer_decls:
-         IDNameMutator(old = c_ast.ID(elem.name), new = c_ast.ID('reduction_loc_' + elem.name)).apply(elem)
+ #        from Tools.Debug import DotDebugTool
+ #        DotDebugTool().apply(elem)
+         IDNameMutator(old = c_ast.ID(elem.name), new = c_ast.ID('reduction_loc_' + elem.name)).apply_all(elem)
+ #        DotDebugTool().apply(elem)
          PointerMutator().apply(elem)
       # Build cuda reduction arrays
       reduction_cu_pointer_decls = copy.deepcopy(reduction_node_list)
       for elem in reduction_cu_pointer_decls:
-         IDNameMutator(old = c_ast.ID(elem.name), new = c_ast.ID('reduction_cu_' + elem.name)).apply(elem)
+         IDNameMutator(old = c_ast.ID(elem.name), new = c_ast.ID('reduction_cu_' + elem.name)).apply_all(elem)
          PointerMutator().apply(elem)
       declarations.ext.extend(reduction_pointer_decls)
       declarations.ext.extend(reduction_cu_pointer_decls)
