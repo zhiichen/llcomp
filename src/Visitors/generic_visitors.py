@@ -16,29 +16,26 @@ class GenericFilterVisitor(object):
        self.match = False
        self.parent_of_match = None
 
-   def apply(self, ast):
+   def apply(self, ast, ignore = []):
       """ Apply filter to the ast """
       self.match = False
+      self.ast = ast
       node = ast
       if not self.condition_func(node):
-         node = self.generic_visit(ast)
+         node = self.generic_visit(ast, ignore = ignore)
       if not self.condition_func(node):
          raise NodeNotFound(self.condition_func.__doc__)
       return node
 
-   def visit(self, node, prev, offset = 1):
+   def visit(self, node, prev, offset = 1, ignore = []):
         """ Visit a node. 
         """
-        if self.match: return node
-        if self.condition_func(node) and (self.prev_brother != None and self.prev_brother == prev):
-           self.match = True
-           return node
         # Continue the search....
         method = 'visit_' + node.__class__.__name__
         visitor = getattr(self, method, self.generic_visit)
-        return visitor(node, offset)
+        return visitor(node, offset, ignore)
         
-   def generic_visit(self, node, offset = 0):
+   def generic_visit(self, node, offset = 0, ignore = []):
        """ Called if no explicit visitor function exists for a 
            node. Implements preorder visiting of the node.
        """
@@ -56,13 +53,13 @@ class GenericFilterVisitor(object):
 
        try:
           c = iter.next();
-          while not self.condition_func(c) or (self.prev_brother != None and self.prev_brother != prev):
-             if self.match: 
-                break
+          while not self.condition_func(c) or (self.prev_brother != None and self.prev_brother != prev) or (c in ignore):
+             if self.match:
+               break
              if debug:
                 print " Act : " + str(c)
-             r = self.visit(c, prev)
-             if self.condition_func(r) and (self.prev_brother != None and self.prev_brother == prev) and not self.match:
+             r = self.visit(c, prev, ignore = ignore)
+             if self.condition_func(r) and (self.prev_brother != None and self.prev_brother == prev) and not self.match and not r in ignore:
                 # Stop iterating, we've found the mathing node
                 # Do not execute the else code, we already have in r 
                 # the matching node
@@ -73,8 +70,9 @@ class GenericFilterVisitor(object):
              c = iter.next()
           else:
              # r is always the matching node (even if its in the same level)
-             r = c
-             self.match = True
+             if not c in ignore:
+                r = c
+                self.match = True
              if debug: print " Level of matching node : " + str(c) + " == " + str(c.name)
        except StopIteration:
           if debug: 
@@ -91,6 +89,16 @@ class GenericFilterVisitor(object):
 
    def parentOfMatch(self):
        return self.parent_of_match
+
+   def iterate(self, ast):
+       """ Iterate throught matching nodes """
+       visited_nodes = []
+       try:
+         while 1:
+            visited_nodes.append(self.apply(ast, ignore = visited_nodes))
+            yield visited_nodes[-1]
+       except NodeNotFound:
+         raise StopIteration
 
 
 
@@ -116,7 +124,6 @@ class IDFilter(GenericFilterVisitor):
 
    def __init__(self, id, prev_brother = None):
        super(IDFilter, self).__init__(condition_func = lambda node : type(node) == c_ast.ID and node.name == id.name, prev_brother = prev_brother)
-
 
 class StrFilter(GenericFilterVisitor):
    """ Returns the first node with an ID
@@ -145,6 +152,7 @@ class FuncCallFilter(GenericFilterVisitor):
           """ FuncCall """
           return type(node) == c_ast.FuncCall
        super(FuncCallFilter, self).__init__(condition_func = condition , prev_brother = prev_brother)
+
 
 class FuncDeclOfNameFilter(GenericFilterVisitor):
    """ Returns the first node with a FuncCall

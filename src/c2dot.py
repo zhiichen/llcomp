@@ -75,6 +75,10 @@ link_all_parents(ast)
 
 new_ast = ast 
 
+#from Visitors.generic_visitors import FuncCallFilter_Iterable
+#for elem in FuncCallFilter_Iterable().iterate(new_ast):
+#   elem.show()
+
 # Print the AST
 v = DotWriter(filename = output_file, highlight = [ast])
 v.visit(new_ast)

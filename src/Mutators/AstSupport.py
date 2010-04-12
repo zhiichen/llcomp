@@ -18,13 +18,14 @@ class AbstractMutator(object):
 
    def apply(self, ast):
       start_node = None
+      self.ast = ast
       try:
-        start_node = self.filter(ast)
+        start_node = self.filter(self.ast)
         self.mutatorFunction(start_node)
       except NodeNotFound as nf:
          print str(nf)
       return start_node
-  
+ 
 
 
 class RemoveAttributeMutator(AbstractMutator):
