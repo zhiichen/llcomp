@@ -65,7 +65,7 @@ class InsertTool:
        return target_node
 
 
-# ReplaceVisitor(subtree = kernelLaunch_subtree, relpaced_node = parent_stmt).apply(parent_stmt, 'stmts')
+# ReplaceVisitor(subtree = kernelLaunch_subtree, replaced_node = parent_stmt).apply(parent_stmt, 'stmts')
 class ReplaceTool:
     """ Replace a subtree with another """
     def __init__(self, new_node, old_node):

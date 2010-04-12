@@ -96,10 +96,14 @@ class CudaMutator(object):
    def buildInitializaton(self, reduction_vars, shared_vars, ast):
       """ Initialization """
       reduction_dict = {} 
+      # Host memory allocation (malloc lines)
       for elem in reduction_vars:
          reduction_dict[str(elem.name)] = type_of_id(elem, ast).type.names[0]
       reduction_malloc_lines = "\n".join(["reduction_loc_" + str(key) + " = (" + str(value) +"*) malloc(numElems * sizeof(" + str(value) + "));" for key,value in reduction_dict.items()])
       reduction_dict = {} 
+
+
+      # Device memory allocation (cudaMalloc lines)
       for elem in reduction_vars:
          reduction_dict["reduction_cu_" + str(elem.name)] = "sizeof(" + "reduction_cu_".join(type_of_id(elem, ast).type.names) +")"
       reduction_malloc_lines += "\n".join(["cudaMalloc((void **) &" + str(key) + ", numElems * " + str(value) + ");" for key,value in reduction_dict.items()])
@@ -110,15 +114,21 @@ class CudaMutator(object):
          if isinstance(elem, c_ast.ArrayDecl) or isinstance(elem, c_ast.Struct):
             shared_dict[elem.name] = "sizeof(" + " ".join(type_of_id(elem, ast).type.names) +  ")"
       shared_malloc_lines = "\n".join(["cudaMalloc((void **) &" + str(key) + "," + str(value) + ");" for key,value in shared_dict.items()])
+
+      # Template source
       template_code = """
       int fake() {
       """ + shared_malloc_lines  + reduction_malloc_lines + "\n}"
+   
       return self.parse_snippet(template_code, None, name = 'SendData').ext[0].body
 
    def buildRetrieve(self, reduction_vars):
       memcpy_lines = ""
+      # CudaMemCpy lines 
       for elem in reduction_vars:
          memcpy_lines += "cudaMemcpy(reduction_loc_" + (elem.name) + ", reduction_cu_" + elem.name + ", cudaMemcpyDeviceToHost);\n"
+      
+      # Template source
       template_code = """
       int fake() {
 /*      cudaMemcpy(reduction_loc, reduction_cu, memSize, cudaMemcpyDeviceToHost); */
@@ -126,6 +136,7 @@ class CudaMutator(object):
       checkCUDAError("memcpy");
       }
       """ 
+
       return self.parse_snippet(template_code, {'cudaMemcpyLines' : memcpy_lines}, name = 'Retrieve').ext[0].body
       
    def buildKernelLaunch(self, reduction_vars, shared_vars):
@@ -205,26 +216,26 @@ void checkCUDAError (const char *msg)
           tree = Dump.load(self.kernel_name)
       # OpenMP shared vars are parameters of the kernel function
       # Note: we need to mutate the declaration subtree into a param declaration (ArrayRef to Pointer and so on...)
-      pm = DeclsToParamsMutator(decls = params)
-      pm.apply(tree.ext[-1].function.decl.type.args)
+      DeclsToParamsMutator(decls = params).apply(tree.ext[-1].function.decl.type.args)
+      # TODO:
+      # Remove declaration of reduction_cu
+      # Insert declarations of reduction_cu_*** from shared
       # OpenMP Private vars need to be declared inside kernel
       #    - we build a tmp Compound to group all declarations, and insert them once
       tmp = c_ast.Compound(decls= private_list, stmts=None)
       #    - Insert tool removes the parent node of the inserted subtree
       InsertTool(subtree = tmp, position = "end").apply(tree.ext[-1].function.body, 'decls')
       # Add the loop statements, (but not the reduction)
-      km = IDNameMutator(old = loop.init.lvalue, new = c_ast.ID('idx'))
-      km.apply(loop.stmt)
+      IDNameMutator(old = loop.init.lvalue, new = c_ast.ID('idx')).apply_all(loop.stmt)
       # Identify function calls inside kernel and replace the definitions to __device__ 
       try:
-         func_call = FuncCallFilter().apply(loop.stmt)
-         fcm = FuncToDeviceMutator(func_call = func_call).apply(ast)
+         for func_call in FuncCallFilter().iterate(loop.stmt):
+           fcm = FuncToDeviceMutator(func_call = func_call).apply(ast)
       except NodeNotFound:
          # There are not function calls on the loop.stmt
          pass
       # TODO: This is incorrect, we should write a subtree instead of a bare string...
-      km = IDNameMutator(old = c_ast.ID('sum'), new = c_ast.ID('reduction_cu[idx]'))
-      km.apply(loop.stmt)
+      IDNameMutator(old = c_ast.ID('sum'), new = c_ast.ID('reduction_cu[idx]')).apply_all(loop.stmt)
       InsertTool(subtree = loop.stmt, position = "begin").apply(tree.ext[-1].function.body, 'stmts')
       return c_ast.FileAST(ext = [tree.ext[-1]])
 
