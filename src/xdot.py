@@ -1704,14 +1704,14 @@ class DotWindow(gtk.Window):
     </ui>
     '''
 
-    def __init__(self):
+    def __init__(self, name = 'Dot Viewer'):
         gtk.Window.__init__(self)
 
         self.graph = Graph()
 
         window = self
 
-        window.set_title('Dot Viewer')
+        window.set_title(name)
         window.set_default_size(512, 512)
         vbox = gtk.VBox()
         window.add(vbox)
