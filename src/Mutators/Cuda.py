@@ -78,10 +78,10 @@ class CudaMutator(object):
       reduction_pointer_decls = copy.deepcopy(reduction_node_list)
       # Build local reduction vars
       for elem in reduction_pointer_decls:
- #        from Tools.Debug import DotDebugTool
- #        DotDebugTool().apply(elem)
+         from Tools.Debug import DotDebugTool
+#~         DotDebugTool().apply(elem)
          IDNameMutator(old = c_ast.ID(elem.name), new = c_ast.ID('reduction_loc_' + elem.name)).apply_all(elem)
- #        DotDebugTool().apply(elem)
+#~         DotDebugTool().apply(elem)
          PointerMutator().apply(elem)
       # Build cuda reduction arrays
       reduction_cu_pointer_decls = copy.deepcopy(reduction_node_list)
@@ -95,17 +95,24 @@ class CudaMutator(object):
 
    def buildInitializaton(self, reduction_vars, shared_vars, ast):
       """ Initialization """
+      def get_names(elem):
+         type = type_of_id(elem, ast)
+         while not hasattr(type, 'names'):
+            # TODO: Launch exception if not type attribute
+            type = type.type
+         return type.names
+
       reduction_dict = {} 
       # Host memory allocation (malloc lines)
       for elem in reduction_vars:
-         reduction_dict[str(elem.name)] = type_of_id(elem, ast).type.names[0]
+          reduction_dict[str(elem.name)] = get_names(elem)[0]
       reduction_malloc_lines = "\n".join(["reduction_loc_" + str(key) + " = (" + str(value) +"*) malloc(numElems * sizeof(" + str(value) + "));" for key,value in reduction_dict.items()])
       reduction_dict = {} 
 
 
       # Device memory allocation (cudaMalloc lines)
       for elem in reduction_vars:
-         reduction_dict["reduction_cu_" + str(elem.name)] = "sizeof(" + "reduction_cu_".join(type_of_id(elem, ast).type.names) +")"
+         reduction_dict["reduction_cu_" + str(elem.name)] = "sizeof(" + "reduction_cu_".join(get_names(elem)) +")"
       reduction_malloc_lines += "\n".join(["cudaMalloc((void **) &" + str(key) + ", numElems * " + str(value) + ");" for key,value in reduction_dict.items()])
 
       shared_dict = {} 
@@ -126,7 +133,7 @@ class CudaMutator(object):
       memcpy_lines = ""
       # CudaMemCpy lines 
       for elem in reduction_vars:
-         memcpy_lines += "cudaMemcpy(reduction_loc_" + (elem.name) + ", reduction_cu_" + elem.name + ", cudaMemcpyDeviceToHost);\n"
+         memcpy_lines += "cudaMemcpy(reduction_loc_" + (elem.name) + ", reduction_cu_" + elem.name + ", memSize, cudaMemcpyDeviceToHost);\n"
       
       # Template source
       template_code = """
@@ -198,7 +205,7 @@ void checkCUDAError (const char *msg)
 
       return c_ast.Compound(stmts = [tree.ext[-1]], decls = [tree.ext[-1].decl])
 
-   def buildKernel(self, params, private_list, reduction_list, loop, ast):
+   def buildKernel(self, shared_list, private_list, reduction_list, loop, ast):
       if not Dump.exists(self.kernel_name):
           template_code = """
           #include "llcomp_cuda.h"
@@ -216,17 +223,27 @@ void checkCUDAError (const char *msg)
           tree = Dump.load(self.kernel_name)
       # OpenMP shared vars are parameters of the kernel function
       # Note: we need to mutate the declaration subtree into a param declaration (ArrayRef to Pointer and so on...)
-      DeclsToParamsMutator(decls = params).apply(tree.ext[-1].function.decl.type.args)
-      # TODO:
-      # Remove declaration of reduction_cu
-      # Insert declarations of reduction_cu_*** from shared
+      reduction_vars = copy.deepcopy(reduction_list)
+      for elem in reduction_vars:
+         # Replace the name of the declaration. The type_declaration doesn't change, so maybe we'll get problems later?
+         IDNameMutator(old = c_ast.ID(elem.name), new = c_ast.ID('reduction_cu_' + elem.name)).apply_all(elem)
+         PointerMutator().apply(elem)
+      # Add the declarations to the parameters of the functions
+      DeclsToParamsMutator(decls = reduction_vars).apply(tree.ext[-1].function.decl.type.args)
+      DeclsToParamsMutator(decls = shared_list).apply(tree.ext[-1].function.decl.type.args)
+      # Remove the template declaration
+      RemoveTool(tree.ext[-1].function.decl.type.args.params[0]).apply(tree.ext[-1].function.decl.type.args, 'params')
       # OpenMP Private vars need to be declared inside kernel
       #    - we build a tmp Compound to group all declarations, and insert them once
       tmp = c_ast.Compound(decls= private_list, stmts=None)
       #    - Insert tool removes the parent node of the inserted subtree
       InsertTool(subtree = tmp, position = "end").apply(tree.ext[-1].function.body, 'decls')
       # Add the loop statements, (but not the reduction)
+
+#~      from Tools.Debug import DotDebugTool
+#~      DotDebugTool().apply(loop.stmt)
       IDNameMutator(old = loop.init.lvalue, new = c_ast.ID('idx')).apply_all(loop.stmt)
+#~      DotDebugTool().apply(loop.stmt)
       # Identify function calls inside kernel and replace the definitions to __device__ 
       try:
          for func_call in FuncCallFilter().iterate(loop.stmt):
@@ -234,9 +251,12 @@ void checkCUDAError (const char *msg)
       except NodeNotFound:
          # There are not function calls on the loop.stmt
          pass
+      # Identify function calls inside kernel and replace the definitions to __device__ 
       # TODO: This is incorrect, we should write a subtree instead of a bare string...
-      IDNameMutator(old = c_ast.ID('sum'), new = c_ast.ID('reduction_cu[idx]')).apply_all(loop.stmt)
+      for elem in reduction_list:
+         IDNameMutator(old = c_ast.ID(name = elem.name, parent = elem.parent), new = c_ast.ID(name = 'reduction_cu_' + str(elem.name) + '[idx]', parent = elem.parent)).apply_all(loop.stmt)
       InsertTool(subtree = loop.stmt, position = "begin").apply(tree.ext[-1].function.body, 'stmts')
+#~      DotDebugTool().apply(loop.stmt)
       return c_ast.FileAST(ext = [tree.ext[-1]])
 
    def mutatorFunction(self, ast, prev_node):
@@ -280,9 +300,9 @@ void checkCUDAError (const char *msg)
       ##################### Cuda Kernel 
 
       # Kernel
-      kernel_subtree = self.buildKernel(params = shared_params, 
+      kernel_subtree = self.buildKernel(shared_list = shared_params, 
                         private_list = private_params, 
-                        reduction_list = prev_node.child.reduction[0].identifiers[0].params,
+                        reduction_list = reduction_params,
                         loop = parallelFor, ast = ast)
 #      from Tools.Debug import DotDebugTool 
 #      DotDebugTool(select_node = ast).apply(kernel_subtree.ext[0])

@@ -128,14 +128,15 @@ class IDNameMutator(AbstractMutator):
    def filter_iterator(self, ast):
       id_node = None
       af = IDFilter(id = self.old)
-#      print " IDNameMutator iterator ast: " + str(ast)
+#~      print " IDNameMutator iterator ast: " + str(ast) + "Looking for : " + str(self.old.name)
       try:
          for id_node in af.iterate(ast):
-      #      print " Node : " + str(id_node)
+#~            print "ID Node : " + str(id_node)
             yield id_node
          else:
             af = StrFilter(id = self.old)
             for id_node in af.iterate(ast):
+#~               print "Str Node  : " + str(id_node)
                yield id_node
             # Otherwise , raise exception and stop
             raise StopIteration
@@ -152,8 +153,12 @@ class IDNameMutator(AbstractMutator):
 
 
    def mutatorFunction(self, ast):
-      delattr(ast, 'name')
-      setattr(ast, 'name', self.new.name)
+      if hasattr(ast, 'name'):
+         delattr(ast, 'name')
+         setattr(ast, 'name', self.new.name)
+      elif hasattr(ast, 'declname'):
+         delattr(ast, 'declname')
+         setattr(ast, 'declname', self.new.name)
       return ast
 
 

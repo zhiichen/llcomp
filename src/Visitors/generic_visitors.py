@@ -128,11 +128,18 @@ class IDFilter(GenericFilterVisitor):
        super(IDFilter, self).__init__(condition_func = lambda node : type(node) == c_ast.ID and node.name == id.name, prev_brother = prev_brother)
 
 class StrFilter(GenericFilterVisitor):
-   """ Returns the first node with an ID
+   """ Returns the first node with a name attr which name is the same as id.name
    """
 
    def __init__(self, id, prev_brother = None):
-       super(StrFilter, self).__init__(condition_func = lambda node : hasattr(node, 'name') and type(node.name) == type("") and node.name == id.name, prev_brother = prev_brother)
+       def condition(node):
+           if hasattr(node, 'name'):
+               return type(node.name) == type("") and node.name == id.name
+           elif hasattr(node, 'declname'):
+               return type(node.declname) == type("") and node.declname == id.name
+           else:
+               return False
+       super(StrFilter, self).__init__(condition_func = condition)
 
 
 class DeclFilter(GenericFilterVisitor):

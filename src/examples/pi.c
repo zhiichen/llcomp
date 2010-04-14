@@ -6,7 +6,7 @@
 
 
 int
-main (int argc, char *argv[], double h)
+main (int argc, char *argv[])
 {
   int done = 0, i;
   int n = N_ELEM;
@@ -14,6 +14,7 @@ main (int argc, char *argv[], double h)
   double pi, sum, x;
   double mysum = 0.0;
   double pi_time = 0.0;
+  double h;
 
 
   h = 1.0 / (double) n;
