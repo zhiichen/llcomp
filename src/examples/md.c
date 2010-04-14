@@ -125,7 +125,7 @@ void compute(int np, int nd,
 #pragma omp parallel for shared(np, nd, box, pos, vel, mass, f, pot_p, kin_p) private(i, j, k, rij, d) reduction(+ : pot, kin)
     for (i = 0; i < np; i++) {
 	/* compute potential energy and forces */
-	for (j = 0; j < nd; j++)
+	for (j = 0; j < nd; j++) 
 	    f[i][j] = 0.0;
 
 	for (j = 0; j < np; j++) {
