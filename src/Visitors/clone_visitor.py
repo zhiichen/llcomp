@@ -252,6 +252,11 @@ class CloneWriter(OffsetNodeVisitor):
 			self.write(0, '&')
 			self.visit(node.expr)
 			self.write_blank()
+		elif node.op == '*':
+			# Pointer Value (*) is also an unary operator
+			self.write(0, '*')
+			self.visit(node.expr)
+			self.write_blank()
 		else:
 			# node.op is like p-- (always a p), we need to remove it
 			self.visit(node.expr)
