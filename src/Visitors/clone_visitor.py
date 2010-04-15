@@ -225,6 +225,13 @@ class CloneWriter(OffsetNodeVisitor):
       self.visit(node.rvalue, offset = 0)
       # self.write_blank()
 
+   def visit_TernaryOp(self, node, offset = 0):
+      self.visit(node.cond)
+      self.write(0, '?')
+      self.visit(node.iftrue)
+      self.write(0, ':')
+      self.visit(node.iffalse)
+
    def visit_BinaryOp(self, node, offset = 0):
       if (isinstance(node.left, c_ast.BinaryOp)):
          self.write(offset, "(")
