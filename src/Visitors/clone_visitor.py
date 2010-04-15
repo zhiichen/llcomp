@@ -125,7 +125,9 @@ class CloneWriter(OffsetNodeVisitor):
             self.write(offset, " ".join(['%s'%qual for qual in node.quals]))
             self.write_blank()
             self.visit(node.type, offset) 
-            self.write(offset, node.name)
+            # Check if node.name is not NoneType
+            if type(node.name) != None.__class__:
+               self.write(offset, node.name)
          if hasattr(node, 'init') and node.init:
             self.write_blank()
             self.write(0, "=")
@@ -279,7 +281,7 @@ class CloneWriter(OffsetNodeVisitor):
    def visit_ArrayDecl(self, node, node_name, offset = 0):
       self.write(0, "[")
       if node.dim:
-         self.visit_Constant(node.dim)
+         self.visit(node.dim)
       self.write(0, "]")
       self.write_blank()
       if isinstance(node.type, c_ast.ArrayDecl):
@@ -293,6 +295,21 @@ class CloneWriter(OffsetNodeVisitor):
          self.visit(node.subscript, offset)
       self.write(0, "]")
       self.write_blank()
+
+
+   # ******************** Struct ********************
+
+   def visit_Struct(self, node, offset = 0):
+      self.write(offset, "struct")
+      self.write_blank()
+      self.write(offset, node.name)
+      if type(node.decls) != None.__class__:
+         self.write(0, "{")
+         for elem in node.decls:
+            self.visit(elem, offset)
+         self.write(0, "}")
+      self.write_blank()
+
 
    def visit_StructRef(self, node, offset = 0):
       self.visit(node.name)

@@ -64,21 +64,29 @@ class CudaMutator(object):
           @param numThreads number of threads
           @return Declarations subtree
       """ 
-      constant_template_code = """
-      int dimA = $numThreads;
-      int numThreadsPerBlock = 512;
-      int numBlocks = dimA / numThreadsPerBlock;
-      int numElems = numBlocks * numThreadsPerBlock;
-      int memSize = numElems * sizeof(double);
-/*    double *reduction_loc_varname;
-      double *reduction_cu_varname;  
-      */
-      """
-      declarations =  self.parse_snippet(constant_template_code, dict(numThreads = numThreads), name = 'declarations')
+      # Position in the template for dimA declaration, just in case we change it
+      DIMA_POS = 0
+      if not Dump.exists('Declarations' + self.kernel_name):
+         constant_template_code = """
+              int dimA = 1;
+              int numThreadsPerBlock = 512;
+              int numBlocks = dimA / numThreadsPerBlock;
+              int numElems = numBlocks * numThreadsPerBlock;
+              int memSize = numElems * sizeof(double);
+        /*    double *reduction_loc_varname;
+              double *reduction_cu_varname;  
+              */
+         """
+         tree = self.parse_snippet(constant_template_code, None, name = 'Declarations' + self.kernel_name)
+         Dump.save('Declarations' + self.kernel_name, tree)
+      else:
+         print " Loading frozen template of Declarations " + self.kernel_name
+         tree = Dump.load('Declarations' + self.kernel_name)
+      declarations =  tree
       reduction_pointer_decls = copy.deepcopy(reduction_node_list)
       # Build local reduction vars
       for elem in reduction_pointer_decls:
-         from Tools.Debug import DotDebugTool
+#~         from Tools.Debug import DotDebugTool
 #~         DotDebugTool().apply(elem)
          IDNameMutator(old = c_ast.ID(elem.name), new = c_ast.ID('reduction_loc_' + elem.name)).apply_all(elem)
 #~         DotDebugTool().apply(elem)
@@ -90,6 +98,7 @@ class CudaMutator(object):
          PointerMutator().apply(elem)
       declarations.ext.extend(reduction_pointer_decls)
       declarations.ext.extend(reduction_cu_pointer_decls)
+      declarations.ext[DIMA_POS].init = numThreads
       return declarations 
 
 
@@ -268,8 +277,11 @@ void checkCUDAError (const char *msg)
       # Parent of the node
       parent_stmt = filter.parentOfMatch()
       # Maximum number of parallel threads
+      from Tools.Debug import DotDebugTool
+
       maxThreadNumber_node = self.getThreadNum(parallelFor.cond)
 
+      DotDebugTool(select_node = maxThreadNumber_node).apply(parallelFor.cond)
 
       ##################### Statement for cuda
       cuda_stmts = c_ast.Compound(stmts = [], decls = []);
@@ -288,8 +300,10 @@ void checkCUDAError (const char *msg)
 
 
       # Declarations
-      declarations_subtree = self.buildDeclarations(numThreads = maxThreadNumber_node.name, reduction_node_list = reduction_params)
-      InsertTool(subtree = declarations_subtree, position = "end").apply(parent_stmt, 'decls')
+      from Tools.Debug import DotDebugTool
+      DotDebugTool().apply(maxThreadNumber_node)
+      declarations_subtree = self.buildDeclarations(numThreads = maxThreadNumber_node, reduction_node_list = reduction_params)
+      InsertTool(subtree = declarations_subtree, position = "begin").apply(cuda_stmts, 'decls')
       # Initialization
 #      initialization_subtree = self.buildInitializaton(reduction_vars = reduction_params, shared_vars = prev_node.child.shared[0].identifiers[0].params, ast = ast)
       initialization_subtree = self.buildInitializaton(reduction_vars = reduction_params, shared_vars = shared_params, ast = ast)
