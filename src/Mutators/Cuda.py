@@ -277,11 +277,11 @@ void checkCUDAError (const char *msg)
       # Parent of the node
       parent_stmt = filter.parentOfMatch()
       # Maximum number of parallel threads
-      from Tools.Debug import DotDebugTool
+#      from Tools.Debug import DotDebugTool
 
       maxThreadNumber_node = self.getThreadNum(parallelFor.cond)
 
-      DotDebugTool(select_node = maxThreadNumber_node).apply(parallelFor.cond)
+#      DotDebugTool(select_node = maxThreadNumber_node).apply(parallelFor.cond)
 
       ##################### Statement for cuda
       cuda_stmts = c_ast.Compound(stmts = [], decls = []);
@@ -300,8 +300,8 @@ void checkCUDAError (const char *msg)
 
 
       # Declarations
-      from Tools.Debug import DotDebugTool
-      DotDebugTool().apply(maxThreadNumber_node)
+#      from Tools.Debug import DotDebugTool
+#      DotDebugTool().apply(maxThreadNumber_node)
       declarations_subtree = self.buildDeclarations(numThreads = maxThreadNumber_node, reduction_node_list = reduction_params)
       InsertTool(subtree = declarations_subtree, position = "begin").apply(cuda_stmts, 'decls')
       # Initialization
