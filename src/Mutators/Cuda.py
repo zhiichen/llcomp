@@ -84,6 +84,8 @@ class CudaMutator(object):
          tree = Dump.load('Declarations' + self.kernel_name)
       declarations =  tree
       reduction_pointer_decls = copy.deepcopy(reduction_node_list)
+      # Set Type of reduction_decls  for memSize sizeof (All of the reduction vars must be of the same type)
+      declarations.ext[-1].init.right.expr.type = reduction_pointer_decls[0].type
       # Build local reduction vars
       for elem in reduction_pointer_decls:
 #~         from Tools.Debug import DotDebugTool
