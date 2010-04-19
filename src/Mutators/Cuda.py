@@ -66,6 +66,7 @@ class CudaMutator(object):
       """ 
       # Position in the template for dimA declaration, just in case we change it
       DIMA_POS = 0
+      MEMSIZE_POS = 4
       if not Dump.exists('Declarations' + self.kernel_name):
          constant_template_code = """
               int dimA = 1;
@@ -85,7 +86,7 @@ class CudaMutator(object):
       declarations =  tree
       reduction_pointer_decls = copy.deepcopy(reduction_node_list)
       # Set Type of reduction_decls  for memSize sizeof (All of the reduction vars must be of the same type)
-      declarations.ext[-1].init.right.expr.type = reduction_pointer_decls[0].type
+      declarations.ext[MEMSIZE_POS].init.right.expr.type = reduction_pointer_decls[0].type
       # Build local reduction vars
       for elem in reduction_pointer_decls:
 #~         from Tools.Debug import DotDebugTool
@@ -107,11 +108,15 @@ class CudaMutator(object):
    def buildInitializaton(self, reduction_vars, shared_vars, ast):
       """ Initialization """
       def get_names(elem):
+         """ Return a list of names for a type """
          type = type_of_id(elem, ast)
-         while not hasattr(type, 'names'):
+         while not hasattr(type, 'names') and not hasattr(type, 'name'):
             # TODO: Launch exception if not type attribute
             type = type.type
-         return type.names
+         if hasattr(type, 'names'):
+            return type.names
+         else:
+            return [type.name]
 
       reduction_dict = {} 
       # Host memory allocation (malloc lines)
@@ -129,10 +134,9 @@ class CudaMutator(object):
       shared_dict = {} 
       for elem in shared_vars:
          # Only malloc / send if it is a complex type
-         if isinstance(elem, c_ast.ArrayDecl) or isinstance(elem, c_ast.Struct):
-            shared_dict[elem.name] = "sizeof(" + " ".join(type_of_id(elem, ast).type.names) +  ")"
+         if isinstance(elem.type, c_ast.ArrayDecl) or isinstance(elem.type, c_ast.Struct):
+            shared_dict[elem.name] = "sizeof(" + " ".join(get_names(elem)) +  ")"
       shared_malloc_lines = "\n".join(["cudaMalloc((void **) &" + str(key) + "," + str(value) + ");" for key,value in shared_dict.items()])
-
       # Template source
       template_code = """
       int fake() {
@@ -165,9 +169,11 @@ class CudaMutator(object):
 	#include "llcomp_cuda.h"
 
        int fake() {
-   	    dim3 dimGrid (numBlocks);
-   	    dim3 dimBlock (numThreadsPerBlock);
- 	       $kernelName <<< dimGrid , dimBlock >>> ($reductionvars, $sharedvars);
+              dim3 dimGrid (numBlocks);
+     	        dim3 dimBlock (numThreadsPerBlock);
+
+
+   	    $kernelName <<< dimGrid , dimBlock >>> ($reductionvars, $sharedvars);
        }
        """
        # The last element is the object function
@@ -177,8 +183,13 @@ class CudaMutator(object):
 
    def buildHostReduction(self, reduction_vars):
       reduction_lines = ""
+      free_lines = ""
       for elem in reduction_vars:
          reduction_lines += elem.name + "+= reduction_loc_" + (elem.name) + "[i];\n"
+         free_lines += "cudaFree(reduction_cu_" + (elem.name) + ");\n"
+         free_lines += "free(reduction_loc_" + (elem.name) + ");\n"
+
+      wait_lines = "cudaThreadSynchronize();\n";
 
       template_code = """
       int fake() {
@@ -186,9 +197,12 @@ class CudaMutator(object):
       {
           $reduction_lines
       }
+      $free_lines
+      /* By default, omp for has a wait at the end */
+      $wait
       }
       """
-      return self.parse_snippet(template_code, {'reduction_lines' : reduction_lines}, name = 'HostReduction').ext[0].body
+      return self.parse_snippet(template_code, {'reduction_lines' : reduction_lines, 'free_lines' : free_lines, 'wait' : wait_lines}, name = 'HostReduction').ext[0].body
 
    def buildSupport(self):
       """ CUDA Support subroutines """
@@ -298,12 +312,10 @@ void checkCUDAError (const char *msg)
       private_params = [ decl_of_id(elem, ast) for elem in private_vars ]
       reduction_params = [ decl_of_id(elem, ast) for elem in reduction_vars ]
 
+      ##################### Declarations
 
-
-
-      # Declarations
-#      from Tools.Debug import DotDebugTool
-#      DotDebugTool().apply(maxThreadNumber_node)
+#~      from Tools.Debug import DotDebugTool
+#~      DotDebugTool().apply(maxThreadNumber_node)
       declarations_subtree = self.buildDeclarations(numThreads = maxThreadNumber_node, reduction_node_list = reduction_params)
       InsertTool(subtree = declarations_subtree, position = "begin").apply(cuda_stmts, 'decls')
       # Initialization
