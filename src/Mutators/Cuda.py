@@ -10,6 +10,7 @@ from string import Template
 
 import subprocess
 from cStringIO import StringIO
+from Visitors.clone_visitor import CloneWriter
 
 # Copy substructures
 import copy
@@ -134,9 +135,18 @@ class CudaMutator(object):
       shared_dict = {} 
       for elem in shared_vars:
          # Only malloc / send if it is a complex type
-         if isinstance(elem.type, c_ast.ArrayDecl) or isinstance(elem.type, c_ast.Struct):
+         if isinstance(elem.type, c_ast.ArrayDecl): 
+            # Parse the array size into a stream  ~~~ TODO: CLEAN ~~~
+            size = StringIO()
+            writer = CloneWriter(stream = size)            
+            writer.visit(elem.type.dim)
+            size.seek(0)
+            shared_dict[elem.name] = "sizeof(" + " ".join(get_names(elem)) +  ") * " +  size.read()
+         elif isinstance(elem.type, c_ast.Struct):
             shared_dict[elem.name] = "sizeof(" + " ".join(get_names(elem)) +  ")"
+
       shared_malloc_lines = "\n".join(["cudaMalloc((void **) &" + str(key) + "," + str(value) + ");" for key,value in shared_dict.items()])
+      print shared_malloc_lines 
       # Template source
       template_code = """
       int fake() {

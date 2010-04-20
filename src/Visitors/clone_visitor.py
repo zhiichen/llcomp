@@ -24,12 +24,18 @@ class OffsetNodeVisitor(object):
 class CloneWriter(OffsetNodeVisitor):
    inside = False
 
-   def __init__(self, filename = None):
+   def __init__(self, filename = None, stream = None):
       self.filename = filename or sys.stdout
-      try:
-         self.file = open(self.filename, 'w+') 
-      except TypeError:
-         self.file = sys.stdout
+      if not stream:
+         try:
+            self.file = open(self.filename, 'w+') 
+         except TypeError:
+            self.file = sys.stdout
+      else:
+         try:
+            self.file = stream
+         except TypeError:
+            print "Error: Unknown stream error"
 
       self.inside = False
 

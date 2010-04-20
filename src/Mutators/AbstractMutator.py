@@ -3,10 +3,44 @@ from pycparser import c_parser, c_ast
 from Visitors.generic_visitors import AttributeFilter, FilterVisitor, NodeNotFound
 from Tools.tree import InsertTool, RemoveTool, ReplaceTool
 
+
 from Visitors.generic_visitors import FilterVisitor, IDFilter, FuncCallFilter, FuncDeclOfNameFilter, StrFilter
 
-from Mutators.AbstactMutator import AbstractMutator
+class AbstractMutator(object):
+   def __init__(self):
+      pass
 
+   def filter(self, ast):
+      pass
+
+   def mutatorFunction(self, ast):
+      return ast
+
+   def apply(self, ast):
+      start_node = None
+      self.ast = ast
+      try:
+        start_node = self.filter(self.ast)
+        self.mutatorFunction(start_node)
+      except NodeNotFound as nf:
+         print str(nf)
+      return start_node
+ 
+   def filter_iterator(self, ast):
+      raise NotImplemented
+
+   def apply_all(self, ast):
+      """ Apply mutation to all matches """
+      start_node = None
+      self.ast = ast
+      try:
+#         print " Looking for node ... " 
+         for elem in self.filter_iterator(ast):
+            start_node = self.mutatorFunction(elem)
+#         print " Finishing node search ... " 
+      except NodeNotFound as nf:
+         print str(nf)
+      return start_node
 
 
 class RemoveAttributeMutator(AbstractMutator):
