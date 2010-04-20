@@ -102,6 +102,28 @@ class GenericFilterVisitor(object):
 #         raise NodeNotFound("Not")
          raise StopIteration
 
+   def dfs_iter(self, root, visited = None):
+      """
+       Given a starting node, root, do a depth-first search. 
+
+       IMPORTANT: This method does not garantee to transverse the tree on the gramatically correct order
+      """
+      if self.prev_brother != None:
+         # Prev brother using DFS won't be the gramatically correct one
+         raise NotImplemented
+
+      to_visit = [] 
+      if visited is None: visited = set()
+      to_visit.append(root) # Start with root
+      while len(to_visit) != 0:
+         v = to_visit.pop()
+         if v not in visited:
+           visited.add(v)
+#           preorder_process(v)
+           if self.condition_func(v):
+              yield v
+           to_visit.extend(v.children())
+      raise StopIteration
 
 
 

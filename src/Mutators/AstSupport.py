@@ -5,7 +5,7 @@ from Tools.tree import InsertTool, RemoveTool, ReplaceTool
 
 from Visitors.generic_visitors import FilterVisitor, IDFilter, FuncCallFilter, FuncDeclOfNameFilter, StrFilter
 
-from Mutators.AbstactMutator import AbstractMutator
+from Mutators.AbstractMutator import AbstractMutator
 
 
 

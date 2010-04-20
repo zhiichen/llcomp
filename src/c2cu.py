@@ -77,6 +77,12 @@ print " OK "
 
 print "Mutating ..."
 
+# Optimize code
+from Mutators.Optimizer import ConstantCalc
+
+ConstantCalc().fast_apply_all(ast)
+
+
 t = CudaMutator()
 
 new_ast = t.apply(ast)

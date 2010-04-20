@@ -67,8 +67,8 @@ ast = c_parser.CParser(lex_optimize = False, yacc_optimize = False).parse(stripp
 print " OK "
 
 
-if not output_file:
-	ast.show(attrnames = True)
+#if not output_file:
+#	ast.show(attrnames = True)
 
 
 link_all_parents(ast)
@@ -79,10 +79,25 @@ new_ast = ast
 #for elem in FuncCallFilter_Iterable().iterate(new_ast):
 #   elem.show()
 
+
+# from Visitors.generic_visitors import FuncCallFilter
+
+
+# print " New  "
+# for elem in FuncCallFilter().dfs_iter(ast):
+#   print "Elem: " + str(elem.name.name)
+
+from Mutators.Optimizer import ConstantCalc
+
+ConstantCalc().fast_apply_all(ast)
+
+#ConstantBinaryExpressionFilter().apply(ast)
+
 # Print the AST
 v = DotWriter(filename = output_file, highlight = [ast])
 v.visit(new_ast)
 
+# Ensure file is closed and saved (calling destructor)
 del v
 
 
