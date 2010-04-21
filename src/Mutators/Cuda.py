@@ -25,6 +25,19 @@ class CudaMutator(object):
       self.template_parser = c_parser.CParser(lex_optimize = False, yacc_optimize = False)
       self.kernel_name = 'reductionKernel'
 
+   def get_names(ast,self, elem):
+      """ Return a list of names for a type """
+      type = type_of_id(elem, ast)
+      while not hasattr(type, 'names') and not hasattr(type, 'name'):
+         # TODO: Launch exception if not type attribute
+         type = type.type
+      if hasattr(type, 'names'):
+         return type.names
+      else:
+         return [type.name]
+
+
+
    def filter(self, ast):
       """ Filter definition
          Returns the first node matching with the filter"""
@@ -59,7 +72,7 @@ class CudaMutator(object):
       return subtree;
 
 
-   def buildDeclarations(self, numThreads, reduction_node_list):
+   def buildDeclarations(self, numThreads, reduction_node_list, shared_node_list):
       """ Builds the declaration section 
           @param numThreads number of threads
           @return Declarations subtree
@@ -89,46 +102,46 @@ class CudaMutator(object):
       declarations.ext[MEMSIZE_POS].init.right.expr.type = reduction_pointer_decls[0].type
       # Build local reduction vars
       for elem in reduction_pointer_decls:
-#~         from Tools.Debug import DotDebugTool
-#~         DotDebugTool().apply(elem)
          IDNameMutator(old = c_ast.ID(elem.name), new = c_ast.ID('reduction_loc_' + elem.name)).apply_all(elem)
-#~         DotDebugTool().apply(elem)
          PointerMutator().apply(elem)
       # Build cuda reduction arrays
       reduction_cu_pointer_decls = copy.deepcopy(reduction_node_list)
       for elem in reduction_cu_pointer_decls:
          IDNameMutator(old = c_ast.ID(elem.name), new = c_ast.ID('reduction_cu_' + elem.name)).apply_all(elem)
          PointerMutator().apply(elem)
+      # Build shared memory declarations on host
+      tmp = copy.deepcopy(shared_node_list)
+      shared_cu_pointer_decls = []
+      for elem in tmp:
+         if isinstance(elem.type, c_ast.ArrayDecl):
+            ptr = c_ast.Decl(elem.name + '_cu', elem.quals, [], elem.type.type, None, None, None, declarations)
+            PointerMutator().apply(ptr)
+            shared_cu_pointer_decls.append(ptr)
+         elif isinstance(elem.type, c_ast.Struct):
+            IDNameMutator(old = c_ast.ID(elem.name), new = c_ast.ID(elem.name +'_cu')).apply_all(elem)
+            PointerMutator().apply(elem)
+
+      # Insert into tree
       declarations.ext.extend(reduction_pointer_decls)
       declarations.ext.extend(reduction_cu_pointer_decls)
+      declarations.ext.extend(shared_cu_pointer_decls)
       declarations.ext[DIMA_POS].init = numThreads
       return declarations 
 
 
    def buildInitializaton(self, reduction_vars, shared_vars, ast):
       """ Initialization """
-      def get_names(elem):
-         """ Return a list of names for a type """
-         type = type_of_id(elem, ast)
-         while not hasattr(type, 'names') and not hasattr(type, 'name'):
-            # TODO: Launch exception if not type attribute
-            type = type.type
-         if hasattr(type, 'names'):
-            return type.names
-         else:
-            return [type.name]
-
       reduction_dict = {} 
       # Host memory allocation (malloc lines)
       for elem in reduction_vars:
-          reduction_dict[str(elem.name)] = get_names(elem)[0]
+          reduction_dict[str(elem.name)] = self.get_names(ast,elem)[0]
       reduction_malloc_lines = "\n".join(["reduction_loc_" + str(key) + " = (" + str(value) +"*) malloc(numElems * sizeof(" + str(value) + "));" for key,value in reduction_dict.items()])
       reduction_dict = {} 
 
 
       # Device memory allocation (cudaMalloc lines)
       for elem in reduction_vars:
-         reduction_dict[str(elem.name)] = "sizeof(" + "reduction_cu_".join(get_names(elem)) +")"
+         reduction_dict[str(elem.name)] = "sizeof(" + "reduction_cu_".join(self.get_names(ast,elem)) +")"
       reduction_malloc_lines += "\n".join(["cudaMalloc((void **) &" + "reduction_cu_" + str(key) + ", numElems * " + str(value) + ");" for key,value in reduction_dict.items()])
       # TODO: Initial value for * reduction must be 1 instead of 0
       # TODO: Maybe initial value should be the init value of the reduction var?
@@ -139,17 +152,19 @@ class CudaMutator(object):
       for elem in shared_vars:
          # Only malloc / send if it is a complex type
          if isinstance(elem.type, c_ast.ArrayDecl): 
-            shared_dict[elem.name] = "sizeof(" + " ".join(get_names(elem)) +  ") * " +  elem.type.dim.value
+            shared_dict[elem.name] = "sizeof(" + " ".join(self.get_names(ast,elem)) +  ") * " +  elem.type.dim.value
          elif isinstance(elem.type, c_ast.Struct):
-            shared_dict[elem.name] = "sizeof(" + " ".join(get_names(elem)) +  ")"
+            shared_dict[elem.name] = "sizeof(" + " ".join(self.get_names(ast,elem)) +  ")"
 
-      shared_malloc_lines = "\n".join(["cudaMalloc((void **) &" + str(key) + "," + str(value) + ");" for key,value in shared_dict.items()])
+      shared_malloc_lines = "\n".join(["cudaMalloc((void **) &" + str(key) + "_cu," + str(value) + ");" for key,value in shared_dict.items()])
+      shared_malloc_lines += "\n".join(["cudaMemcpy(" + str(key) + "_cu," + str(key) + ", " + str(value) + ", cudaMemcpyHostToDevice);" for key,value in shared_dict.items()])
       # Template source
       template_code = """
+      #include "llcomp_cuda.h"
       int fake() {
       """ + shared_malloc_lines  + reduction_malloc_lines + "\n}"
    
-      return self.parse_snippet(template_code, None, name = 'SendData').ext[0].body
+      return self.parse_snippet(template_code, None, name = 'SendData').ext[-1].body
 
    def buildRetrieve(self, reduction_vars):
       memcpy_lines = ""
@@ -168,12 +183,19 @@ class CudaMutator(object):
 
       return self.parse_snippet(template_code, {'cudaMemcpyLines' : memcpy_lines}, name = 'Retrieve').ext[0].body
       
-   def buildKernelLaunch(self, reduction_vars, shared_vars):
+   def buildKernelLaunch(self, reduction_vars, shared_vars, ast):
        reduction_var_list = ",".join("reduction_cu_" + elem.name for elem in reduction_vars)
-       shared_var_list = ",".join(elem.name for elem in shared_vars)
+       # shared_var_list = ",".join(elem.name + "_cu" for elem in shared_vars)
+       shared_var_list = [];
+       for elem in shared_vars:
+         # Only malloc / send if it is a complex type
+         if isinstance(type_of_id(elem, ast), c_ast.ArrayDecl) or isinstance(type_of_id(elem, ast), c_ast.Struct): 
+            shared_var_list += [str(elem.name) + "_cu"]
+         else:
+            shared_var_list += [str(elem.name)]
 
        template_code = """
-	#include "llcomp_cuda.h"
+  	#include "llcomp_cuda.h"
 
        int fake() {
               dim3 dimGrid (numBlocks);
@@ -184,7 +206,7 @@ class CudaMutator(object):
        }
        """
        # The last element is the object function
-       tree = [ elem for elem in self.parse_snippet(template_code, {'reductionvars' : reduction_var_list, 'sharedvars' : shared_var_list, 'kernelName' : self.kernel_name}, name = 'KernelLaunch').ext  if type(elem) == c_ast.FuncDef  ][-1].body
+       tree = [ elem for elem in self.parse_snippet(template_code, {'reductionvars' : reduction_var_list, 'sharedvars' : ",".join(shared_var_list), 'kernelName' : self.kernel_name}, name = 'KernelLaunch').ext  if type(elem) == c_ast.FuncDef  ][-1].body
        return tree
 
 
@@ -215,7 +237,7 @@ class CudaMutator(object):
       """ CUDA Support subroutines """
       if not Dump.exists('SupportRoutines'):
          template_code = """
-         #include "llcomp_cuda.h"
+        #include "llcomp_cuda.h" 
 
 void checkCUDAError (const char *msg)
 {
@@ -323,7 +345,7 @@ void checkCUDAError (const char *msg)
 
 #~      from Tools.Debug import DotDebugTool
 #~      DotDebugTool().apply(maxThreadNumber_node)
-      declarations_subtree = self.buildDeclarations(numThreads = maxThreadNumber_node, reduction_node_list = reduction_params)
+      declarations_subtree = self.buildDeclarations(numThreads = maxThreadNumber_node, reduction_node_list = reduction_params, shared_node_list = shared_params)
       InsertTool(subtree = declarations_subtree, position = "begin").apply(cuda_stmts, 'decls')
       # Initialization
 #      initialization_subtree = self.buildInitializaton(reduction_vars = reduction_params, shared_vars = prev_node.child.shared[0].identifiers[0].params, ast = ast)
@@ -361,7 +383,7 @@ void checkCUDAError (const char *msg)
    
 
       # Kernel Launch
-      kernelLaunch_subtree = self.buildKernelLaunch(reduction_vars = reduction_vars, shared_vars = shared_vars)
+      kernelLaunch_subtree = self.buildKernelLaunch(reduction_vars = reduction_vars, shared_vars = shared_vars, ast = parent_stmt)
       InsertTool(subtree = kernelLaunch_subtree, position = "end").apply(cuda_stmts, 'stmts')
       # Retrieve data
       retrieve_subtree = self.buildRetrieve(reduction_vars = reduction_vars)

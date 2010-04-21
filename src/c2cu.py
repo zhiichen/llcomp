@@ -120,5 +120,6 @@ if output_file:
 	import os
 	if os.system("indent -kr " + config.WORKDIR + output_file) != 0:
 		print " You need to install the indent tool to pretty print ouput files "
+   
 
 
