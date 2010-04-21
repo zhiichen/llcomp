@@ -128,8 +128,12 @@ class CudaMutator(object):
 
       # Device memory allocation (cudaMalloc lines)
       for elem in reduction_vars:
-         reduction_dict["reduction_cu_" + str(elem.name)] = "sizeof(" + "reduction_cu_".join(get_names(elem)) +")"
-      reduction_malloc_lines += "\n".join(["cudaMalloc((void **) &" + str(key) + ", numElems * " + str(value) + ");" for key,value in reduction_dict.items()])
+         reduction_dict[str(elem.name)] = "sizeof(" + "reduction_cu_".join(get_names(elem)) +")"
+      reduction_malloc_lines += "\n".join(["cudaMalloc((void **) &" + "reduction_cu_" + str(key) + ", numElems * " + str(value) + ");" for key,value in reduction_dict.items()])
+      # TODO: Initial value for * reduction must be 1 instead of 0
+      # TODO: Maybe initial value should be the init value of the reduction var?
+#      reduction_malloc_lines += "\n".join(["cudaMemset((void **) &reduction_cu_" + str(key) + ", (int)" + str(key) + ", numElems * " + str(value) + ");" for key,value in reduction_dict.items()])
+      reduction_malloc_lines += "\n".join(["cudaMemset(reduction_cu_" + str(key) + ", (int)" + str(key) + ", numElems * " + str(value) + ");" for key,value in reduction_dict.items()])
 
       shared_dict = {} 
       for elem in shared_vars:
@@ -200,9 +204,9 @@ class CudaMutator(object):
       {
           $reduction_lines
       }
-      $free_lines
       /* By default, omp for has a wait at the end */
       $wait
+      $free_lines
       }
       """
       return self.parse_snippet(template_code, {'reduction_lines' : reduction_lines, 'free_lines' : free_lines, 'wait' : wait_lines}, name = 'HostReduction').ext[0].body
