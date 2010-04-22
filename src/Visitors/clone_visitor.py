@@ -21,7 +21,7 @@ class OffsetNodeVisitor(object):
 
 
 
-class CloneWriter(OffsetNodeVisitor):
+class CWriter(OffsetNodeVisitor):
    inside = False
 
    def __init__(self, filename = None, stream = None):
@@ -199,6 +199,15 @@ class CloneWriter(OffsetNodeVisitor):
       if node:
          self.write(offset, node.value)
 
+   def visit_Break(self, node, offset = 0):
+      self.write(offset, 'break')
+      self.write_blank()
+
+   def visit_Continue(self, node, offset = 0):
+      self.write(offset, 'continue')
+      self.write_blank()
+
+
    def visit_Return(self, node, offset = 0):
       self.write(offset, "return")
       self.write_blank()
@@ -354,7 +363,7 @@ class CloneWriter(OffsetNodeVisitor):
 
 # Omp: [name, type, reduction**, shared**, private**]
 # OmpClause : [name, type, identifiers**]
-class OmpWriter(CloneWriter):
+class OmpWriter(CWriter):
    """ OpenMP code writer """
    def visit_Omp(self, node, offset):
       self.write(offset, "omp")
@@ -379,7 +388,7 @@ class OmpWriter(CloneWriter):
 
 
 
-class CUDAWriter(CloneWriter):
+class CUDAWriter(CWriter):
    """ Specific CUDA writer """
    def visit_CUDAKernel(self, node, offset = 0):
       self.write(offset, "__" + str(node.type) + "__")
