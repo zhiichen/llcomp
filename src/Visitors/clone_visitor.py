@@ -275,14 +275,8 @@ class CWriter(OffsetNodeVisitor):
          self.visit(node.expr)
          self.write(0, ')')
          self.write_blank()
-      elif node.op == '&':
-         # dereference (&) is also an unary operator
-         self.write(0, '&')
-         self.visit(node.expr)
-         self.write_blank()
-      elif node.op == '*':
-         # Pointer Value (*) is also an unary operator
-         self.write(0, '*')
+      elif len(node.op) == 1:
+         self.write(0, node.op)
          self.visit(node.expr)
          self.write_blank()
       else:

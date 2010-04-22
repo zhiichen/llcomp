@@ -217,12 +217,13 @@ class CudaMutator(object):
          reduction_lines += elem.name + "+= reduction_loc_" + (elem.name) + "[i];\n"
          free_lines += "cudaFree(reduction_cu_" + (elem.name) + ");\n"
          free_lines += "free(reduction_loc_" + (elem.name) + ");\n"
+      # TODO: Add shared vars to free
 
       wait_lines = "cudaThreadSynchronize();\n";
 
       template_code = """
       int fake() {
-      for (i = 0; i < dimA; i++)
+      for (i = 0; i < numElems; i++)
       {
           $reduction_lines
       }
