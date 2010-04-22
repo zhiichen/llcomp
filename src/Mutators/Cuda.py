@@ -84,7 +84,7 @@ class CudaMutator(object):
          constant_template_code = """
               int dimA = 1;
               int numThreadsPerBlock = 512;
-              int numBlocks = dimA / numThreadsPerBlock;
+              int numBlocks = dimA / numThreadsPerBlock + (dimA % numThreadsPerBlock?1:0);
               int numElems = numBlocks * numThreadsPerBlock;
               int memSize = numElems * sizeof(double);
         /*    double *reduction_loc_varname;
@@ -223,7 +223,7 @@ class CudaMutator(object):
 
       template_code = """
       int fake() {
-      for (i = 0; i < numElems; i++)
+      for (i = 0; i < dimA; i++)
       {
           $reduction_lines
       }
