@@ -243,11 +243,15 @@ class CWriter(OffsetNodeVisitor):
       # self.write_blank()
 
    def visit_TernaryOp(self, node, offset = 0):
+      self.write(offset, '(')
+      self.write(offset, '(')
       self.visit(node.cond)
+      self.write(0, ')')
       self.write(0, '?')
       self.visit(node.iftrue)
       self.write(0, ':')
       self.visit(node.iffalse)
+      self.write(0, ')')
 
    def visit_BinaryOp(self, node, offset = 0):
       if (isinstance(node.left, c_ast.BinaryOp)):

@@ -362,15 +362,20 @@ void checkCUDAError (const char *msg)
                         private_list = private_params, 
                         reduction_list = reduction_params,
                         loop = parallelFor, ast = ast)
-#      from Tools.Debug import DotDebugTool 
-#      DotDebugTool(select_node = ast).apply(kernel_subtree.ext[0])
 
       # Function declaration
       # - Build a node without body
       tmp = c_ast.CUDAKernel(function = copy.deepcopy(kernel_subtree.ext[0].function), type = 'global', name = kernel_subtree.ext[0].name)
       tmp.function.body = c_ast.Compound(stmts = None, decls = None); # If both of stmts and decls are none, it won't be printed
       kernel_decl = c_ast.Compound(stmts = [tmp], decls = None)
-      InsertTool(subtree = kernel_decl, position = "begin", node = parent_stmt.parent ).apply(ast, 'ext')
+      
+      # Find container function
+      # TODO Move this to a method
+      act = parent_stmt
+      while not isinstance(act, c_ast.FuncDef):
+         act = act.parent
+
+      InsertTool(subtree = kernel_decl, position = "begin", node = act ).apply(ast, 'ext')
       # Function definition
       InsertTool(subtree = kernel_subtree, position = "end" ).apply(ast, 'ext')
 

@@ -10,10 +10,14 @@ from cStringIO import StringIO
 
 
 class DotDebugTool(object):
-      def __init__(self, select_node = None):
+      """ Shows the tree with the highlight nodes selected """
+      def __init__(self, highlight = None):
          self.tmpfile = '/tmp/dotfile.dot'
          self.MAX_LINES = 2000
-         self.select_node = [select_node]
+         if type(highlight) != type([]):
+            self.highlight = [highlight]
+         else:
+            self.highlight = highlight
 
       def apply(self,node):
          if type(node) == type([]):
@@ -23,7 +27,7 @@ class DotDebugTool(object):
             self.debug_node(node)
 
       def debug_node(self, node):
-         DotWriter(filename = self.tmpfile, highlight = self.select_node).visit(node)
+         DotWriter(filename = self.tmpfile, highlight = self.highlight).visit(node)
          size =  len(open(self.tmpfile).readlines())
  #        print str(type(node)) + " --> " + str(size)
          if not (size > self.MAX_LINES):
