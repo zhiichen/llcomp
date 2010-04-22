@@ -10,7 +10,7 @@ Index: pycparser/c_parser.py
          typename = spec['type']
          declaration = self._fix_decl_name_type(declaration, typename)
          return c_ast.FuncDef(
-@@ -362,12 +363,102 @@
+@@ -362,12 +363,107 @@
          """
          p[0] = p[1]
  
@@ -101,6 +101,11 @@ Index: pycparser/c_parser.py
 +       """ clause : REDUCTION LPAREN reduction_operator  COLON identifier_list RPAREN """
 +       p[0] = [c_ast.OmpClause(type = p[3] , name = str(p[1]).upper(), identifiers = [p[5]], coord = self._coord(p.lineno(1)))]
 +
++    def p_clause_3(self, p):
++       """ clause : NOWAIT """
++       p[0] = [c_ast.OmpClause(type = str(p[1]) , name = str(p[1]).upper(), identifiers = [p[5]], coord = self._coord(p.lineno(1)))]
++
++
 +    def p_reduction_operator(self, p):
 +       """ reduction_operator  : PLUS 
 +                               | MINUS
@@ -115,7 +120,7 @@ Index: pycparser/c_parser.py
      # In function definitions, the declarator can be followed by
      # a declaration list, for old "K&R style" function definitios.
      #
-@@ -404,6 +495,13 @@
+@@ -404,6 +500,13 @@
          """
          p[0] = p[1]
  
@@ -129,7 +134,7 @@ Index: pycparser/c_parser.py
      # In C, declarations can come several in a line:
      #   int x, *px, romulo = 5;
      #
-@@ -1176,6 +1274,15 @@
+@@ -1176,6 +1279,15 @@
          """
          p[0] = c_ast.UnaryOp('p' + p[2], p[1], p[1].coord)
  
