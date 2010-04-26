@@ -2,6 +2,18 @@ Index: pycparser/c_parser.py
 ===================================================================
 --- pycparser/c_parser.py	(revisión: 95)
 +++ pycparser/c_parser.py	(copia de trabajo)
+@@ -21,9 +21,9 @@
+ class CParser(PLYParser):    
+     def __init__(
+             self, 
+-            lex_optimize=True,
++            lex_optimize=False,
+             lextab='pycparser.lextab',
+-            yacc_optimize=True,
++            yacc_optimize=False,
+             yacctab='pycparser.yacctab',
+             yacc_debug=False):
+         """ Create a new CParser.
 @@ -292,6 +292,7 @@
              bitsize=None, 
              coord=decl.coord)
@@ -10,7 +22,7 @@ Index: pycparser/c_parser.py
          typename = spec['type']
          declaration = self._fix_decl_name_type(declaration, typename)
          return c_ast.FuncDef(
-@@ -362,12 +363,122 @@
+@@ -362,12 +363,116 @@
          """
          p[0] = p[1]
  
@@ -60,47 +72,41 @@ Index: pycparser/c_parser.py
 +       """ pragma_directive : PRAGMA OMP directive"""
 +       p[0] = [c_ast.Pragma(
 +            name='pragma', 
-+            child = p[3],
++            stmt = p[3],
 +            coord=self._coord(p.lineno(1)))]
 +      # self._parse_error('Directives not supported yet', 
 +      #     self._coord(p.lineno(1)))
 +
++    def p_workshare_directive_1(self, p):
++       """ workshare_directive : FOR omp_clause_list iteration_statement"""
++       # Start of a parallel region within a for
++       p[0] = c_ast.OmpFor(name='for', clauses = p[2], stmt = p[3], coord = self._coord(p.lineno(1)))
++
++
++    def p_workshare_direcitve_2(self, p):
++       """ workshare_directive : SECTIONS omp_clause_list statement """
++       # Start of a parallel region within a for
++       print " SECTIONS Not implemented "
++       p[0] = p[3]
++
++
 +    def p_directive_1(self, p):
-+       """ directive : PARALLEL omp_clause_list
-+                     | PARALLEL """
-+       # Start of a parallel region
-+       p[0] = c_ast.Omp(name='parallel', type = 'parallel', reduction = p[2] if len(p) == 2 else [],
-+          shared = [], private = [], coord = self._coord(p.lineno(1)))
++       """ directive : PARALLEL omp_clause_list statement
++       """
++       p[0] =  c_ast.OmpParallel(name='parallel', clauses = p[2], stmt = p[3], coord = self._coord(p.lineno(1)))
++
 +
 +    def p_directive_2(self, p):
-+       """ directive : PARALLEL FOR omp_clause_list"""
-+       # Start of a parallel region within a for
-+       reduction_list = []
-+       shared_list = []
-+       private_list = []
-+       for clause in p[3]:
-+          if clause.name == 'SHARED': shared_list.append(clause)
-+          elif clause.name == 'PRIVATE' : private_list.append(clause)
-+          elif clause.name == 'REDUCTION' : reduction_list.append(clause)
-+          else:
-+             print " Unknown " + clause.type + " clause in " + str(self._coord(p.lineno(1)))
-+       p[0] = c_ast.Omp(name='for', type = 'parallel', reduction = reduction_list,
-+          shared = shared_list, private = private_list, coord = self._coord(p.lineno(1)))
++       """ directive : PARALLEL workshare_directive
++                     | PARALLEL statement """
++       # Start of a parallel region
++       p[0] = c_ast.OmpParallel(name='parallel', clauses = None, stmt = p[2], coord = self._coord(p.lineno(1)))
 +
 +    def p_directive_3(self, p):
-+       """ directive : FOR omp_clause_list"""
-+       # Start of a parallel region within a for
-+       reduction_list = []
-+       shared_list = []
-+       private_list = []
-+       for clause in p[2]:
-+          if clause.name == 'SHARED': shared_list.append(clause)
-+          elif clause.name == 'PRIVATE' : private_list.append(clause)
-+          elif clause.name == 'REDUCTION' : reduction_list.append(clause)
-+          else:
-+             print " Unknown " + clause.type + " clause in " + str(self._coord(p.lineno(1)))
-+       p[0] = c_ast.Omp(name='for', type = 'standalone', reduction = reduction_list,
-+          shared = shared_list, private = private_list, coord = self._coord(p.lineno(1)))
++       """ directive : workshare_directive """
++       # We are on a parallel region
++       p[0] = p[1]
++
 +
 +
 +    def p_omp_clause_list(self, p):
@@ -135,7 +141,7 @@ Index: pycparser/c_parser.py
      # In function definitions, the declarator can be followed by
      # a declaration list, for old "K&R style" function definitios.
      #
-@@ -404,6 +515,13 @@
+@@ -404,6 +509,13 @@
          """
          p[0] = p[1]
  
@@ -149,7 +155,7 @@ Index: pycparser/c_parser.py
      # In C, declarations can come several in a line:
      #   int x, *px, romulo = 5;
      #
-@@ -1176,6 +1294,15 @@
+@@ -1176,6 +1288,15 @@
          """
          p[0] = c_ast.UnaryOp('p' + p[2], p[1], p[1].coord)
  

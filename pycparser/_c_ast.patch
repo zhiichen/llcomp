@@ -17,18 +17,54 @@ Index: pycparser/_c_ast.yaml
  # type <decl>(args)
  #
  FuncDecl: [args*, type*]
-@@ -161,4 +169,14 @@
+@@ -161,4 +169,50 @@
  While: [cond*, stmt*]
  
  
 +####################
 +# Ruyk
-+Pragma: [name, child*]
++Pragma: [name, stmt*]
  
-+Omp: [name, type, reduction**, shared**, private**]
++# Omp: [name, pragma*] 
++#, reduction**, shared**, private**]
++
++# Construct
++
++OmpParallel : [name, clauses**, stmt*]
++
++OmpFor : [name, clauses**, stmt*]
++
++OmpSections : [name, clauses**, stmt*]
++
++OmpSection: [name, stmt*]
++
++OmpSingle: [name, clauses**, stmt*]
 +
 +OmpClause : [name, type, identifiers**]
 +
++# Task  model
++
++OmpTask : [name, clauses**]
++
++# Master and syncronization
++#
++
++OmpMaster : [name, stmt*]
++
++OmpCritical : [name]
++
++OmpBarrier : [name]
++
++
++OmpTaskWait : [name]
++
++OmpAtomic : [name, expr*]
++
++OmpFlush : [name, identifiers**]
++
++OmpOrdered: [name, stmt*]
++
++# CUDA
 +CUDAKernel: [name, type, function*]
 +
 +

@@ -42,8 +42,10 @@ class CudaMutator(object):
       """ Filter definition
          Returns the first node matching with the filter"""
       # Build a visitor , matching the Pragma node of the AST
-      f = FilterVisitor(match_node_type = c_ast.Pragma)
+      from Tools.Debug import DotDebugTool
+      f = FilterVisitor(match_node_type = c_ast.OmpFor)
       node = f.apply(ast)
+#      DotDebugTool(highlight = [node]).apply(ast)
       return node
 
    def getThreadNum(self, node):
@@ -324,7 +326,7 @@ void checkCUDAError (const char *msg)
       """ CUDA mutator, writes the for as a kernel
       """
       # Look up a For node which previous brother is the start_node
-      filter = FilterVisitor(match_node_type = c_ast.For, prev_brother = prev_node)
+#      filter = FilterVisitor(match_node_type = c_astFor, prev_brother = prev_node)
       parallelFor = filter.apply(ast)
       # Parent of the node
       parent_stmt = filter.parentOfMatch()
