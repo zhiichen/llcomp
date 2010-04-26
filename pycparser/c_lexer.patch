@@ -1,6 +1,6 @@
 Index: pycparser/c_lexer.py
 ===================================================================
---- pycparser/c_lexer.py	(revisión: 91)
+--- pycparser/c_lexer.py	(revisión: 95)
 +++ pycparser/c_lexer.py	(copia de trabajo)
 @@ -157,6 +157,15 @@
          

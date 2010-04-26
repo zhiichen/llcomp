@@ -3,10 +3,14 @@ from pycparser import c_parser, c_ast
 source_code = """
 
 int main() {
+    int i, l;
 
-    #pragma omp parallel for private(a) shared(a) reduction(+ : a)
-    for (i = 0; i <= 10; i++) {
-	a = a + i;
+    #pragma omp parallel private(i) shared(l, a) 
+    {
+	    #pragma omp for reduction (+ : a)
+	    for (i = 0; i <= 10; i++) {
+		a = a + i;
+	    }
     }
 }
 

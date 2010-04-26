@@ -1,6 +1,6 @@
 Index: pycparser/_ast_gen.py
 ===================================================================
---- pycparser/_ast_gen.py	(revisión: 91)
+--- pycparser/_ast_gen.py	(revisión: 95)
 +++ pycparser/_ast_gen.py	(copia de trabajo)
 @@ -72,13 +72,13 @@
  

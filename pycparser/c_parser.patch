@@ -1,6 +1,6 @@
 Index: pycparser/c_parser.py
 ===================================================================
---- pycparser/c_parser.py	(revisión: 91)
+--- pycparser/c_parser.py	(revisión: 95)
 +++ pycparser/c_parser.py	(copia de trabajo)
 @@ -292,6 +292,7 @@
              bitsize=None, 
@@ -10,7 +10,7 @@ Index: pycparser/c_parser.py
          typename = spec['type']
          declaration = self._fix_decl_name_type(declaration, typename)
          return c_ast.FuncDef(
-@@ -362,12 +363,107 @@
+@@ -362,12 +363,122 @@
          """
          p[0] = p[1]
  
@@ -87,6 +87,21 @@ Index: pycparser/c_parser.py
 +       p[0] = c_ast.Omp(name='for', type = 'parallel', reduction = reduction_list,
 +          shared = shared_list, private = private_list, coord = self._coord(p.lineno(1)))
 +
++    def p_directive_3(self, p):
++       """ directive : FOR omp_clause_list"""
++       # Start of a parallel region within a for
++       reduction_list = []
++       shared_list = []
++       private_list = []
++       for clause in p[2]:
++          if clause.name == 'SHARED': shared_list.append(clause)
++          elif clause.name == 'PRIVATE' : private_list.append(clause)
++          elif clause.name == 'REDUCTION' : reduction_list.append(clause)
++          else:
++             print " Unknown " + clause.type + " clause in " + str(self._coord(p.lineno(1)))
++       p[0] = c_ast.Omp(name='for', type = 'standalone', reduction = reduction_list,
++          shared = shared_list, private = private_list, coord = self._coord(p.lineno(1)))
++
 +
 +    def p_omp_clause_list(self, p):
 +       """ omp_clause_list : omp_clause_list clause
@@ -120,7 +135,7 @@ Index: pycparser/c_parser.py
      # In function definitions, the declarator can be followed by
      # a declaration list, for old "K&R style" function definitios.
      #
-@@ -404,6 +500,13 @@
+@@ -404,6 +515,13 @@
          """
          p[0] = p[1]
  
@@ -134,7 +149,7 @@ Index: pycparser/c_parser.py
      # In C, declarations can come several in a line:
      #   int x, *px, romulo = 5;
      #
-@@ -1176,6 +1279,15 @@
+@@ -1176,6 +1294,15 @@
          """
          p[0] = c_ast.UnaryOp('p' + p[2], p[1], p[1].coord)
  

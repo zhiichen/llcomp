@@ -189,10 +189,16 @@ class CudaMutator(object):
        shared_var_list = [];
        for elem in shared_vars:
          # Only malloc / send if it is a complex type
-         if isinstance(type_of_id(elem, ast), c_ast.ArrayDecl) or isinstance(type_of_id(elem, ast), c_ast.Struct): 
-            shared_var_list += [str(elem.name) + "_cu"]
+         elem_type = type_of_id(elem, ast)
+         ptr =""
+         # Check if it is a pointer
+         # if isinstance(type, c_ast.PtrDecl):
+         #   elem_type = elem_type.type
+         #   ptr = "* "
+         if isinstance(elem_type, c_ast.ArrayDecl) or isinstance(elem_type, c_ast.Struct): 
+            shared_var_list += [ptr + str(elem.name) + "_cu"]
          else:
-            shared_var_list += [str(elem.name)]
+            shared_var_list += [ptr + str(elem.name)]
 
        template_code = """
   	#include "llcomp_cuda.h"
