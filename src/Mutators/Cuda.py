@@ -1,5 +1,5 @@
 from pycparser import c_parser, c_ast
-from Visitors.generic_visitors import FilterVisitor, IDFilter, FuncCallFilter, FuncDeclOfNameFilter
+from Visitors.generic_visitors import IDFilter, FuncCallFilter, FuncDeclOfNameFilter, OmpForFilter
 from Tools.tree import InsertTool, NodeNotFound, ReplaceTool, RemoveTool
 from Tools.search import type_of_id, decl_of_id
 from Tools.Dump import Dump
@@ -24,6 +24,9 @@ class CudaMutator(object):
       # BUG: Don't work with optimize
       self.template_parser = c_parser.CParser(lex_optimize = False, yacc_optimize = False)
       self.kernel_name = 'reductionKernel'
+      self._func_def = None
+      self._parallel = None
+
 
    def get_names(ast,self, elem):
       """ Return a list of names for a type """
@@ -36,16 +39,14 @@ class CudaMutator(object):
       else:
          return [type.name]
 
-
-
    def filter(self, ast):
       """ Filter definition
          Returns the first node matching with the filter"""
-      # Build a visitor , matching the Pragma node of the AST
-      from Tools.Debug import DotDebugTool
-      f = FilterVisitor(match_node_type = c_ast.OmpFor)
+      # Build a visitor , matching the OmpFor node of the AST
+      f = OmpForFilter()
       node = f.apply(ast)
-#      DotDebugTool(highlight = [node]).apply(ast)
+      self._func_def = f.get_func_def()
+      self._parallel = f.get_parallel()
       return node
 
    def getThreadNum(self, node):
@@ -186,6 +187,7 @@ class CudaMutator(object):
       return self.parse_snippet(template_code, {'cudaMemcpyLines' : memcpy_lines}, name = 'Retrieve').ext[0].body
       
    def buildKernelLaunch(self, reduction_vars, shared_vars, ast):
+       # FIXME : reduction_vars is now an array of declarations
        reduction_var_list = ",".join("reduction_cu_" + elem.name for elem in reduction_vars)
        # shared_var_list = ",".join(elem.name + "_cu" for elem in shared_vars)
        shared_var_list = [];
@@ -322,18 +324,19 @@ void checkCUDAError (const char *msg)
 #~      DotDebugTool().apply(loop.stmt)
       return c_ast.FileAST(ext = [tree.ext[-1]])
 
-   def mutatorFunction(self, ast, prev_node):
+   def mutatorFunction(self, ast, ompFor_node):
       """ CUDA mutator, writes the for as a kernel
       """
       # Look up a For node which previous brother is the start_node
-#      filter = FilterVisitor(match_node_type = c_astFor, prev_brother = prev_node)
-      parallelFor = filter.apply(ast)
+#      filter = FilterVisitor(match_node_type = c_astFor, prev_brother = ompFor_node)
+      # parallelFor = ompFor_node.stmt
       # Parent of the node
-      parent_stmt = filter.parentOfMatch()
+      # parent_stmt = self._parallel
+      # container_func = self._func_def
       # Maximum number of parallel threads
 #      from Tools.Debug import DotDebugTool
 
-      maxThreadNumber_node = self.getThreadNum(parallelFor.cond)
+      maxThreadNumber_node = self.getThreadNum(ompFor_node.stmt.cond)
 
 #      DotDebugTool(select_node = maxThreadNumber_node).apply(parallelFor.cond)
 
@@ -341,23 +344,36 @@ void checkCUDAError (const char *msg)
       cuda_stmts = c_ast.Compound(stmts = [], decls = []);
 
       ##################### Cuda parameters on host
-      
-      reduction_vars = prev_node.child.reduction[0].identifiers[0].params
-      shared_vars =  prev_node.child.shared[0].identifiers[0].params
-      private_vars = prev_node.child.private[0].identifiers[0].params 
 
-      shared_params = [ decl_of_id(elem, ast) for elem in shared_vars ]
-      private_params = [ decl_of_id(elem, ast) for elem in private_vars ]
-      reduction_params = [ decl_of_id(elem, ast) for elem in reduction_vars ]
+      reduction_declList = [ ]
+      shared_declList = [ ]
+      private_declList = [ ]
+
+      # Note: Each identifiers is a ParamList
+      for elem in ompFor_node.clauses:
+         if elem.name == 'REDUCTION':
+            for id in elem.identifiers.params:
+               reduction_declList.append(decl_of_id(id, ast))
+         elif elem.name == 'SHARED':
+            for id in elem.identifiers.params:
+               shared_declList.append(decl_of_id(id, ast))
+         elif elem.name == 'PRIVATE':
+            for id in elem.identifiers.params:
+               private_declList.append(decl_of_id(id, ast))
+
+      shared_params = shared_declList # [ decl_of_id(elem, ast) for elem in shared_paramList ]
+      private_params = private_declList   # [ decl_of_id(elem, ast) for elem in private_paramList ]
+      reduction_params = reduction_declList # [ decl_of_id(elem, ast) for elem in reduction_paramList ]
+
+#      import pdb
+#      pdb.set_trace()
+
 
       ##################### Declarations
 
-#~      from Tools.Debug import DotDebugTool
-#~      DotDebugTool().apply(maxThreadNumber_node)
       declarations_subtree = self.buildDeclarations(numThreads = maxThreadNumber_node, reduction_node_list = reduction_params, shared_node_list = shared_params)
       InsertTool(subtree = declarations_subtree, position = "begin").apply(cuda_stmts, 'decls')
       # Initialization
-#      initialization_subtree = self.buildInitializaton(reduction_vars = reduction_params, shared_vars = prev_node.child.shared[0].identifiers[0].params, ast = ast)
       initialization_subtree = self.buildInitializaton(reduction_vars = reduction_params, shared_vars = shared_params, ast = ast)
 
       InsertTool(subtree = initialization_subtree, position = "begin").apply(cuda_stmts, 'stmts')
@@ -369,7 +385,7 @@ void checkCUDAError (const char *msg)
       kernel_subtree = self.buildKernel(shared_list = shared_params, 
                         private_list = private_params, 
                         reduction_list = reduction_params,
-                        loop = parallelFor, ast = ast)
+                        loop = ompFor_node.stmt, ast = ast)
 
       # Function declaration
       # - Build a node without body
@@ -377,13 +393,9 @@ void checkCUDAError (const char *msg)
       tmp.function.body = c_ast.Compound(stmts = None, decls = None); # If both of stmts and decls are none, it won't be printed
       kernel_decl = c_ast.Compound(stmts = [tmp], decls = None)
       
-      # Find container function
-      # TODO Move this to a method
-      act = parent_stmt
-      while not isinstance(act, c_ast.FuncDef):
-         act = act.parent
+#      # Find container function
 
-      InsertTool(subtree = kernel_decl, position = "begin", node = act ).apply(ast, 'ext')
+      InsertTool(subtree = kernel_decl, position = "begin", node = self._func_def).apply(ast, 'ext')
       # Function definition
       InsertTool(subtree = kernel_subtree, position = "end" ).apply(ast, 'ext')
 
@@ -397,22 +409,22 @@ void checkCUDAError (const char *msg)
    
 
       # Kernel Launch
-      kernelLaunch_subtree = self.buildKernelLaunch(reduction_vars = reduction_vars, shared_vars = shared_vars, ast = parent_stmt)
+      kernelLaunch_subtree = self.buildKernelLaunch(reduction_vars = reduction_params, shared_vars = shared_params, ast = ompFor_node)
       InsertTool(subtree = kernelLaunch_subtree, position = "end").apply(cuda_stmts, 'stmts')
       # Retrieve data
-      retrieve_subtree = self.buildRetrieve(reduction_vars = reduction_vars)
+      retrieve_subtree = self.buildRetrieve(reduction_vars = reduction_params)
       InsertTool(subtree = retrieve_subtree, position = "end").apply(cuda_stmts, 'stmts')
       # Host reduction
-      reduction_subtree = self.buildHostReduction(reduction_vars = prev_node.child.reduction[0].identifiers[0].params)
+      reduction_subtree = self.buildHostReduction(reduction_vars = reduction_params)
       InsertTool(subtree = reduction_subtree, position = "end").apply(cuda_stmts, 'stmts')
-      # Replace for by a CompoundStatement with all the new statements
-      ReplaceTool(new_node = cuda_stmts, old_node = parallelFor).apply(parent_stmt, 'stmts')
+      # Replace the entire pragma by a CompoundStatement with all the new statements
+      ReplaceTool(new_node = cuda_stmts, old_node = self._parallel.parent).apply(self._parallel.parent.parent, 'stmts')
 
 
       ##################### Final tree operations
 
       # Remove the pragma from the destination code
-      RemoveTool(target_node = prev_node).apply(parent_stmt, 'stmts')
+#      RemoveTool(target_node = self._parallel).apply(container_func, 'stmts')
 
 
 

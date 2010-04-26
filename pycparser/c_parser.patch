@@ -22,7 +22,7 @@ Index: pycparser/c_parser.py
          typename = spec['type']
          declaration = self._fix_decl_name_type(declaration, typename)
          return c_ast.FuncDef(
-@@ -362,12 +363,116 @@
+@@ -362,12 +363,120 @@
          """
          p[0] = p[1]
  
@@ -71,7 +71,7 @@ Index: pycparser/c_parser.py
 +    def p_pragma_directive(self, p):
 +       """ pragma_directive : PRAGMA OMP directive"""
 +       p[0] = [c_ast.Pragma(
-+            name='pragma', 
++            name='omp', 
 +            stmt = p[3],
 +            coord=self._coord(p.lineno(1)))]
 +      # self._parse_error('Directives not supported yet', 
@@ -98,11 +98,15 @@ Index: pycparser/c_parser.py
 +
 +    def p_directive_2(self, p):
 +       """ directive : PARALLEL workshare_directive
-+                     | PARALLEL statement """
++       """
++       p[0] = c_ast.OmpParallel(name='parallel', clauses = [p[2]], stmt = None, coord = self._coord(p.lineno(1)))
++
++    def p_directive_3(self,p):
++       """ directive : PARALLEL statement """
 +       # Start of a parallel region
 +       p[0] = c_ast.OmpParallel(name='parallel', clauses = None, stmt = p[2], coord = self._coord(p.lineno(1)))
 +
-+    def p_directive_3(self, p):
++    def p_directive_4(self, p):
 +       """ directive : workshare_directive """
 +       # We are on a parallel region
 +       p[0] = p[1]
@@ -141,7 +145,7 @@ Index: pycparser/c_parser.py
      # In function definitions, the declarator can be followed by
      # a declaration list, for old "K&R style" function definitios.
      #
-@@ -404,6 +509,13 @@
+@@ -404,6 +513,13 @@
          """
          p[0] = p[1]
  
@@ -155,7 +159,7 @@ Index: pycparser/c_parser.py
      # In C, declarations can come several in a line:
      #   int x, *px, romulo = 5;
      #
-@@ -1176,6 +1288,15 @@
+@@ -1176,6 +1292,15 @@
          """
          p[0] = c_ast.UnaryOp('p' + p[2], p[1], p[1].coord)
  

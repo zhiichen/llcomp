@@ -356,23 +356,36 @@ class CWriter(OffsetNodeVisitor):
    def visit_Pragma(self, node, offset = 0):
       self.write(offset, "#pragma")
       self.write_blank();
-      self.visit(node.child)
+      self.write(0, node.name)
+      self.visit(node.stmt)
    #   self.writeLn(offset, node.name)
 
-# Omp: [name, type, reduction**, shared**, private**]
-# OmpClause : [name, type, identifiers**]
 class OmpWriter(CWriter):
    """ OpenMP code writer """
-   def visit_Omp(self, node, offset):
-      self.write(offset, "omp")
-      self.write_blank();
-      self.write(offset, node.type)
+   def visit_OmpParallel(self, node, offset):
       self.write_blank();
       self.write(offset, node.name)
       self.write_blank();
-      for elem in node.reduction + node.shared + node.private:
-         self.visit(elem)
-         self.write_blank();
+      if node.clauses:
+         for elem in node.clauses:
+            self.visit(elem)
+      if node.stmt:
+         self.writeLn(offset, "")
+         self.visit(node.stmt)
+      self.write_blank();
+
+   def visit_OmpFor(self, node, offset):
+      self.write_blank();
+      self.write(offset, node.name)
+      self.write_blank();
+      if node.clauses:
+         for elem in node.clauses:
+            self.visit(elem)
+      # OmpFor always has an stmt 
+      if node.stmt:
+         self.writeLn(offset, "")
+         self.visit(node.stmt)
+      self.write_blank();  
 
    def visit_OmpClause(self, node, offset):
       self.write(offset, node.name.lower())
