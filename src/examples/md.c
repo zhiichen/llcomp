@@ -123,11 +123,12 @@ void compute(int np, int nd,
 
     /* The computation of forces and energies is fully parallel. */
 /* #pragma omp parallel for shared(np, nd, box, pos, vel, mass, f, pot_p, kin_p) private(i, j, k, rij, d) reduction(+ : pot, kin) */
+   #pragma omp parallel shared(np, nd, box, pos, f,i) private(k, rij, d)
     for (i = 0; i < np; i++) {
 	/* compute potential energy and forces */
 	for (j = 0; j < nd; j++) 
 	    f[i][j] = 0.0;
-	#pragma omp parallel for shared(np, nd, box, pos, f, i) private(k, rij, d) reduction(+ :pot)
+	#pragma omp for reduction(+ :pot)
 	for (j = 0; j < np; j++) {
 	    if (i != j) {
 		d = dist(nd, box, pos[i], pos[j], rij);
