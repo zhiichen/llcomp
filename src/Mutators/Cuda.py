@@ -74,7 +74,7 @@ class CudaMutator(object):
 	 return None
       return subtree;
 
-   def _build_shared_memory_decls_cu(self, shared_node_list, parent, ast):
+   def _build_shared_memory_decls_cu(self, shared_node_list, parent, ast = None):
    # Build shared memory declarations on host
       tmp = copy.deepcopy(shared_node_list)
       shared_cu_pointer_decls = []
@@ -146,7 +146,7 @@ class CudaMutator(object):
       declarations.ext.extend(reduction_pointer_decls)
       declarations.ext.extend(reduction_cu_pointer_decls)
 #      declarations.ext.extend(shared_cu_pointer_decls)
-      declarations.ext.extend(self._build_shared_memory_decls_cu(shared_node_list, declarations, ast))
+      declarations.ext.extend(self._build_shared_memory_decls_cu(shared_node_list, declarations))
       declarations.ext[DIMA_POS].init = numThreads
       return declarations 
 
