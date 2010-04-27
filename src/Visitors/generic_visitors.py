@@ -219,6 +219,34 @@ class OmpForFilter(GenericFilterVisitor):
       return self._funcdef
 
 
+class OmpParallelFilter(GenericFilterVisitor):
+   """ Returns a OmpFor node , the parallel container and the function container
+   """
+   
+   def __init__(self, prev_brother = None):
+      self._parallel = None
+      self._funcdef = None
+      def condition(node):
+         """ OmpFor filter """
+         return type(node) == c_ast.OmpParallel
+      super(OmpParallelFilter, self).__init__(condition_func = condition, prev_brother = prev_brother)
+
+   #############################################
+   # This could be a little bit tricky. 
+   # By defining specific visitor methods for FuncDef and OmpParallel, we can save the last node visited of this types.
+   # Giving the fact that the visit is done in syntax order, the last visited node will be the previous (parent) node of the 
+   # wanted node.
+
+   def visit_FuncDef(self, node, prev, offset = 1, ignore = []):
+      if not self.match:
+         self._funcdef = node
+      return self.generic_visit(node, offset, ignore)
+   
+   def get_func_def(self):
+      return self._funcdef
+
+
+
 class FuncDeclOfNameFilter(GenericFilterVisitor):
    """ Returns the first node with a FuncCall
    """

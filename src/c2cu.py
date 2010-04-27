@@ -2,7 +2,7 @@ from pycparser import parse_file
 
 from Visitors.clone_visitor import CUDAWriter
 
-from Mutators.Cuda import CudaMutator
+from Mutators.Cuda import CM_OmpParallel, CudaMutator
 
 
 from sys import argv, exit
@@ -83,7 +83,8 @@ from Mutators.Optimizer import ConstantCalc
 ConstantCalc().fast_apply_all(ast)
 
 
-t = CudaMutator()
+t = CM_OmpParallel()
+# t = CudaMutator()
 
 new_ast = t.apply(ast)
 

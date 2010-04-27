@@ -1,5 +1,5 @@
 from pycparser import c_parser, c_ast
-from Visitors.generic_visitors import IDFilter, FuncCallFilter, FuncDeclOfNameFilter, OmpForFilter
+from Visitors.generic_visitors import IDFilter, FuncCallFilter, FuncDeclOfNameFilter, OmpForFilter, OmpParallelFilter
 from Tools.tree import InsertTool, NodeNotFound, ReplaceTool, RemoveTool
 from Tools.search import type_of_id, decl_of_id
 from Tools.Dump import Dump
@@ -74,6 +74,35 @@ class CudaMutator(object):
 	 return None
       return subtree;
 
+   def _build_shared_memory_decls_cu(self, shared_node_list, parent, ast):
+   # Build shared memory declarations on host
+      tmp = copy.deepcopy(shared_node_list)
+      shared_cu_pointer_decls = []
+      for elem in tmp:
+         if isinstance(elem.type, c_ast.ArrayDecl):
+            ptr = c_ast.Decl(elem.name + '_cu', elem.quals, [], elem.type.type, None, None, None, parent)
+            PointerMutator().apply(ptr)
+            shared_cu_pointer_decls.append(ptr)
+         elif isinstance(elem.type, c_ast.Struct):
+            IDNameMutator(old = c_ast.ID(elem.name), new = c_ast.ID(elem.name +'_cu')).apply_all(elem)
+            PointerMutator().apply(elem)
+      return shared_cu_pointer_decls
+
+
+   def _build_shared_memory_init_cu(self, shared_node_list, ast):
+      shared_dict = {} 
+      for elem in shared_node_list:
+         # Only malloc / send if it is a complex type
+         if isinstance(elem.type, c_ast.ArrayDecl): 
+            shared_dict[elem.name] = "sizeof(" + " ".join(self.get_names(ast,elem)) +  ") * " +  elem.type.dim.value
+         elif isinstance(elem.type, c_ast.Struct):
+            shared_dict[elem.name] = "sizeof(" + " ".join(self.get_names(ast,elem)) +  ")"
+
+      shared_malloc_lines = "\n".join(["cudaMalloc((void **) &" + str(key) + "_cu," + str(value) + ");" for key,value in shared_dict.items()])
+      shared_malloc_lines += "\n".join(["cudaMemcpy(" + str(key) + "_cu," + str(key) + ", " + str(value) + ", cudaMemcpyHostToDevice);" for key,value in shared_dict.items()])
+
+      return shared_malloc_lines
+
 
    def buildDeclarations(self, numThreads, reduction_node_list, shared_node_list):
       """ Builds the declaration section 
@@ -112,22 +141,12 @@ class CudaMutator(object):
       for elem in reduction_cu_pointer_decls:
          IDNameMutator(old = c_ast.ID(elem.name), new = c_ast.ID('reduction_cu_' + elem.name)).apply_all(elem)
          PointerMutator().apply(elem)
-      # Build shared memory declarations on host
-      tmp = copy.deepcopy(shared_node_list)
-      shared_cu_pointer_decls = []
-      for elem in tmp:
-         if isinstance(elem.type, c_ast.ArrayDecl):
-            ptr = c_ast.Decl(elem.name + '_cu', elem.quals, [], elem.type.type, None, None, None, declarations)
-            PointerMutator().apply(ptr)
-            shared_cu_pointer_decls.append(ptr)
-         elif isinstance(elem.type, c_ast.Struct):
-            IDNameMutator(old = c_ast.ID(elem.name), new = c_ast.ID(elem.name +'_cu')).apply_all(elem)
-            PointerMutator().apply(elem)
 
       # Insert into tree
       declarations.ext.extend(reduction_pointer_decls)
       declarations.ext.extend(reduction_cu_pointer_decls)
-      declarations.ext.extend(shared_cu_pointer_decls)
+#      declarations.ext.extend(shared_cu_pointer_decls)
+      declarations.ext.extend(self._build_shared_memory_decls_cu(shared_node_list, declarations, ast))
       declarations.ext[DIMA_POS].init = numThreads
       return declarations 
 
@@ -438,3 +457,100 @@ void checkCUDAError (const char *msg)
       except NodeNotFound as nf:
          print nf
       return ast
+
+
+
+class CM_OmpParallel(CudaMutator):
+   def filter(self, ast):
+      """ Filter definition
+         Returns the first node matching with the filter"""
+      # Build a visitor , matching the OmpFor node of the AST
+      f = OmpParallelFilter()
+      node = f.apply(ast)
+      self._func_def = f.get_func_def()
+      self._parallel = node
+      return node
+
+   def buildDeclarations(self, shared_node_list, ast):
+      """ Builds the declaration section 
+          @return Declarations subtree
+      """ 
+      # Position in the template for dimA declaration, just in case we change it
+      declarations =  c_ast.FileAST(ext = [])
+      declarations.ext.extend(self._build_shared_memory_decls_cu(shared_node_list, declarations, ast))
+      return declarations 
+
+   def buildInitializaton(self, shared_vars, ast):
+      """ Initialization """
+
+      shared_malloc_lines_cu = self._build_shared_memory_init_cu(shared_vars, ast)
+
+      # Template source
+      template_code = """
+      #include "llcomp_cuda.h"
+      int fake() {
+      """ + shared_malloc_lines_cu + "\n}"
+   
+      return self.parse_snippet(template_code, None, name = 'SendData').ext[-1].body
+
+
+
+   def mutatorFunction(self, ast, ompFor_node):
+      """ CUDA mutator, writes memory transfer operations for a parallel region
+      """
+
+      ##################### Statement for cuda
+      cuda_stmts = c_ast.Compound(stmts = [], decls = []);
+
+      ##################### Cuda parameters on host
+
+      shared_declList = [ ]
+      private_declList = [ ]
+
+      # Note: Each identifiers is a ParamList
+      for elem in ompFor_node.clauses:
+         if elem.name == 'SHARED':
+            for id in elem.identifiers.params:
+               shared_declList.append(decl_of_id(id, ast))
+         elif elem.name == 'PRIVATE':
+            for id in elem.identifiers.params:
+               private_declList.append(decl_of_id(id, ast))
+
+      shared_params = shared_declList # [ decl_of_id(elem, ast) for elem in shared_paramList ]
+      private_params = private_declList   # [ decl_of_id(elem, ast) for elem in private_paramList ]
+
+#      import pdb
+#      pdb.set_trace()
+      from Tools.Debug import DotDebugTool
+
+      ##################### Declarations
+#      import pdb
+#      pdb.set_trace()
+
+      declarations_subtree = self.buildDeclarations(shared_node_list = shared_params, ast = ast)
+      DotDebugTool().apply(declarations_subtree)
+      InsertTool(subtree = declarations_subtree, position = "begin").apply(cuda_stmts, 'decls')
+
+      # Initialization
+      initialization_subtree = self.buildInitializaton(shared_vars = shared_params, ast = ast)
+      DotDebugTool().apply(initialization_subtree)
+
+
+      InsertTool(subtree = self._parallel.stmt, position = "begin").apply(cuda_stmts, 'stmts')
+
+      InsertTool(subtree = initialization_subtree, position = "begin").apply(cuda_stmts, 'stmts')
+
+      ##################### Support subtree
+      support_subtree = self.buildSupport()
+      InsertTool(subtree = c_ast.Compound(stmts = support_subtree.stmts, decls = None), position = "end").apply(ast, 'ext')
+      InsertTool(subtree = c_ast.Compound(decls = support_subtree.decls, stmts = None), position = "begin").apply(ast, 'ext')
+
+
+      ##################### Loop substitution 
+   
+      # Replace the entire pragma by a CompoundStatement with all the new statements
+      # Note: The parent of Parallel is always a Pragma node
+      DotDebugTool().apply(cuda_stmts)
+      ReplaceTool(new_node = cuda_stmts, old_node = self._parallel.parent).apply(self._parallel.parent.parent, 'stmts')
+      DotDebugTool(highlight = [cuda_stmts]).apply(self._parallel.parent.parent)
+
