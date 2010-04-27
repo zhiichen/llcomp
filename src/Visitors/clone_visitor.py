@@ -366,9 +366,12 @@ class OmpWriter(CWriter):
       self.write_blank();
       self.write(offset, node.name)
       self.write_blank();
+      self.write(offset, 'parallel')
+      self.write_blank();
       if node.clauses:
          for elem in node.clauses:
             self.visit(elem)
+            self.write_blank();
       if node.stmt:
          self.writeLn(offset, "")
          self.visit(node.stmt)
@@ -381,9 +384,12 @@ class OmpWriter(CWriter):
       if node.clauses:
          for elem in node.clauses:
             self.visit(elem)
+            self.write_blank();
+
+      self.write_blank();
       # OmpFor always has an stmt 
       if node.stmt:
-         self.writeLn(offset, "")
+         self.writeLn(offset, " ")
          self.visit(node.stmt)
       self.write_blank();  
 
@@ -393,13 +399,12 @@ class OmpWriter(CWriter):
       if node.name == 'REDUCTION':
          self.write(0, node.type)
          self.write(0, ':')
-      for elem in node.identifiers:
-         self.visit(elem)
+      self.visit(node.identifiers)
       self.write(0, ')');
 
 
 
-class CUDAWriter(CWriter):
+class CUDAWriter(OmpWriter):
    """ Specific CUDA writer """
    def visit_CUDAKernel(self, node, offset = 0):
       self.write(offset, "__" + str(node.type) + "__")

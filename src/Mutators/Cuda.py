@@ -519,21 +519,13 @@ class CM_OmpParallel(CudaMutator):
       shared_params = shared_declList # [ decl_of_id(elem, ast) for elem in shared_paramList ]
       private_params = private_declList   # [ decl_of_id(elem, ast) for elem in private_paramList ]
 
-#      import pdb
-#      pdb.set_trace()
-      from Tools.Debug import DotDebugTool
-
       ##################### Declarations
-#      import pdb
-#      pdb.set_trace()
 
       declarations_subtree = self.buildDeclarations(shared_node_list = shared_params, ast = ast)
-      DotDebugTool().apply(declarations_subtree)
       InsertTool(subtree = declarations_subtree, position = "begin").apply(cuda_stmts, 'decls')
 
       # Initialization
       initialization_subtree = self.buildInitializaton(shared_vars = shared_params, ast = ast)
-      DotDebugTool().apply(initialization_subtree)
 
 
       InsertTool(subtree = self._parallel.stmt, position = "begin").apply(cuda_stmts, 'stmts')
@@ -550,7 +542,5 @@ class CM_OmpParallel(CudaMutator):
    
       # Replace the entire pragma by a CompoundStatement with all the new statements
       # Note: The parent of Parallel is always a Pragma node
-      DotDebugTool().apply(cuda_stmts)
       ReplaceTool(new_node = cuda_stmts, old_node = self._parallel.parent).apply(self._parallel.parent.parent, 'stmts')
-      DotDebugTool(highlight = [cuda_stmts]).apply(self._parallel.parent.parent)
 
