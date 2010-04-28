@@ -16,7 +16,7 @@ def parse_template(template_code, template_name):
         process = subprocess.Popen("sed -nf nocomments.sed", shell = True, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
         stripped_code = process.communicate(clean_source)[0]
         ast = c_parser.CParser(lex_optimize = False, yacc_optimize = False).parse(stripped_code, filename = template_name)
-	return ast
+        return ast
 
 def link_all_parents(ast):
         """ Function to link the nodes of the AST in reverse order, using a parent attribute in each node """
@@ -60,30 +60,30 @@ class TestCudaMutatorFunctions(unittest.TestCase):
         self.good_tree = None 
 
     def test_pi(self):
-    	template_code = open('examples/pi.c', 'r').read()
-	ast = parse_template(template_code, 'pi_test')
-    	link_all_parents(ast)
+        template_code = open('examples/pi.c', 'r').read()
+        ast = parse_template(template_code, 'pi_test')
+        link_all_parents(ast)
         self.good_tree = Dump.load('tests/pi_tree')
-	ast_str = StringIO();
-	good_str = StringIO();
-	ast.show(ast_str)
-	self.good_tree.show(good_str)
+        ast_str = StringIO();
+        good_str = StringIO();
+        ast.show(ast_str)
+        self.good_tree.show(good_str)
         self.assertEqual(ast_str.getvalue(), good_str.getvalue())
 
     def test_picu(self):
-    	template_code = open('examples/pi.c', 'r').read()
-	ast = parse_template(template_code, 'pi_test')
-	link_all_parents(ast)
-	new_ast = CudaMutator().apply(ast)
+        template_code = open('examples/pi.c', 'r').read()
+        ast = parse_template(template_code, 'pi_test')
+        link_all_parents(ast)
+        new_ast = CudaMutator().apply(ast)
 
         self.good_tree = Dump.load('tests/picu_tree')
-	new_ast_str = StringIO();
-	good_str = StringIO();
-	new_ast.show(new_ast_str)
-	self.good_tree.show(good_str)
+        new_ast_str = StringIO();
+        good_str = StringIO();
+        new_ast.show(new_ast_str)
+        self.good_tree.show(good_str)
         self.assertEqual(new_ast_str.getvalue(), good_str.getvalue())
 
-	
+        
 
 if __name__ == '__main__':
     build_test_trees()

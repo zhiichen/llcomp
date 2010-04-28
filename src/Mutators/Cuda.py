@@ -74,6 +74,30 @@ class CudaMutator(object):
 	 return None
       return subtree;
 
+   def _get_dict_from_clauses(self, clauses, ast):
+      """ Return a dict of clauses from a list of OmpClause objects
+         
+           Example: [OmpClause('REDUCTION', ...), OmpClause('PRIVATE', ...)]
+             will return:  {'REDUCTION' : [....] , 'PRIVATE' : [...]}
+      """
+      clause_dict = {}
+      # Note: Each identifiers is a ParamList
+      for elem in clauses:
+         if not clause_dict.has_key(elem.name):
+               clause_dict[elem.name] = []
+         if elem.name == 'SHARED':
+            for id in elem.identifiers.params:
+               clause_dict[elem.name].append(decl_of_id(id, ast))
+         elif elem.name == 'PRIVATE':
+            for id in elem.identifiers.params:
+               clause_dict[elem.name].append(decl_of_id(id, ast))
+         elif elem.name == 'NOWAIT':
+            clause_dict[elem.name] = True
+         elif elem.name == 'REDUCTION':
+            clause_dict[elem.name].append(decl_of_id(id, ast))
+
+      return  clause_dict
+
    def _build_shared_memory_decls_cu(self, shared_node_list, parent, ast = None):
    # Build shared memory declarations on host
       tmp = copy.deepcopy(shared_node_list)
@@ -364,29 +388,11 @@ void checkCUDAError (const char *msg)
 
       ##################### Cuda parameters on host
 
-      reduction_declList = [ ]
-      shared_declList = [ ]
-      private_declList = [ ]
-
-      # Note: Each identifiers is a ParamList
-      for elem in ompFor_node.clauses:
-         if elem.name == 'REDUCTION':
-            for id in elem.identifiers.params:
-               reduction_declList.append(decl_of_id(id, ast))
-         elif elem.name == 'SHARED':
-            for id in elem.identifiers.params:
-               shared_declList.append(decl_of_id(id, ast))
-         elif elem.name == 'PRIVATE':
-            for id in elem.identifiers.params:
-               private_declList.append(decl_of_id(id, ast))
-
-      shared_params = shared_declList # [ decl_of_id(elem, ast) for elem in shared_paramList ]
-      private_params = private_declList   # [ decl_of_id(elem, ast) for elem in private_paramList ]
-      reduction_params = reduction_declList # [ decl_of_id(elem, ast) for elem in reduction_paramList ]
-
-#      import pdb
-#      pdb.set_trace()
-
+      clause_dict = self._get_dict_from_clauses(ompFor_node.clauses,  ast)
+      shared_params = clause_dict['SHARED']
+      private_params = clause_dict['PRIVATE']
+      reduction_params = clause_dict['REDUCTION']
+      nowait = clause_dict.has_key('NOWAIT')
 
       ##################### Declarations
 
@@ -504,20 +510,10 @@ class CM_OmpParallel(CudaMutator):
 
       ##################### Cuda parameters on host
 
-      shared_declList = [ ]
-      private_declList = [ ]
-
-      # Note: Each identifiers is a ParamList
-      for elem in ompFor_node.clauses:
-         if elem.name == 'SHARED':
-            for id in elem.identifiers.params:
-               shared_declList.append(decl_of_id(id, ast))
-         elif elem.name == 'PRIVATE':
-            for id in elem.identifiers.params:
-               private_declList.append(decl_of_id(id, ast))
-
-      shared_params = shared_declList # [ decl_of_id(elem, ast) for elem in shared_paramList ]
-      private_params = private_declList   # [ decl_of_id(elem, ast) for elem in private_paramList ]
+      clause_dict = self._get_dict_from_clauses(ompFor_node.clauses, ast)
+      shared_params = clause_dict['SHARED']
+      private_params = clause_dict['PRIVATE']
+      nowait = clause_dict.has_key('NOWAIT')
 
       ##################### Declarations
 
@@ -526,10 +522,7 @@ class CM_OmpParallel(CudaMutator):
 
       # Initialization
       initialization_subtree = self.buildInitializaton(shared_vars = shared_params, ast = ast)
-
-
       InsertTool(subtree = self._parallel.stmt, position = "begin").apply(cuda_stmts, 'stmts')
-
       InsertTool(subtree = initialization_subtree, position = "begin").apply(cuda_stmts, 'stmts')
 
       ##################### Support subtree
