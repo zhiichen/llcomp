@@ -193,6 +193,7 @@ int main(int argc, char **argv)
     double t0, t1;
     int np;
 
+
     for (i = 0; i < ndim; i++)
 	box[i] = 10.0;
 
