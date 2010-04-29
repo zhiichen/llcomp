@@ -129,6 +129,38 @@ class CudaMutator(object):
       return shared_malloc_lines
 
 
+   def _build_reduction_decls(self, reduction_pointer_decls):
+      reduction_cu_pointer_decls = copy.deepcopy(reduction_pointer_decls)
+      # Build local reduction vars
+      for elem in reduction_pointer_decls:
+         IDNameMutator(old = c_ast.ID(elem.name), new = c_ast.ID('reduction_loc_' + elem.name)).apply_all(elem)
+         PointerMutator().apply(elem)
+      # Build cuda reduction arrays
+      for elem in reduction_cu_pointer_decls:
+         IDNameMutator(old = c_ast.ID(elem.name), new = c_ast.ID('reduction_cu_' + elem.name)).apply_all(elem)
+         PointerMutator().apply(elem)
+      return reduction_cu_pointer_decls
+
+
+   def _build_reduction_malloc_lines(self, ast, reduction_vars):
+      reduction_dict = {} 
+      # Host memory allocation (malloc lines)
+      for elem in reduction_vars:
+          reduction_dict[str(elem.name)] = self.get_names(ast,elem)[0]
+      reduction_malloc_lines = "\n".join(["reduction_loc_" + str(key) + " = (" + str(value) +"*) malloc(numElems * sizeof(" + str(value) + "));" for key,value in reduction_dict.items()])
+      reduction_dict = {} 
+
+
+      # Device memory allocation (cudaMalloc lines)
+      for elem in reduction_vars:
+         reduction_dict[str(elem.name)] = "sizeof(" + "reduction_cu_".join(self.get_names(ast,elem)) +")"
+      reduction_malloc_lines += "\n".join(["cudaMalloc((void **) &" + "reduction_cu_" + str(key) + ", numElems * " + str(value) + ");" for key,value in reduction_dict.items()])
+      # TODO: Initial value for * reduction must be 1 instead of 0
+      reduction_malloc_lines += "\n".join(["cudaMemset(reduction_cu_" + str(key) + ", (int)" + str(key) + ", numElems * " + str(value) + ");" for key,value in reduction_dict.items()])
+      return reduction_malloc_lines
+
+
+
    def buildDeclarations(self, numThreads, reduction_node_list, shared_node_list):
       """ Builds the declaration section 
           @param numThreads number of threads
@@ -157,44 +189,19 @@ class CudaMutator(object):
       reduction_pointer_decls = copy.deepcopy(reduction_node_list)
       # Set Type of reduction_decls  for memSize sizeof (All of the reduction vars must be of the same type)
       declarations.ext[MEMSIZE_POS].init.right.expr.type = reduction_pointer_decls[0].type
-      # Build local reduction vars
-      for elem in reduction_pointer_decls:
-         IDNameMutator(old = c_ast.ID(elem.name), new = c_ast.ID('reduction_loc_' + elem.name)).apply_all(elem)
-         PointerMutator().apply(elem)
-      # Build cuda reduction arrays
-      reduction_cu_pointer_decls = copy.deepcopy(reduction_node_list)
-      for elem in reduction_cu_pointer_decls:
-         IDNameMutator(old = c_ast.ID(elem.name), new = c_ast.ID('reduction_cu_' + elem.name)).apply_all(elem)
-         PointerMutator().apply(elem)
-
+      reduction_cu_pointer_decls = self._build_reduction_decls(reduction_pointer_decls)
       # Insert into tree
       declarations.ext.extend(reduction_pointer_decls)
       declarations.ext.extend(reduction_cu_pointer_decls)
-#      declarations.ext.extend(shared_cu_pointer_decls)
       declarations.ext.extend(self._build_shared_memory_decls_cu(shared_node_list, declarations))
       declarations.ext[DIMA_POS].init = numThreads
       return declarations 
 
 
-   def buildInitializaton(self, reduction_vars, shared_vars, ast):
+   def buildInitialization(self, reduction_vars, shared_vars, ast):
       """ Initialization """
       reduction_dict = {} 
-      # Host memory allocation (malloc lines)
-      for elem in reduction_vars:
-          reduction_dict[str(elem.name)] = self.get_names(ast,elem)[0]
-      reduction_malloc_lines = "\n".join(["reduction_loc_" + str(key) + " = (" + str(value) +"*) malloc(numElems * sizeof(" + str(value) + "));" for key,value in reduction_dict.items()])
-      reduction_dict = {} 
-
-
-      # Device memory allocation (cudaMalloc lines)
-      for elem in reduction_vars:
-         reduction_dict[str(elem.name)] = "sizeof(" + "reduction_cu_".join(self.get_names(ast,elem)) +")"
-      reduction_malloc_lines += "\n".join(["cudaMalloc((void **) &" + "reduction_cu_" + str(key) + ", numElems * " + str(value) + ");" for key,value in reduction_dict.items()])
-      # TODO: Initial value for * reduction must be 1 instead of 0
-      # TODO: Maybe initial value should be the init value of the reduction var?
-#      reduction_malloc_lines += "\n".join(["cudaMemset((void **) &reduction_cu_" + str(key) + ", (int)" + str(key) + ", numElems * " + str(value) + ");" for key,value in reduction_dict.items()])
-      reduction_malloc_lines += "\n".join(["cudaMemset(reduction_cu_" + str(key) + ", (int)" + str(key) + ", numElems * " + str(value) + ");" for key,value in reduction_dict.items()])
-
+ 
       shared_dict = {} 
       for elem in shared_vars:
          # Only malloc / send if it is a complex type
@@ -209,7 +216,7 @@ class CudaMutator(object):
       template_code = """
       #include "llcomp_cuda.h"
       int fake() {
-      """ + shared_malloc_lines  + reduction_malloc_lines + "\n}"
+      """ + shared_malloc_lines  + self._build_reduction_malloc_lines(ast, reduction_vars) + "\n}"
    
       return self.parse_snippet(template_code, None, name = 'SendData').ext[-1].body
 
@@ -247,6 +254,7 @@ class CudaMutator(object):
             shared_var_list += [ptr + str(elem.name) + "_cu"]
          else:
             shared_var_list += [ptr + str(elem.name)]
+
 
        template_code = """
   	#include "llcomp_cuda.h"
@@ -400,7 +408,7 @@ void checkCUDAError (const char *msg)
       declarations_subtree = self.buildDeclarations(numThreads = maxThreadNumber_node, reduction_node_list = reduction_params, shared_node_list = shared_params)
       InsertTool(subtree = declarations_subtree, position = "begin").apply(cuda_stmts, 'decls')
       # Initialization
-      initialization_subtree = self.buildInitializaton(reduction_vars = reduction_params, shared_vars = shared_params, ast = ast)
+      initialization_subtree = self.buildInitialization(reduction_vars = reduction_params, shared_vars = shared_params, ast = ast)
 
       InsertTool(subtree = initialization_subtree, position = "begin").apply(cuda_stmts, 'stmts')
       
@@ -466,161 +474,5 @@ void checkCUDAError (const char *msg)
       return ast
 
 
-
-class CM_OmpParallel(CudaMutator):
-   def filter(self, ast):
-      """ Filter definition
-         Returns the first node matching with the filter"""
-      # Build a visitor , matching the OmpFor node of the AST
-      f = OmpParallelFilter()
-      node = f.apply(ast)
-      self._func_def = f.get_func_def()
-      self._parallel = node
-      return node
-
-   def buildDeclarations(self, shared_node_list, ast):
-      """ Builds the declaration section 
-          @return Declarations subtree
-      """ 
-      # Position in the template for dimA declaration, just in case we change it
-      declarations =  c_ast.FileAST(ext = [])
-      declarations.ext.extend(self._build_shared_memory_decls_cu(shared_node_list, declarations, ast))
-      return declarations 
-
-   def buildInitializaton(self, shared_vars, ast):
-      """ Initialization """
-
-      shared_malloc_lines_cu = self._build_shared_memory_init_cu(shared_vars, ast)
-
-      # Template source
-      template_code = """
-      #include "llcomp_cuda.h"
-      int fake() {
-      """ + shared_malloc_lines_cu + "\n}"
-   
-      return self.parse_snippet(template_code, None, name = 'SendData').ext[-1].body
-
-
-
-   def mutatorFunction(self, ast, ompFor_node):
-      """ CUDA mutator, writes memory transfer operations for a parallel region
-      """
-
-      ##################### Statement for cuda
-      cuda_stmts = c_ast.Compound(stmts = [], decls = []);
-
-      ##################### Cuda parameters on host
-
-      clause_dict = self._get_dict_from_clauses(ompFor_node.clauses, ast)
-      shared_params = clause_dict['SHARED']
-      private_params = clause_dict['PRIVATE']
-      nowait = clause_dict.has_key('NOWAIT')
-
-      ##################### Declarations
-
-      declarations_subtree = self.buildDeclarations(shared_node_list = shared_params, ast = ast)
-      InsertTool(subtree = declarations_subtree, position = "begin").apply(cuda_stmts, 'decls')
-
-      # Initialization
-      initialization_subtree = self.buildInitializaton(shared_vars = shared_params, ast = ast)
-      InsertTool(subtree = self._parallel.stmt, position = "begin").apply(cuda_stmts, 'stmts')
-      InsertTool(subtree = initialization_subtree, position = "begin").apply(cuda_stmts, 'stmts')
-
-      ##################### Support subtree
-      support_subtree = self.buildSupport()
-      InsertTool(subtree = c_ast.Compound(stmts = support_subtree.stmts, decls = None), position = "end").apply(ast, 'ext')
-      InsertTool(subtree = c_ast.Compound(decls = support_subtree.decls, stmts = None), position = "begin").apply(ast, 'ext')
-
-
-      ##################### Loop substitution 
-   
-      # Replace the entire pragma by a CompoundStatement with all the new statements
-      # Note: The parent of Parallel is always a Pragma node
-      ReplaceTool(new_node = cuda_stmts, old_node = self._parallel.parent).apply(self._parallel.parent.parent, 'stmts')
-
-
-
-class CM_OmpFor(CudaMutator):
-   def filter(self, ast):
-      """ Filter definition
-         Returns the first node matching with the filter"""
-      # Build a visitor , matching the OmpFor node of the AST
-      f = OmpForFilter()
-      node = f.apply(ast)
-      self._func_def = f.get_func_def()
-      self._parallel = f.get_parallel()
-      return node
-
-
-   def mutatorFunction(self, ast, ompFor_node):
-      """ CUDA mutator, writes memory transfer operations for a parallel region
-      """
-      maxThreadNumber_node = self.getThreadNum(ompFor_node.stmt.cond)
-
-      ##################### Statement for cuda
-      cuda_stmts = c_ast.Compound(stmts = [], decls = []);
-
-      ##################### Cuda parameters on host
-
-      clause_dict = self._get_dict_from_clauses(ompFor_node.clauses,  ast)
-      reduction_params = clause_dict['REDUCTION']
-      nowait = clause_dict.has_key('NOWAIT')
-
-      ##################### Declarations
-
-      declarations_subtree = self.buildDeclarations(numThreads = maxThreadNumber_node, reduction_node_list = reduction_params, shared_node_list = shared_params)
-      InsertTool(subtree = declarations_subtree, position = "begin").apply(cuda_stmts, 'decls')
-      # Initialization
-      initialization_subtree = self.buildInitializaton(reduction_vars = reduction_params, shared_vars = shared_params, ast = ast)
-
-      InsertTool(subtree = initialization_subtree, position = "begin").apply(cuda_stmts, 'stmts')
-      
-
-      ##################### Cuda Kernel 
-
-      # Kernel
-      kernel_subtree = self.buildKernel(shared_list = shared_params, 
-                        private_list = private_params, 
-                        reduction_list = reduction_params,
-                        loop = ompFor_node.stmt, ast = ast)
-
-      # Function declaration
-      # - Build a node without body
-      tmp = c_ast.CUDAKernel(function = copy.deepcopy(kernel_subtree.ext[0].function), type = 'global', name = kernel_subtree.ext[0].name)
-      tmp.function.body = c_ast.Compound(stmts = None, decls = None); # If both of stmts and decls are none, it won't be printed
-      kernel_decl = c_ast.Compound(stmts = [tmp], decls = None)
-      
-#      # Find container function
-
-      InsertTool(subtree = kernel_decl, position = "begin", node = self._func_def).apply(ast, 'ext')
-      # Function definition
-      InsertTool(subtree = kernel_subtree, position = "end" ).apply(ast, 'ext')
-
-      # Support subtree
-      support_subtree = self.buildSupport()
-      InsertTool(subtree = c_ast.Compound(stmts = support_subtree.stmts, decls = None), position = "end").apply(ast, 'ext')
-      InsertTool(subtree = c_ast.Compound(decls = support_subtree.decls, stmts = None), position = "begin").apply(ast, 'ext')
-
-
-      ##################### Loop substitution 
-   
-
-      # Kernel Launch
-      kernelLaunch_subtree = self.buildKernelLaunch(reduction_vars = reduction_params, shared_vars = shared_params, ast = ompFor_node)
-      InsertTool(subtree = kernelLaunch_subtree, position = "end").apply(cuda_stmts, 'stmts')
-      # Retrieve data
-      retrieve_subtree = self.buildRetrieve(reduction_vars = reduction_params)
-      InsertTool(subtree = retrieve_subtree, position = "end").apply(cuda_stmts, 'stmts')
-      # Host reduction
-      reduction_subtree = self.buildHostReduction(reduction_vars = reduction_params)
-      InsertTool(subtree = reduction_subtree, position = "end").apply(cuda_stmts, 'stmts')
-      # Replace the entire pragma by a CompoundStatement with all the new statements
-      ReplaceTool(new_node = cuda_stmts, old_node = self._parallel.parent).apply(self._parallel.parent.parent, 'stmts')
-
-
-      ##################### Final tree operations
-
-      # Remove the pragma from the destination code
-#      RemoveTool(target_node = self._parallel).apply(container_func, 'stmts')
 
 
