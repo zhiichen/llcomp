@@ -45,14 +45,24 @@ def link_all_parents(ast):
 
 
 def build_test_trees():
+    # Pi
     template_code = open('examples/pi.c', 'r').read()
     ast = parse_template(template_code, 'pi_test')
     link_all_parents(ast)
     Dump.save('tests/pi_tree', ast)
+    # CUDA version
     new_ast = CudaMutator().apply(ast)
     Dump.save('tests/picu_tree', new_ast)
+    # Mandel
+    template_code = open('examples/mandel.c', 'r').read()
+    ast = parse_template(template_code, 'mandel_test')
+    link_all_parents(ast)
+    Dump.save('tests/mandel_tree', ast)
+    # CUDA version
+    new_ast = CudaMutator().apply(ast)
+    Dump.save('tests/mandelcu_tree', new_ast)
 
-
+   
 
 class TestCudaMutatorFunctions(unittest.TestCase):
 
@@ -83,7 +93,30 @@ class TestCudaMutatorFunctions(unittest.TestCase):
         self.good_tree.show(good_str)
         self.assertEqual(new_ast_str.getvalue(), good_str.getvalue())
 
-        
+    def test_mandel(self):
+        template_code = open('examples/mandel.c', 'r').read()
+        ast = parse_template(template_code, 'mandel_test')
+        link_all_parents(ast)
+        self.good_tree = Dump.load('tests/mandel_tree')
+        ast_str = StringIO();
+        good_str = StringIO();
+        ast.show(ast_str)
+        self.good_tree.show(good_str)
+        self.assertEqual(ast_str.getvalue(), good_str.getvalue())
+ 
+    def test_mandelcu(self):
+        template_code = open('examples/mandel.c', 'r').read()
+        ast = parse_template(template_code, 'mandel_test')
+        link_all_parents(ast)
+        new_ast = CudaMutator().apply(ast)
+
+        self.good_tree = Dump.load('tests/mandelcu_tree')
+        new_ast_str = StringIO();
+        good_str = StringIO();
+        new_ast.show(new_ast_str)
+        self.good_tree.show(good_str)
+        self.assertEqual(new_ast_str.getvalue(), good_str.getvalue())
+     
 
 if __name__ == '__main__':
     build_test_trees()
