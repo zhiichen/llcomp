@@ -208,7 +208,6 @@ class OmpForFilter(GenericFilterVisitor):
       return self.generic_visit(node, offset, ignore)
 
    def visit_OmpParallel(self, node, prev, offset = 1, ignore = []):
-      print "*** Here *** "
       if not self.match:
          self._parallel = node
       return self.generic_visit(node, offset, ignore)
