@@ -264,7 +264,6 @@ class CudaMutator(object):
               dim3 dimGrid (numBlocks);
      	        dim3 dimBlock (numThreadsPerBlock);
 
-
    	    $kernelName <<< dimGrid , dimBlock >>> ($reductionvars, $sharedvars);
        }
        """
@@ -346,9 +345,21 @@ void checkCUDAError (const char *msg)
          # Replace the name of the declaration. The type_declaration doesn't change, so maybe we'll get problems later?
          IDNameMutator(old = c_ast.ID(elem.name), new = c_ast.ID('reduction_cu_' + elem.name)).apply_all(elem)
          PointerMutator().apply(elem)
+      shared_vars = copy.deepcopy(shared_list)
+      # TODO: Move this to DeclsToParamsMutator
+      for elem in shared_vars:
+         # Replace the name of the declaration. 
+         if isinstance(elem.type, c_ast.ArrayDecl) or isinstance(elem.type, c_ast.Struct):
+            mut = IDNameMutator(old = c_ast.ID(elem.name), new = c_ast.ID(elem.name + '_cu'))
+            mut.apply_all(elem)
+            mut.apply_all(loop.stmt)
+            # Pointer instead of array 
+            elem.type = elem.type.type
+            PointerMutator().apply(elem)
+
       # Add the declarations to the parameters of the functions
       DeclsToParamsMutator(decls = reduction_vars).apply(tree.ext[-1].function.decl.type.args)
-      DeclsToParamsMutator(decls = shared_list).apply(tree.ext[-1].function.decl.type.args)
+      DeclsToParamsMutator(decls = shared_vars).apply(tree.ext[-1].function.decl.type.args)
       # Remove the template declaration
       RemoveTool(tree.ext[-1].function.decl.type.args.params[0]).apply(tree.ext[-1].function.decl.type.args, 'params')
       # OpenMP Private vars need to be declared inside kernel
@@ -357,11 +368,7 @@ void checkCUDAError (const char *msg)
       #    - Insert tool removes the parent node of the inserted subtree
       InsertTool(subtree = tmp, position = "end").apply(tree.ext[-1].function.body, 'decls')
       # Add the loop statements, (but not the reduction)
-
-#~      from Tools.Debug import DotDebugTool
-#~      DotDebugTool().apply(loop.stmt)
       IDNameMutator(old = loop.init.lvalue, new = c_ast.ID('idx')).apply_all(loop.stmt)
-#~      DotDebugTool().apply(loop.stmt)
       # Identify function calls inside kernel and replace the definitions to __device__ 
       try:
          for func_call in FuncCallFilter().iterate(loop.stmt):

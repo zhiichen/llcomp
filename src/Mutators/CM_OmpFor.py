@@ -122,8 +122,8 @@ class CM_OmpFor(CudaMutator):
       nowait = clause_dict.has_key('NOWAIT')
       # Private declarations come from the parent parallel construct
       private_params = parent_clause_dict['PRIVATE']
-      shared_params = [ elem for elem in parent_clause_dict['SHARED'] if not isinstance(elem.type, c_ast.ArrayDecl) ]
-
+      # shared_params = [ elem for elem in parent_clause_dict['SHARED'] if not isinstance(elem.type, c_ast.ArrayDecl) ]
+      shared_params = parent_clause_dict['SHARED']
 
       ##################### Declarations
 
