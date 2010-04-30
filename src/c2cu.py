@@ -84,9 +84,8 @@ from Mutators.Optimizer import ConstantCalc
 ConstantCalc().fast_apply_all(ast)
 
 
-#t = CudaMutator()
-
-t = CM_OmpParallel()
+t = CudaMutator()
+#t = CM_OmpParallel()
 new_ast = t.apply(ast)
 
 

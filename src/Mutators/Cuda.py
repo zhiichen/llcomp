@@ -206,6 +206,7 @@ class CudaMutator(object):
       for elem in shared_vars:
          # Only malloc / send if it is a complex type
          if isinstance(elem.type, c_ast.ArrayDecl): 
+            # print "Array Decl: " + elem.name
             shared_dict[elem.name] = "sizeof(" + " ".join(self.get_names(ast,elem)) +  ") * " +  elem.type.dim.value
          elif isinstance(elem.type, c_ast.Struct):
             shared_dict[elem.name] = "sizeof(" + " ".join(self.get_names(ast,elem)) +  ")"
@@ -399,6 +400,7 @@ void checkCUDAError (const char *msg)
 
       clause_dict = self._get_dict_from_clauses(ompFor_node.clauses,  ast)
       shared_params = clause_dict['SHARED']
+      
       private_params = clause_dict['PRIVATE']
       reduction_params = clause_dict['REDUCTION']
       nowait = clause_dict.has_key('NOWAIT')
