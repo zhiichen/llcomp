@@ -37,7 +37,7 @@ Index: pycparser/_c_ast.yaml
 +
 +OmpSingle: [name, clauses**, stmt*]
 +
-+OmpClause : [name, type, identifiers**]
++OmpClause : [name, type, identifiers*]
 +
 +# Task  model
 +

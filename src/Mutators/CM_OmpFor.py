@@ -172,16 +172,15 @@ class CM_OmpFor(CudaMutator):
       # Host reduction
       reduction_subtree = self.buildHostReduction(reduction_vars = reduction_params)
       InsertTool(subtree = reduction_subtree, position = "end").apply(cuda_stmts, 'stmts')
+
       # Replace the entire pragma by a CompoundStatement with all the new statements
-#      from Tools.Debug import DotDebugTool
-#      DotDebugTool(highlight = [ompFor_node]).apply(self._parallel.stmt)
-#      ReplaceTool(new_node = cuda_stmts, old_node = ompFor_node).apply(self._parallel, 'stmt')
-      self._parallel.stmt = cuda_stmts
+#      DotDebugTool(highlight = [ompFor_node]).apply(self._parallel)
+      if isinstance(ompFor_node.parent.parent, c_ast.Compound) :
+         ReplaceTool(new_node = cuda_stmts, old_node = ompFor_node.parent).apply(ompFor_node.parent.parent, 'stmts')
+      else:
+         # Maybe we have an error here
+         ompFor_node.parent.parent.stmt = cuda_stmts
 
 
-      ##################### Final tree operations
-
-      # Remove the pragma from the destination code
-#      RemoveTool(target_node = self._parallel).apply(container_func, 'stmts')
 
 

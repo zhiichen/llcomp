@@ -7,6 +7,9 @@ int main() {
 
     #pragma omp parallel private(i) shared(l, a) 
     {
+      for  (i = 0; i <= 10; i++) {
+         a = 0;
+      }
 	    #pragma omp for reduction (+ : a)
 	    for (i = 0; i <= 10; i++) {
 		a = a + i;

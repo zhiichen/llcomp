@@ -62,6 +62,10 @@ class CM_OmpParallel(CudaMutator):
       from Mutators.CM_OmpFor import CM_OmpFor
       CM_OmpFor().apply(ast)
 
+#      from Tools.Debug import DotDebugTool
+#      DotDebugTool().apply(ast.ext[18])
+
+
       ##################### Statement for cuda
       cuda_stmts = c_ast.Compound(stmts = [], decls = []);
 
@@ -93,5 +97,8 @@ class CM_OmpParallel(CudaMutator):
       # Replace the entire pragma by a CompoundStatement with all the new statements
       # Note: The parent of Parallel is always a Pragma node
       ReplaceTool(new_node = cuda_stmts, old_node = self._parallel.parent).apply(self._parallel.parent.parent, 'stmts')
+      # DotDebugTool().apply(self._parallel)
+      # DotDebugTool().apply(cuda_stmts)
+      # InsertTool(subtree = cuda_stmts, position = "begin").apply(self._parallel.stmt, 'stmts')
 
 

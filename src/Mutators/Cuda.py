@@ -276,7 +276,7 @@ class CudaMutator(object):
       reduction_lines = ""
       free_lines = ""
       for elem in reduction_vars:
-         reduction_lines += elem.name + "+= reduction_loc_" + (elem.name) + "[i];\n"
+         reduction_lines += elem.name + "+= reduction_loc_" + (elem.name) + "[__i__];\n"
          free_lines += "cudaFree(reduction_cu_" + (elem.name) + ");\n"
          free_lines += "free(reduction_loc_" + (elem.name) + ");\n"
       # TODO: Add shared vars to free
@@ -285,7 +285,8 @@ class CudaMutator(object):
 
       template_code = """
       int fake() {
-      for (i = 0; i < dimA; i++)
+      int __i__;
+      for (__i__ = 0; __i__ < dimA; __i__++)
       {
           $reduction_lines
       }
