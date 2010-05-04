@@ -22,7 +22,7 @@ Index: pycparser/c_parser.py
          typename = spec['type']
          declaration = self._fix_decl_name_type(declaration, typename)
          return c_ast.FuncDef(
-@@ -362,12 +363,120 @@
+@@ -362,12 +363,124 @@
          """
          p[0] = p[1]
  
@@ -112,6 +112,10 @@ Index: pycparser/c_parser.py
 +       p[0] = p[1]
 +
 +
++    def p_directive_5(self, p):
++       """ directive : THREADPRIVATE LPAREN identifier_list RPAREN """
++       p[0] = c_ast.OmpThreadPrivate(name = 'threadprivate', identifiers = p[3], coord = self._coord(p.lineno(1)))
++
 +
 +    def p_omp_clause_list(self, p):
 +       """ omp_clause_list : omp_clause_list clause
@@ -145,7 +149,7 @@ Index: pycparser/c_parser.py
      # In function definitions, the declarator can be followed by
      # a declaration list, for old "K&R style" function definitios.
      #
-@@ -404,6 +513,13 @@
+@@ -404,6 +517,13 @@
          """
          p[0] = p[1]
  
@@ -159,7 +163,7 @@ Index: pycparser/c_parser.py
      # In C, declarations can come several in a line:
      #   int x, *px, romulo = 5;
      #
-@@ -1176,6 +1292,15 @@
+@@ -1176,6 +1296,15 @@
          """
          p[0] = c_ast.UnaryOp('p' + p[2], p[1], p[1].coord)
  

@@ -17,7 +17,7 @@ Index: pycparser/_c_ast.yaml
  # type <decl>(args)
  #
  FuncDecl: [args*, type*]
-@@ -161,4 +169,47 @@
+@@ -161,4 +169,49 @@
  While: [cond*, stmt*]
  
  
@@ -38,6 +38,8 @@ Index: pycparser/_c_ast.yaml
 +OmpSingle: [name, clauses**, stmt*]
 +
 +OmpClause : [name, type, identifiers*]
++
++OmpThreadPrivate : [name, identifiers*]
 +
 +# Task  model
 +

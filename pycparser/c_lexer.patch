@@ -2,24 +2,39 @@ Index: pycparser/c_lexer.py
 ===================================================================
 --- pycparser/c_lexer.py	(revisión: 95)
 +++ pycparser/c_lexer.py	(copia de trabajo)
-@@ -157,6 +157,16 @@
+@@ -157,6 +157,31 @@
          
          # pre-processor 
          'PPHASH',      # '#'
 +
-+	####################
-+	# Ruyk
 +	'PRAGMA', # pragma
++
++	####################
++	# Ruyk 
++   ####################
++
++
++   ####################
++   # OpenMP 3.0 syntax
++
 +	'OMP', # openmp
-+	'PARALLEL', # parallel
-+   'SECTIONS', # sections
-+	     'SHARED', 'PRIVATE', 'REDUCTION', 'NOWAIT',
++
++   # Constructs
++	'PARALLEL', 
++   'SECTIONS', 
++
++   # Clauses
++   'SHARED', 'PRIVATE', 'REDUCTION', 'NOWAIT', 'THREADPRIVATE',
++
++   ####################
++   # CUDA syntax
++
 +        'LKLAUNCH', 'RKLAUNCH', # CUDA kernel launch
 +        'GLOBAL',
      )
  
      ##
-@@ -209,6 +219,7 @@
+@@ -209,6 +234,7 @@
          # ppline: preprocessor line directives
          # 
          ('ppline', 'exclusive'),
@@ -27,7 +42,7 @@ Index: pycparser/c_lexer.py
      )
      
      def t_PPHASH(self, t):
-@@ -216,14 +227,80 @@
+@@ -216,14 +242,86 @@
          m = self.line_pattern.match(
              t.lexer.lexdata, pos=t.lexer.lexpos)
          
@@ -80,6 +95,12 @@ Index: pycparser/c_lexer.py
 +        t.type = 'REDUCTION'
 +        return t
 + 
++    def t_directive_THREADPRIVATE(self, t):
++        r'threadprivate'
++        t.type = 'THREADPRIVATE'
++        return t
++
++
 +    def t_directive_NOWAIT(self, t):
 +        r'nowait'
 +        t.type = 'NOWAIT'
@@ -110,10 +131,13 @@ Index: pycparser/c_lexer.py
      ##
      ## Rules for the ppline state
      ##
-@@ -267,6 +344,15 @@
+@@ -267,6 +365,18 @@
          msg = 'invalid #line directive'
          self._error(msg, t)
  
++   ##################
++   # Comments
++
 +    def t_COMMENT_SINGLELINE(self, t):
 +        r'//.*'
 +        pass
@@ -126,7 +150,7 @@ Index: pycparser/c_lexer.py
      ##
      ## Rules for the normal state
      ##
-@@ -298,7 +384,12 @@
+@@ -298,7 +408,12 @@
      t_GE                = r'>='
      t_EQ                = r'=='
      t_NE                = r'!='
@@ -139,7 +163,7 @@ Index: pycparser/c_lexer.py
      # Assignment operators
      t_EQUALS            = r'='
      t_TIMESEQUAL        = r'\*='
-@@ -337,7 +428,7 @@
+@@ -337,7 +452,7 @@
  
      t_STRING_LITERAL    = string_literal
      
@@ -148,7 +172,7 @@ Index: pycparser/c_lexer.py
      # functions to impose a strict order (otherwise, decimal
      # is placed before the others because its regex is longer,
      # and this is bad)
-@@ -410,7 +501,8 @@
+@@ -410,7 +525,8 @@
  
  
  if __name__ == "__main__":

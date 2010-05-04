@@ -2,6 +2,9 @@ from pycparser import c_parser, c_ast
 
 source_code = """
 
+int x;
+#pragma omp threadprivate(x)
+
 int main() {
     int i, l;
 
