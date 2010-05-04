@@ -55,7 +55,7 @@ from cStringIO import StringIO
 
 from pycparser import c_ast
 
-from Tools.Parse import parse_tempalte
+from Tools.Parse import parse_template
 
 print "Translating " + filename + " .... ", 
 template_code = " ".join(open(filename, 'r').readlines())
