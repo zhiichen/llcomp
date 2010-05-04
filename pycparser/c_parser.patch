@@ -22,7 +22,7 @@ Index: pycparser/c_parser.py
          typename = spec['type']
          declaration = self._fix_decl_name_type(declaration, typename)
          return c_ast.FuncDef(
-@@ -362,12 +363,124 @@
+@@ -362,12 +363,125 @@
          """
          p[0] = p[1]
  
@@ -124,7 +124,8 @@ Index: pycparser/c_parser.py
 +
 +    def p_clause_1(self, p):
 +       """ clause : SHARED LPAREN identifier_list RPAREN 
-+                  | PRIVATE LPAREN identifier_list RPAREN """
++                  | PRIVATE LPAREN identifier_list RPAREN 
++                  | COPYIN LPAREN identifier_list RPAREN"""
 +       p[0] = [c_ast.OmpClause(type = 'memory', name = str(p[1]).upper(), identifiers = p[3], coord = self._coord(p.lineno(1)))]
 +    def p_clause_2(self, p):
 +       """ clause : REDUCTION LPAREN reduction_operator  COLON identifier_list RPAREN """
@@ -149,7 +150,7 @@ Index: pycparser/c_parser.py
      # In function definitions, the declarator can be followed by
      # a declaration list, for old "K&R style" function definitios.
      #
-@@ -404,6 +517,13 @@
+@@ -404,6 +518,13 @@
          """
          p[0] = p[1]
  
@@ -163,7 +164,7 @@ Index: pycparser/c_parser.py
      # In C, declarations can come several in a line:
      #   int x, *px, romulo = 5;
      #
-@@ -1176,6 +1296,15 @@
+@@ -1176,6 +1297,15 @@
          """
          p[0] = c_ast.UnaryOp('p' + p[2], p[1], p[1].coord)
  

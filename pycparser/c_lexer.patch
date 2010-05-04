@@ -24,7 +24,7 @@ Index: pycparser/c_lexer.py
 +   'SECTIONS', 
 +
 +   # Clauses
-+   'SHARED', 'PRIVATE', 'REDUCTION', 'NOWAIT', 'THREADPRIVATE',
++   'SHARED', 'PRIVATE', 'REDUCTION', 'NOWAIT', 'THREADPRIVATE', 'COPYIN',
 +
 +   ####################
 +   # CUDA syntax
@@ -42,7 +42,7 @@ Index: pycparser/c_lexer.py
      )
      
      def t_PPHASH(self, t):
-@@ -216,14 +242,86 @@
+@@ -216,14 +242,91 @@
          m = self.line_pattern.match(
              t.lexer.lexdata, pos=t.lexer.lexpos)
          
@@ -100,6 +100,11 @@ Index: pycparser/c_lexer.py
 +        t.type = 'THREADPRIVATE'
 +        return t
 +
++    def t_directive_COPYIN(self, t):
++        r'copyin'
++        t.type = 'COPYIN'
++        return t
++
 +
 +    def t_directive_NOWAIT(self, t):
 +        r'nowait'
@@ -131,7 +136,7 @@ Index: pycparser/c_lexer.py
      ##
      ## Rules for the ppline state
      ##
-@@ -267,6 +365,18 @@
+@@ -267,6 +370,18 @@
          msg = 'invalid #line directive'
          self._error(msg, t)
  
@@ -150,7 +155,7 @@ Index: pycparser/c_lexer.py
      ##
      ## Rules for the normal state
      ##
-@@ -298,7 +408,12 @@
+@@ -298,7 +413,12 @@
      t_GE                = r'>='
      t_EQ                = r'=='
      t_NE                = r'!='
@@ -163,7 +168,7 @@ Index: pycparser/c_lexer.py
      # Assignment operators
      t_EQUALS            = r'='
      t_TIMESEQUAL        = r'\*='
-@@ -337,7 +452,7 @@
+@@ -337,7 +457,7 @@
  
      t_STRING_LITERAL    = string_literal
      
@@ -172,7 +177,7 @@ Index: pycparser/c_lexer.py
      # functions to impose a strict order (otherwise, decimal
      # is placed before the others because its regex is longer,
      # and this is bad)
-@@ -410,7 +525,8 @@
+@@ -410,7 +530,8 @@
  
  
  if __name__ == "__main__":
