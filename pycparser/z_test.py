@@ -7,9 +7,10 @@ int main() {
 
     #pragma omp parallel private(i) shared(l, a) 
     {
-      for  (i = 0; i <= 10; i++) {
+      for  (i = 0/*Pututu*/; i <= 10; i++) {
          a = 0;
       }
+// tetete
 	    #pragma omp for reduction (+ : a)
 	    for (i = 0; i <= 10; i++) {
 		a = a + i;
@@ -29,11 +30,12 @@ except IOError:
     exit(0)
 clean_source = p.communicate(source_code)[0]
 
-try:
-	process = subprocess.Popen("sed -nf /home/rreyes/pycparser-read-only/nocomments", shell = True, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-except IOError:
-    exit(0)
-stripped_code = process.communicate(clean_source)[0]
+#try:
+#	process = subprocess.Popen("sed -nf /home/rreyes/pycparser-read-only/nocomments", shell = True, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+#except IOError:
+#    exit(0)
+# stripped_code = process.communicate(clean_source)[0]
+stripped_code = clean_source
 
 
 parser = c_parser.CParser(

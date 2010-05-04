@@ -8,14 +8,7 @@ from pycparser import c_parser, c_ast
 
 from Tools.Dump import Dump
 
-
-def parse_template(template_code, template_name):
-        p = subprocess.Popen("cpp -ansi -pedantic -CC -U __USE_GNU  -P -I /home/rreyes/llcomp/src/include/fake_libc_include/", shell=True, bufsize=1, stdin=subprocess.PIPE, stdout=subprocess.PIPE, close_fds=True)
-        clean_source = p.communicate(template_code)[0]
-        process = subprocess.Popen("sed -nf nocomments.sed", shell = True, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-        stripped_code = process.communicate(clean_source)[0]
-        ast = c_parser.CParser(lex_optimize = False, yacc_optimize = False).parse(stripped_code, filename = template_name)
-	return ast
+from Tools.Parse import parse_template
 
 
 def build_test_trees():

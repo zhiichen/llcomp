@@ -29,9 +29,7 @@ from pycparser import c_parser, c_ast
 print "Translating " + filename + " .... ", 
 template_code = " ".join(open(filename, 'r').readlines())
 p = subprocess.Popen("cpp -ansi -pedantic -CC -U __USE_GNU  -P -I /home/rreyes/llcomp/src/include/fake_libc_include/", shell=True, bufsize=1, stdin=subprocess.PIPE, stdout=subprocess.PIPE, close_fds=True)
-clean_source = p.communicate(template_code)[0]
-process = subprocess.Popen("sed -nf nocomments.sed", shell = True, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-stripped_code = process.communicate(clean_source)[0]
+stripped_code = p.communicate(template_code)[0]
 ast = c_parser.CParser(lex_optimize = False, yacc_optimize = False).parse(stripped_code, filename = filename)
 
 print " OK "

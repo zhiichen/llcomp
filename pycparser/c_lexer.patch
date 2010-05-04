@@ -13,7 +13,7 @@ Index: pycparser/c_lexer.py
 +	'OMP', # openmp
 +	'PARALLEL', # parallel
 +   'SECTIONS', # sections
-+	'SHARED', 'PRIVATE', 'REDUCTION', 'NOWAIT',
++	     'SHARED', 'PRIVATE', 'REDUCTION', 'NOWAIT',
 +        'LKLAUNCH', 'RKLAUNCH', # CUDA kernel launch
 +        'GLOBAL',
      )
@@ -110,7 +110,23 @@ Index: pycparser/c_lexer.py
      ##
      ## Rules for the ppline state
      ##
-@@ -298,7 +375,12 @@
+@@ -267,6 +344,15 @@
+         msg = 'invalid #line directive'
+         self._error(msg, t)
+ 
++    def t_COMMENT_SINGLELINE(self, t):
++        r'//.*'
++        pass
++
++    def t_COMMENT_MULTILINE(self, t):
++        r'/\*(.|[\r\n])*?\*/'
++        t.lexer.lineno += t.value.count("\n")
++        pass
++
+     ##
+     ## Rules for the normal state
+     ##
+@@ -298,7 +384,12 @@
      t_GE                = r'>='
      t_EQ                = r'=='
      t_NE                = r'!='
@@ -123,7 +139,7 @@ Index: pycparser/c_lexer.py
      # Assignment operators
      t_EQUALS            = r'='
      t_TIMESEQUAL        = r'\*='
-@@ -337,7 +419,7 @@
+@@ -337,7 +428,7 @@
  
      t_STRING_LITERAL    = string_literal
      
@@ -132,7 +148,7 @@ Index: pycparser/c_lexer.py
      # functions to impose a strict order (otherwise, decimal
      # is placed before the others because its regex is longer,
      # and this is bad)
-@@ -410,7 +492,8 @@
+@@ -410,7 +501,8 @@
  
  
  if __name__ == "__main__":

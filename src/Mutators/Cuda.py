@@ -4,6 +4,7 @@ from Tools.tree import InsertTool, NodeNotFound, ReplaceTool, RemoveTool
 from Tools.search import type_of_id, decl_of_id
 from Tools.Dump import Dump
 from Tools.Debug import DotDebugTool
+from Tools.Parse import parse_template
 from Mutators.AstSupport import DeclsToParamsMutator, IDNameMutator, FuncToDeviceMutator, PointerMutator
 
 from string import Template
@@ -60,11 +61,7 @@ class CudaMutator(object):
       subtree = None
       template_code = Template(template_code).substitute(subs_dir)
       try:
-         p = subprocess.Popen("cpp -ansi -pedantic -CC -U __USE_GNU  -P -I /home/rreyes/llcomp/src/include/ 2>/dev/null", shell=True, bufsize=1, stdin=subprocess.PIPE, stdout=subprocess.PIPE, close_fds=True)
-         clean_source = p.communicate(template_code)[0]
-         process = subprocess.Popen("sed -nf nocomments.sed", shell = True, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-         stripped_code = process.communicate(clean_source)[0]
-         subtree = self.template_parser.parse(stripped_code, filename=name)
+         subtree = parse_template(template_code, name)
       except c_parser.ParseError, e:
          print "Parse error:" + str(e)
 
@@ -215,7 +212,7 @@ class CudaMutator(object):
       shared_malloc_lines += "\n".join(["cudaMemcpy(" + str(key) + "_cu," + str(key) + ", " + str(value) + ", cudaMemcpyHostToDevice);" for key,value in shared_dict.items()])
       # Template source
       template_code = """
-      #include "llcomp_cuda.h"
+      #include "llcomp_cuda.h" 
       int fake() {
       """ + shared_malloc_lines  + self._build_reduction_malloc_lines(ast, reduction_vars) + "\n}"
    
@@ -258,7 +255,7 @@ class CudaMutator(object):
 
 
        template_code = """
-  	#include "llcomp_cuda.h"
+  	#include "llcomp_cuda.h" 
 
        int fake() {
               dim3 dimGrid (numBlocks);
@@ -301,7 +298,7 @@ class CudaMutator(object):
       """ CUDA Support subroutines """
       if not Dump.exists('SupportRoutines'):
          template_code = """
-        #include "llcomp_cuda.h" 
+        #include "llcomp_cuda.h"  
 
 void checkCUDAError (const char *msg)
 {
@@ -326,7 +323,7 @@ void checkCUDAError (const char *msg)
    def buildKernel(self, shared_list, private_list, reduction_list, loop, ast):
       if not Dump.exists(self.kernel_name):
           template_code = """
-          #include "llcomp_cuda.h"
+         #include "llcomp_cuda.h" 
           __global__ void $kernelName (double * reduction_cu)
           {
           int idx = blockIdx.x * blockDim.x + threadIdx.x;
