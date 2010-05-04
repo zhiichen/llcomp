@@ -8,7 +8,7 @@ int x;
 int main() {
     int i, l;
 
-    #pragma omp parallel private(i) shared(l, a) copyin(x)
+    #pragma omp parallel private(i) shared(l, a) copyin(x) schedule(static)
     {
       for  (i = 0/*Pututu*/; i <= 10; i++) {
          a = 0;
