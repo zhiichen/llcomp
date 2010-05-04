@@ -18,6 +18,8 @@ int main() {
 	    for (i = 0; i <= 10; i++) {
 		a = a + i;
 	    }
+      #pragma omp critical
+      l = 0;
     }
 }
 

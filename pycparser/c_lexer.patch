@@ -2,7 +2,7 @@ Index: pycparser/c_lexer.py
 ===================================================================
 --- pycparser/c_lexer.py	(revisión: 95)
 +++ pycparser/c_lexer.py	(copia de trabajo)
-@@ -157,6 +157,31 @@
+@@ -157,6 +157,32 @@
          
          # pre-processor 
          'PPHASH',      # '#'
@@ -25,6 +25,7 @@ Index: pycparser/c_lexer.py
 +
 +   # Clauses
 +   'SHARED', 'PRIVATE', 'REDUCTION', 'NOWAIT', 'THREADPRIVATE', 'COPYIN', 'SCHEDULE', 'OMP_SCHEDULE_KIND',
++   'MASTER', 'CRITICAL', 'ATOMIC', 'BARRIER', 'FLUSH',
 +
 +   ####################
 +   # CUDA syntax
@@ -34,7 +35,7 @@ Index: pycparser/c_lexer.py
      )
  
      ##
-@@ -209,6 +234,7 @@
+@@ -209,6 +235,7 @@
          # ppline: preprocessor line directives
          # 
          ('ppline', 'exclusive'),
@@ -42,7 +43,7 @@ Index: pycparser/c_lexer.py
      )
      
      def t_PPHASH(self, t):
-@@ -216,14 +242,100 @@
+@@ -216,14 +243,126 @@
          m = self.line_pattern.match(
              t.lexer.lexdata, pos=t.lexer.lexpos)
          
@@ -110,6 +111,32 @@ Index: pycparser/c_lexer.py
 +        t.type = 'SCHEDULE'
 +        return t
 +
++    def t_directive_MASTER(self, t):
++        r'master'
++        t.type = 'MASTER'
++        return t
++
++    def t_directive_CRITICAL(self, t):
++        r'critical'
++        t.type = 'CRITICAL'
++        return t
++
++    def t_directive_BARRIER(self, t):
++        r'barrier'
++        t.type = 'BARRIER'
++        return t
++
++    def t_directive_ATOMIC(self, t):
++        r'atomic'
++        t.type = 'ATOMIC'
++        return t
++
++    def t_directive_FLUSH(self, t):
++        r'flush'
++        t.type = 'FLUSH'
++        return t
++
++
 +    def t_directive_OMP_SCHEDULE_KIND(self, t):
 +        r'static|dynamic'
 +        t.type = 'OMP_SCHEDULE_KIND'
@@ -145,7 +172,7 @@ Index: pycparser/c_lexer.py
      ##
      ## Rules for the ppline state
      ##
-@@ -267,6 +379,18 @@
+@@ -267,6 +406,18 @@
          msg = 'invalid #line directive'
          self._error(msg, t)
  
@@ -164,7 +191,7 @@ Index: pycparser/c_lexer.py
      ##
      ## Rules for the normal state
      ##
-@@ -298,7 +422,12 @@
+@@ -298,7 +449,12 @@
      t_GE                = r'>='
      t_EQ                = r'=='
      t_NE                = r'!='
@@ -177,7 +204,7 @@ Index: pycparser/c_lexer.py
      # Assignment operators
      t_EQUALS            = r'='
      t_TIMESEQUAL        = r'\*='
-@@ -337,7 +466,7 @@
+@@ -337,7 +493,7 @@
  
      t_STRING_LITERAL    = string_literal
      
@@ -186,7 +213,7 @@ Index: pycparser/c_lexer.py
      # functions to impose a strict order (otherwise, decimal
      # is placed before the others because its regex is longer,
      # and this is bad)
-@@ -410,7 +539,8 @@
+@@ -410,7 +566,8 @@
  
  
  if __name__ == "__main__":
