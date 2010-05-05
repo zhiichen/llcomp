@@ -70,7 +70,7 @@ class CM_OmpParallel(CudaMutator):
       cuda_stmts = c_ast.Compound(stmts = [], decls = []);
 
       ##################### Cuda parameters on host
-
+      
       clause_dict = self._get_dict_from_clauses(ompFor_node.clauses, ast)
       shared_params = clause_dict['SHARED']
       private_params = clause_dict['PRIVATE']

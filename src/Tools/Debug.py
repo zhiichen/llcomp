@@ -6,7 +6,7 @@ import subprocess
 import os
 from cStringIO import StringIO
 
-
+import config
 
 
 class DotDebugTool(object):
@@ -31,5 +31,7 @@ class DotDebugTool(object):
          size =  len(open(self.tmpfile).readlines())
  #        print str(type(node)) + " --> " + str(size)
          if not (size > self.MAX_LINES):
-            p = subprocess.Popen("python /home/rreyes/llcomp/src/xdot.py " + "/tmp/dotfile.dot", shell=True)
+            p = subprocess.Popen("python " + config.WORKDIR + "/xdot.py " + "/tmp/dotfile.dot", shell=True)
             sts = os.waitpid(p.pid, 0)[1]
+         else:
+            print "DotDebugTool:::: AST Too big to show"

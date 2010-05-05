@@ -315,7 +315,8 @@ class CWriter(OffsetNodeVisitor):
    def visit_Struct(self, node, offset = 0):
       self.write(offset, "struct")
       self.write_blank()
-      self.write(offset, node.name)
+      if node.name:
+         self.write(offset, node.name)
       if type(node.decls) != None.__class__:
          self.write(0, "{")
          for elem in node.decls:
@@ -335,10 +336,11 @@ class CWriter(OffsetNodeVisitor):
       self.write(offset, "if");
       self.write_blank();
       self.write(offset, "(");
-      self.visit_BinaryOp(node.cond);
+      # self.visit_BinaryOp(node.cond);
+      self.visit(node.cond, offset)
       self.write(offset, ")");
       self.write_blank();
-      self.visit_Compound(node.iftrue);
+      self.visit(node.iftrue, offset);
       if node.iffalse:
          self.write(offset, "else");
          self.write_blank()
@@ -376,6 +378,17 @@ class OmpWriter(CWriter):
          self.writeLn(offset, "")
          self.visit(node.stmt)
       self.write_blank();
+
+   def visit_OmpThreadPrivate(self, node, offset):
+      self.write_blank();
+      self.write(offset, node.name)
+      self.write_blank()
+      if node.identifiers:
+         for elem in node.identifiers.params:
+            self.write(offset, '(')
+            self.visit(elem)
+            self.write(offset, ')')
+            self.write_blank()
 
    def visit_OmpFor(self, node, offset):
       self.write_blank();

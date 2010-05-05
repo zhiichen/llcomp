@@ -261,3 +261,6 @@ class FuncDeclOfNameFilter(GenericFilterVisitor):
            return type(node) == c_ast.FuncDecl and getattr(node.parent, 'name') == name.name
        super(FuncDeclOfNameFilter, self).__init__(condition_func = condition , prev_brother = prev_brother)
 
+
+
+

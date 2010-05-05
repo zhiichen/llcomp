@@ -140,6 +140,18 @@ class FuncToDeviceMutator(AbstractMutator):
       id_node = None
       try:
          # ast.show()
+         from Tools.search import type_of_id, decl_of_id
+         from Tools.Debug import DotDebugTool
+ #        DotDebugTool().apply(self.func_call)
+         decl = decl_of_id(self.func_call.name, ast)
+         if 'extern' in decl.storage:
+#            print "********************"
+#            print dir(decl)
+#            decl.show()
+#            print "********************"
+            print " *** Cannot use external declarations inside kernel *** "
+            print " Decl : " + decl.name
+            raise NodeNotFound
          af = FuncDeclOfNameFilter(name = self.func_call.name)
          id_node = af.apply(ast)
 #         print " Definition of " + str(self.func_call.name) + " is " + str(ast) 

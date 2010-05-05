@@ -77,11 +77,13 @@ class CudaMutator(object):
            Example: [OmpClause('REDUCTION', ...), OmpClause('PRIVATE', ...)]
              will return:  {'REDUCTION' : [....] , 'PRIVATE' : [...]}
       """
+      clause_names = ['SHARED', 'PRIVATE', 'NOWAIT', 'REDUCTION']
       clause_dict = {}
       # Note: Each identifiers is a ParamList
       for elem in clauses:
          if not clause_dict.has_key(elem.name):
                clause_dict[elem.name] = []
+         
          if elem.name == 'SHARED':
             for id in elem.identifiers.params:
                clause_dict[elem.name].append(decl_of_id(id, ast))
@@ -93,6 +95,10 @@ class CudaMutator(object):
          elif elem.name == 'REDUCTION':
             for id in elem.identifiers.params:
                clause_dict[elem.name].append(decl_of_id(id, ast))
+
+      for name in clause_names:
+         if not clause_dict.has_key(name):
+            clause_dict[name] = []
 
       return  clause_dict
 
@@ -370,6 +376,8 @@ void checkCUDAError (const char *msg)
       # Identify function calls inside kernel and replace the definitions to __device__ 
       try:
          for func_call in FuncCallFilter().iterate(loop.stmt):
+           func_call.show()
+           # DotDebugTool(highlight = [func_call]).apply(loop.stmt)
            fcm = FuncToDeviceMutator(func_call = func_call).apply(ast)
       except NodeNotFound:
          # There are not function calls on the loop.stmt
