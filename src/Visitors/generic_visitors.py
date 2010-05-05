@@ -3,7 +3,15 @@ from pycparser import c_ast
 
 from Tools.tree import NodeNotFound, NodeNotValid
 
+class FilterError(Exception):
+   def __init__(self, description):
+      self.description = description
 
+   def __str__(self):
+      return "FilterError:: " + self.description
+
+   def get_description(self):
+      return self.description
 
 
 class GenericFilterVisitor(object):

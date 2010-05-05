@@ -3,10 +3,9 @@ from pycparser import c_parser, c_ast
 from Visitors.generic_visitors import AttributeFilter, FilterVisitor, NodeNotFound
 from Tools.tree import InsertTool, RemoveTool, ReplaceTool
 
-from Visitors.generic_visitors import FilterVisitor, IDFilter, FuncCallFilter, FuncDeclOfNameFilter, StrFilter
+from Visitors.generic_visitors import FilterVisitor, IDFilter, FuncCallFilter, FuncDeclOfNameFilter, StrFilter, FilterError
 
 from Mutators.AbstractMutator import AbstractMutator
-
 
 
 class RemoveAttributeMutator(AbstractMutator):
@@ -151,7 +150,7 @@ class FuncToDeviceMutator(AbstractMutator):
 #            print "********************"
             print " *** Cannot use external declarations inside kernel *** "
             print " Decl : " + decl.name
-            raise NodeNotFound
+            raise FilterError("Cannot use external declarations inside kernel")
          af = FuncDeclOfNameFilter(name = self.func_call.name)
          id_node = af.apply(ast)
 #         print " Definition of " + str(self.func_call.name) + " is " + str(ast) 

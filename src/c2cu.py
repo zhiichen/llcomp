@@ -2,7 +2,7 @@ from pycparser import parse_file
 
 from Visitors.clone_visitor import CUDAWriter
 
-from Mutators.Cuda import CudaMutator
+from Mutators.Cuda import CudaMutator, CudaMutatorError
 from Mutators.CM_OmpFor import CM_OmpFor
 from Mutators.CM_OmpParallel import CM_OmpParallel
 
@@ -81,16 +81,20 @@ from Mutators.Optimizer import ConstantCalc
 
 ConstantCalc().fast_apply_all(ast)
 
+new_ast = None
 
-# t = CudaMutator()
-t = CM_OmpParallel()
-new_ast = t.apply(ast)
-
+try:
+   # t = CudaMutator()
+   t = CM_OmpParallel()
+   new_ast = t.apply(ast)
+except CudaMutatorError as cme:
+   print " Error while mutating tree "
+   print cme
 
 if new_ast:
 	print " OK "
 else:
-	print " ERROR "
+	print " Translation interrupted due to previous errors "
 	import sys
 	sys.exit(-1)
 

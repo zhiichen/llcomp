@@ -1,5 +1,5 @@
 from pycparser import c_parser, c_ast
-from Visitors.generic_visitors import IDFilter, FuncCallFilter, FuncDeclOfNameFilter, OmpForFilter, OmpParallelFilter
+from Visitors.generic_visitors import IDFilter, FuncCallFilter, FuncDeclOfNameFilter, OmpForFilter, OmpParallelFilter, FilterError
 from Tools.tree import InsertTool, NodeNotFound, ReplaceTool, RemoveTool
 from Tools.search import type_of_id, decl_of_id
 from Tools.Dump import Dump
@@ -14,6 +14,13 @@ from cStringIO import StringIO
 
 # Copy substructures
 import copy
+
+class CudaMutatorError(Exception):
+   def __init__(self, description):
+      self.description = description
+
+   def __str__(self):
+      return "CudaMutatorError :: " + self.description
 
 
 class CudaMutator(object):
@@ -382,6 +389,8 @@ void checkCUDAError (const char *msg)
       except NodeNotFound:
          # There are not function calls on the loop.stmt
          pass
+      except FilterError as fe:
+         raise CudaMutatorError(fe.get_description())
       # Identify function calls inside kernel and replace the definitions to __device__ 
       # TODO: This is incorrect, we should write a subtree instead of a bare string...
       for elem in reduction_list:
