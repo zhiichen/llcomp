@@ -16,6 +16,7 @@ from Mutators.Cuda import CudaMutator
 
 
 class CM_OmpFor(CudaMutator):
+
    def filter(self, ast):
       """ Filter definition
          Returns the first node matching with the filter"""
@@ -86,16 +87,14 @@ class CM_OmpFor(CudaMutator):
       ##################### Cuda parameters on host
 
       clause_dict = self._get_dict_from_clauses(ompFor_node.clauses,  ast)
-      parent_clause_dict = self._get_dict_from_clauses(self._parallel.clauses, ast)
+      # parent_clause_dict = self._get_dict_from_clauses(self._parallel.clauses, ast)
       reduction_params = clause_dict['REDUCTION']
       nowait = clause_dict.has_key('NOWAIT')
       # Private declarations come from the parent parallel construct
-      private_params = parent_clause_dict['PRIVATE']
-      # shared_params = [ elem for elem in parent_clause_dict['SHARED'] if not isinstance(elem.type, c_ast.ArrayDecl) ]
-      shared_params = parent_clause_dict['SHARED']
-
-      if self._parallel.stmt.decls:
-         private_params += self._parallel.stmt.decls
+      private_params = clause_dict['PRIVATE']
+      shared_params = clause_dict['SHARED']
+#      if self._parallel.stmt.decls:
+#         private_params += self._parallel.stmt.decls
 
 
       ##################### Declarations

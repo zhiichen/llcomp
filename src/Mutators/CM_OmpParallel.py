@@ -1,6 +1,6 @@
 
 from pycparser import c_parser, c_ast
-from Visitors.generic_visitors import IDFilter, FuncCallFilter, FuncDeclOfNameFilter, OmpForFilter, OmpParallelFilter
+from Visitors.generic_visitors import IDFilter, FuncCallFilter, FuncDeclOfNameFilter, OmpForFilter, OmpParallelFilter, OmpThreadPrivateFilter
 from Tools.tree import InsertTool, NodeNotFound, ReplaceTool, RemoveTool
 from Tools.search import type_of_id, decl_of_id
 from Tools.Dump import Dump
@@ -60,7 +60,23 @@ class CM_OmpParallel(CudaMutator):
       """ CUDA mutator, writes memory transfer operations for a parallel region
       """
       from Mutators.CM_OmpFor import CM_OmpFor
-      CM_OmpFor().apply(ast)
+
+      threadprivate = []
+      for elem in OmpThreadPrivateFilter().dfs_iter(ast):
+         threadprivate.extend([decl_of_id(it, ast) for it in elem.identifiers.params])
+      print " Threadprivate : " + str(threadprivate)
+
+      clause_dict = self._get_dict_from_clauses(ompParallel_node.clauses, ast)
+      shared_params = clause_dict['SHARED']
+      private_params = clause_dict['PRIVATE'] 
+      nowait = clause_dict.has_key('NOWAIT')
+      # If the parallel statement have declarations, they are private to the thread, so, we need to put them as params
+      if ompParallel_node.stmt.decls:
+         private_params += ompParallel_node.stmt.decls
+      private_params.extend(threadprivate)
+
+
+      CM_OmpFor(clause_dict).apply(ast)
 
 #      from Tools.Debug import DotDebugTool
 #      DotDebugTool().apply(ast.ext[18])
@@ -70,15 +86,6 @@ class CM_OmpParallel(CudaMutator):
       cuda_stmts = c_ast.Compound(stmts = [], decls = []);
 
       ##################### Cuda parameters on host
-      
-      clause_dict = self._get_dict_from_clauses(ompParallel_node.clauses, ast)
-      shared_params = clause_dict['SHARED']
-      private_params = clause_dict['PRIVATE'] 
-      nowait = clause_dict.has_key('NOWAIT')
-      # If the parallel statement have declarations, they are private to the thread, so, we need to put them as params
-      if ompParallel_node.stmt.decls:
-         private_params += ompParallel_node.stmt.decls
-
 #      print " *** Private params :  " 
 #      for priv in private_params:
 #         priv.show()

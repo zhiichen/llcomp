@@ -28,13 +28,14 @@ class CudaMutator(object):
    """ This  mutator locates a omp parallel for reduction, and then
       translate the original source to an equivalent cuda implementation 
    """
-   def __init__(self):
+   def __init__(self, clauses = {}):
       " Constructor "
       # BUG: Don't work with optimize
       self.template_parser = c_parser.CParser(lex_optimize = False, yacc_optimize = False)
       self.kernel_name = 'reductionKernel'
       self._func_def = None
       self._parallel = None
+      self._clauses = clauses
 
 
    def get_names(ast,self, elem):
@@ -86,7 +87,7 @@ class CudaMutator(object):
              will return:  {'REDUCTION' : [....] , 'PRIVATE' : [...]}
       """
       clause_names = ['SHARED', 'PRIVATE', 'NOWAIT', 'REDUCTION']
-      clause_dict = {}
+      clause_dict = self._clauses
       # Note: Each identifiers is a ParamList
       for elem in clauses:
          if not clause_dict.has_key(elem.name):
@@ -108,6 +109,7 @@ class CudaMutator(object):
          if not clause_dict.has_key(name):
             clause_dict[name] = []
 
+      self._clauses = clause_dict
       return  clause_dict
 
    def _build_shared_memory_decls_cu(self, shared_node_list, parent, ast = None):

@@ -192,6 +192,19 @@ class FuncCallFilter(GenericFilterVisitor):
           return type(node) == c_ast.FuncCall
        super(FuncCallFilter, self).__init__(condition_func = condition , prev_brother = prev_brother)
 
+
+class OmpThreadPrivateFilter(GenericFilterVisitor):
+   """ Returns the first node with a FuncCall
+   """
+
+   def __init__(self, prev_brother = None):
+       # The condition __doc__ is used as exception information
+       def condition(node):
+          """ FuncCall """
+          return type(node) == c_ast.OmpThreadPrivate
+       super(OmpThreadPrivateFilter, self).__init__(condition_func = condition , prev_brother = prev_brother)
+
+
 class OmpForFilter(GenericFilterVisitor):
    """ Returns a OmpFor node , the parallel container and the function container
    """
