@@ -79,6 +79,12 @@ class CM_OmpParallel(CudaMutator):
       if ompParallel_node.stmt.decls:
          private_params += ompParallel_node.stmt.decls
 
+#      print " *** Private params :  " 
+#      for priv in private_params:
+#         priv.show()
+
+#      DotDebugTool().apply(private_params)
+
       ##################### Declarations
 
       declarations_subtree = self.buildDeclarations(shared_node_list = shared_params, ast = ast)

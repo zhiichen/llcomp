@@ -94,6 +94,10 @@ class CM_OmpFor(CudaMutator):
       # shared_params = [ elem for elem in parent_clause_dict['SHARED'] if not isinstance(elem.type, c_ast.ArrayDecl) ]
       shared_params = parent_clause_dict['SHARED']
 
+      if self._parallel.stmt.decls:
+         private_params += self._parallel.stmt.decls
+
+
       ##################### Declarations
 
       declarations_subtree = self.buildDeclarations(numThreads = maxThreadNumber_node, reduction_node_list = reduction_params)

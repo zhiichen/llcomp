@@ -426,7 +426,10 @@ class OmpWriter(CWriter):
 class CUDAWriter(OmpWriter):
    """ Specific CUDA writer """
    def visit_CUDAKernel(self, node, offset = 0):
-      self.write(offset, "__" + str(node.type) + "__")
+      if node.type == 'both':
+         self.write(offset, "__device__ __host__")
+      else:
+         self.write(offset, "__" + str(node.type) + "__")
       self.write_blank();
       self.visit(node.function, offset)
 

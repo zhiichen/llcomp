@@ -171,7 +171,7 @@ class FuncToDeviceMutator(AbstractMutator):
       while type(file_ast) != c_ast.FileAST:
          file_ast = file_ast.parent
 
-      cuda_node = c_ast.CUDAKernel(name = self.func_call.name.name, type = 'device', function = ast, parent=file_ast)
+      cuda_node = c_ast.CUDAKernel(name = self.func_call.name.name, type = 'both', function = ast, parent=file_ast)
       ast.parent = cuda_node
       from Tools.Debug import DotDebugTool
       DotDebugTool(highlight = [ast]).apply(file_ast)
