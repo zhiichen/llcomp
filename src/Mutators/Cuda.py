@@ -6,6 +6,7 @@ from Tools.Dump import Dump
 from Tools.Debug import DotDebugTool
 from Tools.Parse import parse_template
 from Mutators.AstSupport import DeclsToParamsMutator, IDNameMutator, FuncToDeviceMutator, PointerMutator
+from Mutators.AbstractMutator import IgnoreMutationException
 
 from string import Template
 
@@ -267,6 +268,12 @@ class CudaMutator(object):
             shared_var_list += [ptr + str(elem.name)]
 
 
+       kernel_parameters = " "
+       if len(reduction_var_list) > 0:
+         kernel_parameters += reduction_var_list
+       if len(shared_var_list) > 0:
+         kernel_parameters += "," + ",".join(shared_var_list)
+
        template_code = """
   	#include "llcomp_cuda.h" 
 
@@ -274,11 +281,11 @@ class CudaMutator(object):
               dim3 dimGrid (numBlocks);
      	        dim3 dimBlock (numThreadsPerBlock);
 
-   	    $kernelName <<< dimGrid , dimBlock >>> ($reductionvars, $sharedvars);
+          $kernelName <<< dimGrid, dimBlock >>> ($kernelParameters);
        }
        """
        # The last element is the object function
-       tree = [ elem for elem in self.parse_snippet(template_code, {'reductionvars' : reduction_var_list, 'sharedvars' : ",".join(shared_var_list), 'kernelName' : self.kernel_name}, name = 'KernelLaunch').ext  if type(elem) == c_ast.FuncDef  ][-1].body
+       tree = [ elem for elem in self.parse_snippet(template_code, {'kernelParameters' : kernel_parameters,  'kernelName' : self.kernel_name}, name = 'KernelLaunch').ext  if type(elem) == c_ast.FuncDef  ][-1].body
        return tree
 
 
@@ -386,7 +393,11 @@ void checkCUDAError (const char *msg)
            # func_call.show()
            # DotDebugTool(highlight = [func_call]).apply(loop.stmt)
            print " Writing " + func_call.name.name + " to device "
-           fcm = FuncToDeviceMutator(func_call = func_call).apply(ast)
+           try:
+              fcm = FuncToDeviceMutator(func_call = func_call).apply(ast)
+           except IgnoreMutationException as ime:
+              # This function is already implemented on device, so we continue we don't need to convert it
+              print "CudaMutator:: Warning :: " + str(ime)
       except NodeNotFound:
          # There are not function calls on the loop.stmt
          pass

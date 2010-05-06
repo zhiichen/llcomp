@@ -75,37 +75,6 @@ class CM_OmpFor(CudaMutator):
       return self.parse_snippet(template_code, None, name = 'SendData').ext[-1].body
 
 
-#   def buildKernelLaunch(self, reduction_vars, shared_vars,  ast):
-#       # FIXME : reduction_vars is now an array of declarations
-#       reduction_var_list = ",".join("reduction_cu_" + elem.name for elem in reduction_vars)
-#
-#       # Only pass non complex variables as parameters
-#       shared_var_list = [];
-#       for elem in shared_vars:
-#         elem_type = type_of_id(elem, ast)
-#         if isinstance(elem_type, c_ast.ArrayDecl) or isinstance(elem_type, c_ast.Struct): 
-#            pass
-#         else:
-#            shared_var_list += [str(elem.name)]
-#
-#
-#       template_code = """
-#  	   #include "llcomp_cuda.h"
-#
-#       int fake() {
-#              dim3 dimGrid (numBlocks);
-#     	        dim3 dimBlock (numThreadsPerBlock);
-#
-#
-#   	    $kernelName <<< dimGrid , dimBlock >>> ($reductionvars, $sharedvars);
-#       }
-#       """
-#       # The last element is the object function
-#       tree = [ elem for elem in self.parse_snippet(template_code, {'reductionvars' : reduction_var_list, 'sharedvars' : ",".join(shared_var_list), 'kernelName' : self.kernel_name}, name = 'KernelLaunch').ext  if type(elem) == c_ast.FuncDef  ][-1].body
-#       return tree
-#
-
-
    def mutatorFunction(self, ast, ompFor_node):
       """ CUDA mutator, writes memory transfer operations for a parallel region
       """

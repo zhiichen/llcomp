@@ -5,8 +5,7 @@ from Tools.tree import InsertTool, RemoveTool, ReplaceTool
 
 from Visitors.generic_visitors import FilterVisitor, IDFilter, FuncCallFilter, FuncDeclOfNameFilter, StrFilter, FilterError
 
-from Mutators.AbstractMutator import AbstractMutator
-
+from Mutators.AbstractMutator import AbstractMutator, IgnoreMutationException, AbortMutationException
 
 from Tools.search import type_of_id, decl_of_id
 
@@ -131,10 +130,13 @@ class FuncToDeviceMutator(AbstractMutator):
    """  Replace the definition of a FuncCall with a CUDAKernel with type __device__ """
    def __init__(self, func_call):
       self.func_call = func_call
+      self.ignore_names = ['sqrt', 'min', 'max', 'log', 'fabs']
  
    def filter(self, ast):
       """ Find the declaration of the """
       id_node = None
+      if self.func_call.name.name in self.ignore_names:
+         raise IgnoreMutationException('This function is already implemented on CUDA')
       try:
          # ast.show()
  #        from Tools.Debug import DotDebugTool
