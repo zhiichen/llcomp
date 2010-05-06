@@ -383,8 +383,9 @@ void checkCUDAError (const char *msg)
       # Identify function calls inside kernel and replace the definitions to __device__ 
       try:
          for func_call in FuncCallFilter().iterate(loop.stmt):
-           func_call.show()
+           # func_call.show()
            # DotDebugTool(highlight = [func_call]).apply(loop.stmt)
+           print " Writing " + func_call.name.name + " to device "
            fcm = FuncToDeviceMutator(func_call = func_call).apply(ast)
       except NodeNotFound:
          # There are not function calls on the loop.stmt

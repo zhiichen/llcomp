@@ -65,7 +65,7 @@ class InsertTool:
        return target_node
 
 
-# ReplaceVisitor(subtree = kernelLaunch_subtree, replaced_node = parent_stmt).apply(parent_stmt, 'stmts')
+# ReplaceTool(subtree = kernelLaunch_subtree, replaced_node = parent_stmt).apply(parent_stmt, 'stmts')
 class ReplaceTool:
     """ Replace a subtree with another """
     def __init__(self, new_node, old_node):
@@ -79,6 +79,24 @@ class ReplaceTool:
        # 1. Check attribute is a list of nodes
        if not type(attr) == type([]):
            raise NodeNotValid(target_node)
+       print "************************** "
+       for elem in attr:
+         print str(type(elem)) + " --> ",
+         if type(elem) == type(""):
+            print elem
+         elif hasattr(elem, 'name') and type(elem.name) == type(""):
+            print elem.name
+         elif hasattr(elem, 'name') and hasattr(elem.name, 'name') and type(elem.name.name) == type(""):
+            print elem.name.name
+         elif type(elem) == c_ast.FuncDef:
+            if type(elem.decl.name) == type(""):
+               print elem.decl.name
+            else:
+               print elem.decl.name.name
+         else:
+            print elem
+       print "Old_node : " + str(self.old_node)
+       print "************************** "
        position = attr.index(self.old_node)
        attr[position] = self.new_node
        setattr(target_node, attribute_name, attr)

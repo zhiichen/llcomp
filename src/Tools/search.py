@@ -16,11 +16,12 @@ def decl_of_id(id, ast):
         while act != None:
                 if isinstance(act, c_ast.FuncDef):
                   # Check for a decl of the var as parameter
-                  for elem in act.decl.type.args.params:
-                     try:
-                        decl = DeclFilter(attribute = "name", value = id.name).apply(elem)
-                     except NodeNotFound:
-                        pass
+                  if act.decl.type.args and act.decl.type.args.params:
+                     for elem in act.decl.type.args.params:
+                        try:
+                           decl = DeclFilter(attribute = "name", value = id.name).apply(elem)
+                        except NodeNotFound:
+                           pass
                 # Taking advantage of lazy boolean evaluation, if the first part is false, 
                 #    the second is not executed, so, we won't have an exception
                 if hasattr(act, 'decls') and act.decls:

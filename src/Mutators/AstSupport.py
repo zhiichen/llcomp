@@ -8,6 +8,9 @@ from Visitors.generic_visitors import FilterVisitor, IDFilter, FuncCallFilter, F
 from Mutators.AbstractMutator import AbstractMutator
 
 
+from Tools.search import type_of_id, decl_of_id
+
+
 class RemoveAttributeMutator(AbstractMutator):
    """ Remove the child of the first apperance of an attribute inside a node """
    def __init__(self, attr):
@@ -15,11 +18,6 @@ class RemoveAttributeMutator(AbstractMutator):
  
    def filter(self, ast):
       af = AttributeFilter(match_attribute = self.attr)
-#      print " *********** "
-#      ast.show()
-
-#      from Tools.Debug import DotDebugTool
-#      DotDebugTool().apply(ast)
       attr_node = af.apply(ast)
       return [attr_node, af.parentOfMatch()]
 
@@ -139,11 +137,10 @@ class FuncToDeviceMutator(AbstractMutator):
       id_node = None
       try:
          # ast.show()
-         from Tools.search import type_of_id, decl_of_id
-         from Tools.Debug import DotDebugTool
+ #        from Tools.Debug import DotDebugTool
  #        DotDebugTool().apply(self.func_call)
          decl = decl_of_id(self.func_call.name, ast)
-         if 'extern' in decl.storage:
+         if hasattr(decl, 'storage') and 'extern' in decl.storage:
 #            print "********************"
 #            print dir(decl)
 #            decl.show()
@@ -153,21 +150,30 @@ class FuncToDeviceMutator(AbstractMutator):
             raise FilterError("Cannot use external declarations inside kernel")
          af = FuncDeclOfNameFilter(name = self.func_call.name)
          id_node = af.apply(ast)
-#         print " Definition of " + str(self.func_call.name) + " is " + str(ast) 
+         print " Declaration " + str(self.func_call.name) + " is " + str(id_node) 
+         print " Definition " + str(id_node.parent.parent)
       except NodeNotFound:
          print " *** Node not found *** "
          return None
-      # Return the FuncDef instead of the FuncDecl (always the same structure )
-      return id_node.parent.parent
+#      if isinstance(id_node.parent, c_ast.Decl):
+      if isinstance(id_node.parent.parent, c_ast.FileAST):
+         for elem in id_node.parent.parent.ext:
+            if isinstance(elem, c_ast.FuncDef) and elem.decl.name == self.func_call.name:
+               return elem
+         raise NodeNotFound(id_node)
+      else:
+         return id_node.parent.parent
 
    def mutatorFunction(self, ast):
       file_ast = ast
       while type(file_ast) != c_ast.FileAST:
          file_ast = file_ast.parent
 
- #     print " *** Nodo a reemplazar "
       cuda_node = c_ast.CUDAKernel(name = self.func_call.name.name, type = 'device', function = ast, parent=file_ast)
       ast.parent = cuda_node
+      from Tools.Debug import DotDebugTool
+      DotDebugTool(highlight = [ast]).apply(file_ast)
+#      ast.show()
       ReplaceTool(new_node = cuda_node, old_node = ast).apply(file_ast, 'ext')
       return cuda_node
 
