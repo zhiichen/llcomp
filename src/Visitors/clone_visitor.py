@@ -345,7 +345,8 @@ class CWriter(OffsetNodeVisitor):
       self.write(offset, ")");
       self.write_blank();
       self.visit(node.iftrue, offset);
-      self.write(offset, ";")
+      if not isinstance(node.iftrue, c_ast.Compound):
+         self.write(offset, ";")
       if node.iffalse:
          self.write(offset, "else");
          self.write_blank()

@@ -56,7 +56,7 @@ class CM_OmpParallel(CudaMutator):
       return self.parse_snippet(template_code, None, name = 'SendData').ext[-1].body
 
 
-   def mutatorFunction(self, ast, ompFor_node):
+   def mutatorFunction(self, ast, ompParallel_node):
       """ CUDA mutator, writes memory transfer operations for a parallel region
       """
       from Mutators.CM_OmpFor import CM_OmpFor
@@ -71,10 +71,13 @@ class CM_OmpParallel(CudaMutator):
 
       ##################### Cuda parameters on host
       
-      clause_dict = self._get_dict_from_clauses(ompFor_node.clauses, ast)
+      clause_dict = self._get_dict_from_clauses(ompParallel_node.clauses, ast)
       shared_params = clause_dict['SHARED']
-      private_params = clause_dict['PRIVATE']
+      private_params = clause_dict['PRIVATE'] 
       nowait = clause_dict.has_key('NOWAIT')
+      # If the parallel statement have declarations, they are private to the thread, so, we need to put them as params
+      if ompParallel_node.stmt.decls:
+         private_params += ompParallel_node.stmt.decls
 
       ##################### Declarations
 
