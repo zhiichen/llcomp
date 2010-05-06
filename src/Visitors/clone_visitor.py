@@ -138,7 +138,12 @@ class CWriter(OffsetNodeVisitor):
             self.write_blank()
             self.write(0, "=")
             self.write_blank()
-            self.visit(node.init)
+            if isinstance(node.init, c_ast.ExprList):
+               self.write(0, '{')
+               self.visit(node.init)
+               self.write(0, '}')
+            else:
+               self.visit(node.init)
          if not self.inside:
             self.write(0, ";\n")
             self.write_blank()
@@ -336,11 +341,11 @@ class CWriter(OffsetNodeVisitor):
       self.write(offset, "if");
       self.write_blank();
       self.write(offset, "(");
-      # self.visit_BinaryOp(node.cond);
       self.visit(node.cond, offset)
       self.write(offset, ")");
       self.write_blank();
       self.visit(node.iftrue, offset);
+      self.write(offset, ";")
       if node.iffalse:
          self.write(offset, "else");
          self.write_blank()
