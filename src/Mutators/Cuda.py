@@ -199,13 +199,15 @@ class CudaMutator(object):
          print " Loading frozen template of Declarations " + self.kernel_name
          tree = Dump.load('Declarations' + self.kernel_name)
       declarations =  tree
-      reduction_pointer_decls = copy.deepcopy(reduction_node_list)
-      # Set Type of reduction_decls  for memSize sizeof (All of the reduction vars must be of the same type)
-      declarations.ext[MEMSIZE_POS].init.right.expr.type = reduction_pointer_decls[0].type
-      reduction_cu_pointer_decls = self._build_reduction_decls(reduction_pointer_decls)
-      # Insert into tree
-      declarations.ext.extend(reduction_pointer_decls)
-      declarations.ext.extend(reduction_cu_pointer_decls)
+      # Maybe we haven't got a reduction clause
+      if len(reduction_node_list):
+         reduction_pointer_decls = copy.deepcopy(reduction_node_list)
+         # Set Type of reduction_decls  for memSize sizeof (All of the reduction vars must be of the same type)
+         declarations.ext[MEMSIZE_POS].init.right.expr.type = reduction_pointer_decls[0].type
+         reduction_cu_pointer_decls = self._build_reduction_decls(reduction_pointer_decls)
+         # Insert into tree
+         declarations.ext.extend(reduction_pointer_decls)
+         declarations.ext.extend(reduction_cu_pointer_decls)
       declarations.ext.extend(self._build_shared_memory_decls_cu(shared_node_list, declarations))
       declarations.ext[DIMA_POS].init = numThreads
       return declarations 
@@ -234,12 +236,16 @@ class CudaMutator(object):
    
       return self.parse_snippet(template_code, None, name = 'SendData').ext[-1].body
 
-   def buildRetrieve(self, reduction_vars):
+   def buildRetrieve(self, reduction_vars, modified_shared_vars):
       memcpy_lines = ""
       # CudaMemCpy lines 
       for elem in reduction_vars:
          memcpy_lines += "cudaMemcpy(reduction_loc_" + (elem.name) + ", reduction_cu_" + elem.name + ", memSize, cudaMemcpyDeviceToHost);\n"
-      
+      # If a shared var is modified inside kernel, we retrieve it from device
+      for elem in modified_shared_vars:
+         memcpy_lines += "cudaMemcpy(" + (elem.name) + ", "  + elem.name + "_cu, memSize, cudaMemcpyDeviceToHost);\n"
+
+     
       # Template source
       template_code = """
       int fake() {
@@ -273,8 +279,10 @@ class CudaMutator(object):
        kernel_parameters = " "
        if len(reduction_var_list) > 0:
          kernel_parameters += reduction_var_list
+       if len(reduction_var_list) > 0 and len(shared_var_list) > 0:
+         kernel_parameters += ","
        if len(shared_var_list) > 0:
-         kernel_parameters += "," + ",".join(shared_var_list)
+         kernel_parameters += ",".join(shared_var_list)
 
        template_code = """
   	#include "llcomp_cuda.h" 
@@ -484,7 +492,7 @@ void checkCUDAError (const char *msg)
       kernelLaunch_subtree = self.buildKernelLaunch(reduction_vars = reduction_params, shared_vars = shared_params, ast = ompFor_node)
       InsertTool(subtree = kernelLaunch_subtree, position = "end").apply(cuda_stmts, 'stmts')
       # Retrieve data
-      retrieve_subtree = self.buildRetrieve(reduction_vars = reduction_params)
+      retrieve_subtree = self.buildRetrieve(reduction_vars = reduction_params, modified_shared_vars = [])
       InsertTool(subtree = retrieve_subtree, position = "end").apply(cuda_stmts, 'stmts')
       # Host reduction
       reduction_subtree = self.buildHostReduction(reduction_vars = reduction_params)

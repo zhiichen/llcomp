@@ -84,8 +84,8 @@ ConstantCalc().fast_apply_all(ast)
 new_ast = None
 
 try:
-   # t = CudaMutator()
-   t = CM_OmpParallel()
+   t = CudaMutator()
+   # t = CM_OmpParallel()
    new_ast = t.apply(ast)
 except CudaMutatorError as cme:
    print " Error while mutating tree "
