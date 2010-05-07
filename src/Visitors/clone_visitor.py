@@ -239,8 +239,13 @@ class CWriter(OffsetNodeVisitor):
             self.visit(node.stmt, offset)
       self.write_blank()
 
- # def visit_While(self, node, offset = 0):
- #  pass
+   def visit_While(self, node, offset = 0):
+      self.write(offset, "while (")
+      self.visit(node.cond)
+      self.write(0, ")")
+      self.visit(node.stmt)
+
+
    # ******************** Expressions ********************
    def visit_Assignment(self, node, offset = 0):
       self.visit(node.lvalue)
