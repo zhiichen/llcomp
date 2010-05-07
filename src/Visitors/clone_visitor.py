@@ -359,6 +359,24 @@ class CWriter(OffsetNodeVisitor):
          self.write_blank()
          self.visit(node.iffalse)
 
+   def visit_Switch(self, node, offset = 0):
+      self.write(offset, "switch (")
+      self.visit(node.cond)
+      self.write(0, ")")
+      self.visit(node.stmt)
+
+   def visit_Case(self, node, offset = 0):
+      self.write(offset, "case ")
+      self.visit(node.expr)
+      self.write(0, " : ")
+      self.visit(node.stmt)
+
+   def visit_Default(self, node, offset = 0):
+      self.write(offset, "default ")
+      self.write(0, " : ")
+      self.visit(node.stmt)
+
+
    # ******************** Typecast ********************
    def visit_Cast(self, node, offset = 0):
       self.write(offset, '(')
