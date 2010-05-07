@@ -149,7 +149,7 @@ class CWriter(OffsetNodeVisitor):
             self.write_blank()
 
    def visit_FuncDecl(self, node, name = "None", offset = 0 ):
-      self.visit_TypeDecl(node.type, offset = 0)
+      self.visit(node.type, offset = 0)
       self.write(offset, str(name))
       if node.args:
          self.inside = 1
@@ -170,6 +170,7 @@ class CWriter(OffsetNodeVisitor):
 
    def visit_PtrDecl(self, node, offset = 0):
       self.visit(node.type)
+      # self.write(offset, node.quals)
       self.write(offset, "*")
 
 
@@ -238,7 +239,8 @@ class CWriter(OffsetNodeVisitor):
             self.visit(node.stmt, offset)
       self.write_blank()
 
-
+ # def visit_While(self, node, offset = 0):
+ #  pass
    # ******************** Expressions ********************
    def visit_Assignment(self, node, offset = 0):
       self.visit(node.lvalue)
