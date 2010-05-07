@@ -358,7 +358,9 @@ class CWriter(OffsetNodeVisitor):
       self.visit(node.to_type)
 #      self.generic_visit(node.childrens)
       self.write(offset, ')')
+      self.write(offset, '(')
       self.visit(node.expr)
+      self.write(offset, ')')
 
    # ******************** Language Extensions ********************
    def visit_Pragma(self, node, offset = 0):
