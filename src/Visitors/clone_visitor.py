@@ -334,7 +334,7 @@ class CWriter(OffsetNodeVisitor):
 
    def visit_StructRef(self, node, offset = 0):
       self.visit(node.name)
-      self.write(0, ".")
+      self.write(0, node.type)
       self.visit(node.field)
       self.write_blank()
 
