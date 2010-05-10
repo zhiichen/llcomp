@@ -139,7 +139,7 @@ class CM_OmpFor(CudaMutator):
       kernelLaunch_subtree = self.buildKernelLaunch(reduction_vars = reduction_params, shared_vars = shared_params, ast = ompFor_node)
       InsertTool(subtree = kernelLaunch_subtree, position = "end").apply(cuda_stmts, 'stmts')
       # Retrieve data
-      retrieve_subtree = self.buildRetrieve(reduction_vars = reduction_params)
+      retrieve_subtree = self.buildRetrieve(reduction_vars = reduction_params, modified_shared_vars = shared_params)
       InsertTool(subtree = retrieve_subtree, position = "end").apply(cuda_stmts, 'stmts')
       # Host reduction
       reduction_subtree = self.buildHostReduction(reduction_vars = reduction_params)

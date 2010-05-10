@@ -243,8 +243,9 @@ class CudaMutator(object):
          memcpy_lines += "cudaMemcpy(reduction_loc_" + (elem.name) + ", reduction_cu_" + elem.name + ", memSize, cudaMemcpyDeviceToHost);\n"
       # If a shared var is modified inside kernel, we retrieve it from device
       for elem in modified_shared_vars:
-         memcpy_lines += "cudaMemcpy(" + (elem.name) + ", "  + elem.name + "_cu, memSize, cudaMemcpyDeviceToHost);\n"
-
+         # Only malloc / send if it is a complex type
+         if isinstance(elem.type, c_ast.ArrayDecl) or isinstance(elem.type, c_ast.Struct):
+            memcpy_lines += "cudaMemcpy(" + (elem.name) + ", "  + elem.name + "_cu, memSize, cudaMemcpyDeviceToHost);\n"
      
       # Template source
       template_code = """
@@ -492,7 +493,8 @@ void checkCUDAError (const char *msg)
       kernelLaunch_subtree = self.buildKernelLaunch(reduction_vars = reduction_params, shared_vars = shared_params, ast = ompFor_node)
       InsertTool(subtree = kernelLaunch_subtree, position = "end").apply(cuda_stmts, 'stmts')
       # Retrieve data
-      retrieve_subtree = self.buildRetrieve(reduction_vars = reduction_params, modified_shared_vars = [])
+      # TODO : Detect modified vars
+      retrieve_subtree = self.buildRetrieve(reduction_vars = reduction_params, modified_shared_vars = shared_params)
       InsertTool(subtree = retrieve_subtree, position = "end").apply(cuda_stmts, 'stmts')
       # Host reduction
       reduction_subtree = self.buildHostReduction(reduction_vars = reduction_params)
