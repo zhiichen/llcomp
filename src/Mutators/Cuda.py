@@ -318,6 +318,7 @@ class CudaMutator(object):
       {
           $reduction_lines
       }
+
       /* By default, omp for has a wait at the end */
       $wait
       $free_lines
@@ -341,6 +342,47 @@ void checkCUDAError (const char *msg)
 		exit (EXIT_FAILURE);
 	}
 }
+
+#ifndef __DEVICE_EMULATION__
+#define EMUSYNC
+#endif
+
+/* __global__ void reduction_sdk(int *g_idata, int *g_odata)
+{
+    extern __shared__ int sdata[];
+
+    // perform first level of reduction,
+    // reading from global memory, writing to shared memory
+    unsigned int tid = threadIdx.x;
+    unsigned int i = blockIdx.x*(blockDim.x*2) + threadIdx.x;
+    sdata[tid] = g_idata[i] + g_idata[i+blockDim.x];
+    __syncthreads();
+
+    // do reduction in shared mem
+    for(unsigned int s=blockDim.x/2; s>32; s>>=1)
+    {
+        if (tid < s)
+            sdata[tid] += sdata[tid + s];
+        __syncthreads();
+    }
+
+#ifndef __DEVICE_EMULATION__
+    if (tid < 32)
+#endif
+    {
+        sdata[tid] += sdata[tid + 32]; EMUSYNC;
+        sdata[tid] += sdata[tid + 16]; EMUSYNC;
+        sdata[tid] += sdata[tid +  8]; EMUSYNC;
+        sdata[tid] += sdata[tid +  4]; EMUSYNC;
+        sdata[tid] += sdata[tid +  2]; EMUSYNC;
+        sdata[tid] += sdata[tid +  1]; EMUSYNC;
+    }
+
+    // write result for this block to global mem 
+    if (tid == 0) g_odata[blockIdx.x] = sdata[0];
+} */
+
+
 """
          print " Parsing template of Support Routines "
          tree = self.parse_snippet(template_code, None, name = 'SupportRoutines')

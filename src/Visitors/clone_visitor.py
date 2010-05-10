@@ -401,8 +401,8 @@ class OmpWriter(CWriter):
       self.write_blank();
       self.write(offset, node.name)
       self.write_blank();
-      self.write(offset, 'parallel')
-      self.write_blank();
+      # self.write(offset, 'parallel')
+      # self.write_blank();
       if node.clauses:
          for elem in node.clauses:
             self.visit(elem)
@@ -441,13 +441,13 @@ class OmpWriter(CWriter):
 
    def visit_OmpClause(self, node, offset):
       self.write(offset, node.name.lower())
-      self.write(0, '(');
       if node.name == 'REDUCTION':
+         self.write(0, '(');
          self.write(0, node.type)
          self.write(0, ':')
       self.visit(node.identifiers)
-      self.write(0, ')');
-
+      if node.name == 'REDUCTION':
+         self.write(0, ')');
 
 
 class CUDAWriter(OmpWriter):
