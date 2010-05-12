@@ -75,7 +75,7 @@ class CM_OmpParallel(CudaMutator):
          private_params += ompParallel_node.stmt.decls
       private_params.extend(threadprivate)
 
-
+      # Loops inside parallel region (wired for now)
       CM_OmpFor(clause_dict, kernel_name = 'initKernel').apply(ast)
       CM_OmpFor(clause_dict, kernel_name = 'loopKernel').apply(ast)
 
@@ -83,11 +83,7 @@ class CM_OmpParallel(CudaMutator):
       cuda_stmts = c_ast.Compound(stmts = [], decls = []);
 
       ##################### Cuda parameters on host
-#      print " *** Private params :  " 
-#      for priv in private_params:
-#         priv.show()
 
-#      DotDebugTool().apply(private_params)
 
       ##################### Declarations
 
@@ -110,8 +106,5 @@ class CM_OmpParallel(CudaMutator):
       # Replace the entire pragma by a CompoundStatement with all the new statements
       # Note: The parent of Parallel is always a Pragma node
       ReplaceTool(new_node = cuda_stmts, old_node = self._parallel.parent).apply(self._parallel.parent.parent, 'stmts')
-      # DotDebugTool().apply(self._parallel)
-      # DotDebugTool().apply(cuda_stmts)
-      # InsertTool(subtree = cuda_stmts, position = "begin").apply(self._parallel.stmt, 'stmts')
 
 
