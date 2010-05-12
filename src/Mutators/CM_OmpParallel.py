@@ -41,9 +41,9 @@ class CM_OmpParallel(CudaMutator):
       for elem in shared_vars:
          # Only malloc / send if it is a complex type
          if isinstance(elem.type, c_ast.ArrayDecl): 
-            shared_dict[elem.name] = "sizeof(" + " ".join(self.get_names(ast,elem)) +  ") * " +  elem.type.dim.value
+            shared_dict[elem.name] = "sizeof(" + " ".join(self.get_names(elem, ast)) +  ") * " +  elem.type.dim.value
          elif isinstance(elem.type, c_ast.Struct):
-            shared_dict[elem.name] = "sizeof(" + " ".join(self.get_names(ast,elem)) +  ")"
+            shared_dict[elem.name] = "sizeof(" + " ".join(self.get_names(elem, ast)) +  ")"
 
       shared_malloc_lines = "\n".join(["cudaMalloc((void **) &" + str(key) + "_cu," + str(value) + ");" for key,value in shared_dict.items()])
       shared_malloc_lines += "\n".join(["cudaMemcpy(" + str(key) + "_cu," + str(key) + ", " + str(value) + ", cudaMemcpyHostToDevice);" for key,value in shared_dict.items()])
@@ -76,7 +76,8 @@ class CM_OmpParallel(CudaMutator):
       private_params.extend(threadprivate)
 
 
-      CM_OmpFor(clause_dict).apply(ast)
+      CM_OmpFor(clause_dict, kernel_name = 'initKernel').apply(ast)
+      CM_OmpFor(clause_dict, kernel_name = 'loopKernel').apply(ast)
 
       ##################### Statement for cuda
       cuda_stmts = c_ast.Compound(stmts = [], decls = []);

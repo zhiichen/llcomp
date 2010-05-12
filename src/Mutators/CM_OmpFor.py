@@ -52,13 +52,14 @@ class CM_OmpFor(CudaMutator):
          print " Loading frozen template of Declarations " + self.kernel_name
          tree = Dump.load('Declarations' + self.kernel_name)
       declarations =  tree
-      reduction_pointer_decls = copy.deepcopy(reduction_node_list)
-      # Set Type of reduction_decls  for memSize sizeof (All of the reduction vars must be of the same type)
-      declarations.ext[MEMSIZE_POS].init.right.expr.type = reduction_pointer_decls[0].type
-      reduction_cu_pointer_decls = self._build_reduction_decls(reduction_pointer_decls)
-      # Insert into tree
-      declarations.ext.extend(reduction_pointer_decls)
-      declarations.ext.extend(reduction_cu_pointer_decls)
+      if len(reduction_node_list) > 0:
+         reduction_pointer_decls = copy.deepcopy(reduction_node_list)
+         # Set Type of reduction_decls  for memSize sizeof (All of the reduction vars must be of the same type)
+         declarations.ext[MEMSIZE_POS].init.right.expr.type = reduction_pointer_decls[0].type
+         reduction_cu_pointer_decls = self._build_reduction_decls(reduction_pointer_decls)
+         # Insert into tree
+         declarations.ext.extend(reduction_pointer_decls)
+         declarations.ext.extend(reduction_cu_pointer_decls)
       declarations.ext[DIMA_POS].init = numThreads
       return declarations 
 
@@ -87,14 +88,12 @@ class CM_OmpFor(CudaMutator):
       ##################### Cuda parameters on host
 
       clause_dict = self._get_dict_from_clauses(ompFor_node.clauses,  ast)
-      # parent_clause_dict = self._get_dict_from_clauses(self._parallel.clauses, ast)
+  
       reduction_params = clause_dict['REDUCTION']
       nowait = clause_dict.has_key('NOWAIT')
       # Private declarations come from the parent parallel construct
       private_params = clause_dict['PRIVATE']
       shared_params = clause_dict['SHARED']
-#      if self._parallel.stmt.decls:
-#         private_params += self._parallel.stmt.decls
 
 
       ##################### Declarations
@@ -142,7 +141,7 @@ class CM_OmpFor(CudaMutator):
       retrieve_subtree = self.buildRetrieve(reduction_vars = reduction_params, modified_shared_vars = shared_params)
       InsertTool(subtree = retrieve_subtree, position = "end").apply(cuda_stmts, 'stmts')
       # Host reduction
-      reduction_subtree = self.buildHostReduction(reduction_vars = reduction_params)
+      reduction_subtree = self.buildHostReduction(reduction_vars = reduction_params, ast = ast)
       InsertTool(subtree = reduction_subtree, position = "end").apply(cuda_stmts, 'stmts')
 
       # Replace the entire pragma by a CompoundStatement with all the new statements

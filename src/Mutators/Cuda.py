@@ -37,8 +37,8 @@ class CudaMutator(object):
       self._parallel = None
       self._clauses = clauses
 
-
-   def get_names(ast,self, elem):
+   # TODO: Clean this function, it has an strange behaviour
+   def get_names(self, elem, ast):
       """ Return a list of names for a type """
       type = type_of_id(elem, ast)
       while not hasattr(type, 'names') and not hasattr(type, 'name'):
@@ -132,9 +132,9 @@ class CudaMutator(object):
       for elem in shared_node_list:
          # Only malloc / send if it is a complex type
          if isinstance(elem.type, c_ast.ArrayDecl): 
-            shared_dict[elem.name] = "sizeof(" + " ".join(self.get_names(ast,elem)) +  ") * " +  elem.type.dim.value
+            shared_dict[elem.name] = "sizeof(" + " ".join(self.get_names(elem, ast)) +  ") * " +  elem.type.dim.value
          elif isinstance(elem.type, c_ast.Struct):
-            shared_dict[elem.name] = "sizeof(" + " ".join(self.get_names(ast,elem)) +  ")"
+            shared_dict[elem.name] = "sizeof(" + " ".join(self.get_names(elem, ast)) +  ")"
 
       shared_malloc_lines = "\n".join(["cudaMalloc((void **) &" + str(key) + "_cu," + str(value) + ");" for key,value in shared_dict.items()])
       shared_malloc_lines += "\n".join(["cudaMemcpy(" + str(key) + "_cu," + str(key) + ", " + str(value) + ", cudaMemcpyHostToDevice);" for key,value in shared_dict.items()])
@@ -159,14 +159,14 @@ class CudaMutator(object):
       reduction_dict = {} 
       # Host memory allocation (malloc lines)
       for elem in reduction_vars:
-          reduction_dict[str(elem.name)] = self.get_names(ast,elem)[0]
+          reduction_dict[str(elem.name)] = self.get_names(elem, ast)[0]
       reduction_malloc_lines = "\n".join(["reduction_loc_" + str(key) + " = (" + str(value) +"*) malloc(numElems * sizeof(" + str(value) + "));" for key,value in reduction_dict.items()])
       reduction_dict = {} 
 
 
       # Device memory allocation (cudaMalloc lines)
       for elem in reduction_vars:
-         reduction_dict[str(elem.name)] = "sizeof(" + "reduction_cu_".join(self.get_names(ast,elem)) +")"
+         reduction_dict[str(elem.name)] = "sizeof(" + "reduction_cu_".join(self.get_names(elem, ast)) +")"
       reduction_malloc_lines += "\n".join(["cudaMalloc((void **) &" + "reduction_cu_" + str(key) + ", numElems * " + str(value) + ");" for key,value in reduction_dict.items()])
       # TODO: Initial value for * reduction must be 1 instead of 0
       reduction_malloc_lines += "\n".join(["cudaMemset(reduction_cu_" + str(key) + ", (int)" + str(key) + ", numElems * " + str(value) + ");" for key,value in reduction_dict.items()])
@@ -222,9 +222,9 @@ class CudaMutator(object):
          # Only malloc / send if it is a complex type
          if isinstance(elem.type, c_ast.ArrayDecl): 
             # print "Array Decl: " + elem.name
-            shared_dict[elem.name] = "sizeof(" + " ".join(self.get_names(ast,elem)) +  ") * " +  elem.type.dim.value
+            shared_dict[elem.name] = "sizeof(" + " ".join(self.get_names(elem, ast)) +  ") * " +  elem.type.dim.value
          elif isinstance(elem.type, c_ast.Struct):
-            shared_dict[elem.name] = "sizeof(" + " ".join(self.get_names(ast,elem)) +  ")"
+            shared_dict[elem.name] = "sizeof(" + " ".join(self.get_names(elem, ast)) +  ")"
 
       shared_malloc_lines = "\n".join(["cudaMalloc((void **) &" + str(key) + "_cu," + str(value) + ");" for key,value in shared_dict.items()])
       shared_malloc_lines += "\n".join(["cudaMemcpy(" + str(key) + "_cu," + str(key) + ", " + str(value) + ", cudaMemcpyHostToDevice);" for key,value in shared_dict.items()])
@@ -300,7 +300,10 @@ class CudaMutator(object):
        return tree
 
 
-   def buildHostReduction(self, reduction_vars):
+   def buildHostReduction(self, reduction_vars, ast):
+      if len(reduction_vars) == 0:
+         return c_ast.Compound(stmts = [], decls = [])
+
       reduction_lines = ""
       free_lines = ""
       for elem in reduction_vars:
@@ -313,18 +316,15 @@ class CudaMutator(object):
 
       template_code = """
       int fake() {
-      int __i__;
-      for (__i__ = 0; __i__ < dimA; __i__++)
-      {
-          $reduction_lines
-      }
+/*      #define LLC_REDUCTION_FUNC(dest, fuente) dest = dest + fuente*/
+      kernelReduction_$type(reduction_cu_$var, numElems, $var);
 
       /* By default, omp for has a wait at the end */
       $wait
       $free_lines
       }
       """
-      return self.parse_snippet(template_code, {'reduction_lines' : reduction_lines, 'free_lines' : free_lines, 'wait' : wait_lines}, name = 'HostReduction').ext[0].body
+      return self.parse_snippet(template_code, {'var' : elem.name, 'type' : self.get_names(elem, ast)[0], 'free_lines' : free_lines, 'wait' : wait_lines}, name = 'HostReduction').ext[0].body
 
    def buildSupport(self):
       """ CUDA Support subroutines """
@@ -342,45 +342,6 @@ void checkCUDAError (const char *msg)
 		exit (EXIT_FAILURE);
 	}
 }
-
-#ifndef __DEVICE_EMULATION__
-#define EMUSYNC
-#endif
-
-/* __global__ void reduction_sdk(int *g_idata, int *g_odata)
-{
-    extern __shared__ int sdata[];
-
-    // perform first level of reduction,
-    // reading from global memory, writing to shared memory
-    unsigned int tid = threadIdx.x;
-    unsigned int i = blockIdx.x*(blockDim.x*2) + threadIdx.x;
-    sdata[tid] = g_idata[i] + g_idata[i+blockDim.x];
-    __syncthreads();
-
-    // do reduction in shared mem
-    for(unsigned int s=blockDim.x/2; s>32; s>>=1)
-    {
-        if (tid < s)
-            sdata[tid] += sdata[tid + s];
-        __syncthreads();
-    }
-
-#ifndef __DEVICE_EMULATION__
-    if (tid < 32)
-#endif
-    {
-        sdata[tid] += sdata[tid + 32]; EMUSYNC;
-        sdata[tid] += sdata[tid + 16]; EMUSYNC;
-        sdata[tid] += sdata[tid +  8]; EMUSYNC;
-        sdata[tid] += sdata[tid +  4]; EMUSYNC;
-        sdata[tid] += sdata[tid +  2]; EMUSYNC;
-        sdata[tid] += sdata[tid +  1]; EMUSYNC;
-    }
-
-    // write result for this block to global mem 
-    if (tid == 0) g_odata[blockIdx.x] = sdata[0];
-} */
 
 
 """
@@ -539,7 +500,7 @@ void checkCUDAError (const char *msg)
       retrieve_subtree = self.buildRetrieve(reduction_vars = reduction_params, modified_shared_vars = shared_params)
       InsertTool(subtree = retrieve_subtree, position = "end").apply(cuda_stmts, 'stmts')
       # Host reduction
-      reduction_subtree = self.buildHostReduction(reduction_vars = reduction_params)
+      reduction_subtree = self.buildHostReduction(reduction_vars = reduction_params, ast = ast)
       InsertTool(subtree = reduction_subtree, position = "end").apply(cuda_stmts, 'stmts')
       # Replace the entire pragma by a CompoundStatement with all the new statements
       ReplaceTool(new_node = cuda_stmts, old_node = self._parallel.parent).apply(self._parallel.parent.parent, 'stmts')
