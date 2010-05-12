@@ -77,7 +77,10 @@ print " OK "
 print "Mutating ..."
 
 # Optimize code
-from Mutators.Optimizer import ConstantCalc
+from Mutators.Optimizer import MatrixDeclToPtr, ConstantCalc
+
+
+MatrixDeclToPtr(start_ast = ast).fast_apply_all(ast)
 
 ConstantCalc().fast_apply_all(ast)
 
