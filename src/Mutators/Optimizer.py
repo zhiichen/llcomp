@@ -10,7 +10,13 @@ class ConstantBinaryExpressionFilter(GenericFilterVisitor):
    """ Returns the first node with the given attribute
    """
    def __init__(self):
-      super(ConstantBinaryExpressionFilter, self).__init__(condition_func = lambda node : type(node) == c_ast.BinaryOp and type(node.right) == c_ast.Constant and type(node.left) == c_ast.Constant)
+      def condition(node):
+         if type(node) == c_ast.BinaryOp and type(node.right) == c_ast.Constant and type(node.left) == c_ast.Constant:
+            return True
+         elif type(node) == c_ast.Constant and len(node.value) > 1:
+            return True
+         return False
+      super(ConstantBinaryExpressionFilter, self).__init__(condition_func = condition)
 
 
 class ConstantCalc(AbstractMutator):
@@ -32,13 +38,28 @@ class ConstantCalc(AbstractMutator):
 
    def mutatorFunction(self, ast):
       """ Mutator code """
+      result = None
+      _type = None
+      if type(ast) == c_ast.BinaryOp:
 #~      print "Optimize: " + str(ast.left.value) + str(ast.op) + str(ast.right.value) + " ( " + str(ast.left.type) + " ) "
-      result = c_ast.Constant(value = eval(str(ast.left.value) + str(ast.op) + str(ast.right.value)), parent = ast.parent, type = ast.left.type)
+         result = c_ast.Constant(value = str(eval(str(ast.left.value) + str(ast.op) + str(ast.right.value))), parent = ast.parent, type = ast.left.type)
+         _type =  ast.left.type
+      elif type(ast) == c_ast.Constant:
+         if ast.type == 'int':
+            try:
+               result = c_ast.Constant(value = str(eval(ast.value)), parent = ast.parent, type = 'int')
+            except NameError:
+               print "Name error: " + str(ast.value)
+               result = c_ast.Constant(value = str(ast.value), parent = ast.parent, type = 'int')
+         else:
+            result = c_ast.Constant(value = str(ast.value), parent = ast.parent, type = 'string')
+
+
       parent = ast.parent
       # Replace the BinaryOp for a constant node
       for attr in dir(parent):
-            if id(getattr(parent, attr)) == id(ast):
-               setattr(parent, attr, c_ast.Constant(value = str(eval(str(ast.left.value) + str(ast.op) + str(ast.right.value))), parent = ast.parent, type = ast.left.type))
+         if id(getattr(parent, attr)) == id(ast):
+            setattr(parent, attr, result)
       return ast
 
 
