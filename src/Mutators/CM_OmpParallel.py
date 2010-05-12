@@ -78,10 +78,6 @@ class CM_OmpParallel(CudaMutator):
 
       CM_OmpFor(clause_dict).apply(ast)
 
-#      from Tools.Debug import DotDebugTool
-#      DotDebugTool().apply(ast.ext[18])
-
-
       ##################### Statement for cuda
       cuda_stmts = c_ast.Compound(stmts = [], decls = []);
 

@@ -22,7 +22,7 @@ Index: pycparser/c_parser.py
          typename = spec['type']
          declaration = self._fix_decl_name_type(declaration, typename)
          return c_ast.FuncDef(
-@@ -362,12 +363,142 @@
+@@ -362,12 +363,147 @@
          """
          p[0] = p[1]
  
@@ -78,12 +78,17 @@ Index: pycparser/c_parser.py
 +      #     self._coord(p.lineno(1)))
 +
 +    def p_workshare_directive_1(self, p):
-+       """ workshare_directive : FOR omp_clause_list iteration_statement"""
++       """ workshare_directive : FOR omp_clause_list iteration_statement """
 +       # Start of a parallel region within a for
 +       p[0] = c_ast.OmpFor(name='for', clauses = p[2], stmt = p[3], coord = self._coord(p.lineno(1)))
 +
++    def p_workshare_directive_2(self, p):
++       """ workshare_directive : FOR  iteration_statement """
++       # Start of a parallel region within a for
++       p[0] = c_ast.OmpFor(name='for', clauses = [], stmt = p[2], coord = self._coord(p.lineno(1)))
 +
-+    def p_workshare_direcitve_2(self, p):
++
++    def p_workshare_direcitve_3(self, p):
 +       """ workshare_directive : SECTIONS omp_clause_list compound_statement """
 +       # Start of a parallel region within a for
 +       print " SECTIONS Not implemented "
@@ -167,7 +172,7 @@ Index: pycparser/c_parser.py
      # In function definitions, the declarator can be followed by
      # a declaration list, for old "K&R style" function definitios.
      #
-@@ -404,6 +535,13 @@
+@@ -404,6 +540,13 @@
          """
          p[0] = p[1]
  
@@ -181,7 +186,7 @@ Index: pycparser/c_parser.py
      # In C, declarations can come several in a line:
      #   int x, *px, romulo = 5;
      #
-@@ -1176,6 +1314,15 @@
+@@ -1176,6 +1319,15 @@
          """
          p[0] = c_ast.UnaryOp('p' + p[2], p[1], p[1].coord)
  

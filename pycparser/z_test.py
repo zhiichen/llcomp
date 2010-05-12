@@ -13,8 +13,7 @@ int main() {
       for  (i = 0/*Pututu*/; i <= 10; i++) {
          a = 0;
       }
-// tetete
-	    #pragma omp for reduction (+ : a)
+	    #pragma omp for
 	    for (i = 0; i <= 10; i++) {
 		a = a + i;
 	    }
