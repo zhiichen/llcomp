@@ -15,14 +15,13 @@ main (int argc, char *argv[])
   double mysum = 0.0;
   double pi_time = 0.0;
   double h;
-  double array [100];
 
 
   h = 1.0 / (double) n;
   sum = 0.0;
  
  /* reduction(+: sum) */
-#pragma omp parallel shared(h, array) private(x)
+#pragma omp parallel shared(h) private(x)
 {
   #pragma omp for reduction(+ : sum)
   for (i = 0; i <= n; i++)
