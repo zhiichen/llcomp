@@ -113,11 +113,8 @@ class MatrixRefFilter(GenericFilterVisitor):
    def __init__(self, idname):
       def condition(node):
          if type(node) == c_ast.ArrayRef and type(node.name) == c_ast.ArrayRef:
-            print "*** (name : " + str(idname)
-            print "** ( : " + str(node.name.name.name)
             node.show()
             if node.name.name.name == idname:
-               print " Match ! "
                return True
          return False
       super(MatrixRefFilter, self).__init__(condition_func = condition)
@@ -147,6 +144,14 @@ class MatrixRefToVect(AbstractMutator):
   
    def mutatorFunction(self, ast):
       """ Mutator code """
+      def get_str(node):
+         if hasattr(node, 'name'):
+            return node.name
+         elif hasattr(node, 'value'):
+            return node.value
+         elif type(node) == c_ast.ID:
+            return node.name.name
+
       array1lvl = ast
       array2lvl = ast.name
       # Ensure we're working with a matrix
@@ -154,15 +159,15 @@ class MatrixRefToVect(AbstractMutator):
 
       i = j = None
 
-      if hasattr(array1lvl.subscript, 'name'):
-         i = array1lvl.subscript.name
+      if type(array1lvl.subscript) == c_ast.BinaryOp:
+         i = get_str(array1lvl.subscript.left) + array1lvl.subscript.op + get_str(array1lvl.subscript.right)
       else:
-         i = array1lvl.subscript.value
+         i = get_str(array1lvl.subscript)
  
-      if hasattr(array2lvl.subscript, 'name'):
-         j = array2lvl.subscript.name
+      if type(array2lvl.subscript) == c_ast.BinaryOp:
+         j = get_str(array2lvl.subscript.left) + array2lvl.subscript.op + get_str(array2lvl.subscript.right)
       else:
-         j = array2lvl.subscript.value
+         j = get_str(array2lvl.subscript)
 
 
       # i*M+j
