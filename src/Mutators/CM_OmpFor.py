@@ -64,6 +64,22 @@ class CM_OmpFor(CudaMutator):
       return declarations 
 
 
+   def buildRetrieve(self, reduction_vars, modified_shared_vars):
+      memcpy_lines = ""
+      # CudaMemCpy lines 
+      #for elem in reduction_vars:
+      #   memcpy_lines += "cudaMemcpy(reduction_loc_" + (elem.name) + ", reduction_cu_" + elem.name + ", memSize, cudaMemcpyDeviceToHost);\n"
+     
+      # Template source
+      template_code = """
+      int fake() {
+/*      cudaMemcpy(reduction_loc, reduction_cu, memSize, cudaMemcpyDeviceToHost); */
+        $cudaMemcpyLines
+      checkCUDAError("memcpy");
+      }
+      """ 
+
+      return self.parse_snippet(template_code, {'cudaMemcpyLines' : memcpy_lines}, name = 'Retrieve').ext[0].body
 
    def buildInitialization(self, reduction_vars, ast):
       """ Initialization """
