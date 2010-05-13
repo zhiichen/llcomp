@@ -18,7 +18,7 @@
 #include "/usr/local/cuda/include/builtin_types.h" 
 
 
-/* Keep kernel identifiers as original ... */
+/* Keep kernel identifiers as original ... (CUDA includes remove them) */
 
 #define __global__ __global__
 #define __host__ __host__

@@ -317,7 +317,7 @@ class CudaMutator(object):
       template_code = """
       int fake() {
 /*      #define LLC_REDUCTION_FUNC(dest, fuente) dest = dest + fuente*/
-      kernelReduction_$type(reduction_cu_$var, numElems, $var);
+      $var = kernelReduction_$type(reduction_cu_$var, numElems, $var);
 
       /* By default, omp for has a wait at the end */
       $wait
