@@ -13,12 +13,13 @@ class ConstantBinaryExpressionFilter(GenericFilterVisitor):
       def condition(node):
          if type(node) == c_ast.BinaryOp and type(node.right) == c_ast.Constant and type(node.left) == c_ast.Constant:
             return True
-         elif type(node) == c_ast.Constant and len(node.value) > 1:
-            return True
+         # Constant calc removed , cause collateral damage if enabled. 
+         # elif type(node) == c_ast.Constant and len(node.value) > 1:
+         #   return True
          return False
       super(ConstantBinaryExpressionFilter, self).__init__(condition_func = condition)
 
-
+# Constant calc (No BinaryOP) removed , cause collateral damage if enabled. 
 class ConstantCalc(AbstractMutator):
    """ Calculate constant operations """ 
    def __init__(self):
@@ -45,14 +46,16 @@ class ConstantCalc(AbstractMutator):
          result = c_ast.Constant(value = str(eval(str(ast.left.value) + str(ast.op) + str(ast.right.value))), parent = ast.parent, type = ast.left.type)
          _type =  ast.left.type
       elif type(ast) == c_ast.Constant:
-         if ast.type == 'int':
-            try:
-               result = c_ast.Constant(value = str(eval(ast.value)), parent = ast.parent, type = 'int')
-            except NameError:
-               print "Name error: " + str(ast.value)
-               result = c_ast.Constant(value = str(ast.value), parent = ast.parent, type = 'int')
-         else:
-            result = c_ast.Constant(value = str(ast.value), parent = ast.parent, type = 'string')
+         # Constant calc (No BinaryOP) removed , cause collateral damage if enabled. 
+         result = ast
+#         if ast.type == 'int':
+#            try:
+#               result = c_ast.Constant(value = str(eval(ast.value)), parent = ast.parent, type = 'int')
+#            except NameError:
+#               print "Name error: " + str(ast.value)
+#               result = c_ast.Constant(value = str(ast.value), parent = ast.parent, type = 'int')
+#         else:
+#            result = c_ast.Constant(value = str(ast.value), parent = ast.parent, type = 'string')
 
 
       parent = ast.parent
