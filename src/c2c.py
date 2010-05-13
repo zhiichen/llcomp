@@ -74,7 +74,7 @@ from Mutators.Optimizer import MatrixDeclToPtr, ConstantCalc
 
 MatrixDeclToPtr(start_ast = new_ast).fast_apply_all(new_ast)
 
-ConstantCalc().fast_apply_all(new_ast)
+# ConstantCalc().fast_apply_all(new_ast)
 
 # Print the AST
 v = OmpWriter(filename = output_file)

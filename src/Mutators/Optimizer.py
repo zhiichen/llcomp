@@ -100,12 +100,11 @@ class MatrixDeclToPtr(AbstractMutator):
       # Ensure we're working with a matrix
       assert type(array2lvl) == c_ast.ArrayDecl
 
-      self.nrows = array1lvl.dim.value
-      self.ncols = array2lvl.dim.value
+      self.nrows = array1lvl.dim
+      self.ncols = array2lvl.dim
 
-      newdim = str(array1lvl.dim.value) + " * " + str(array2lvl.dim.value)
       array1lvl.type = array2lvl.type
-      array1lvl.dim = c_ast.Constant(type = 'int', value = newdim);
+      array1lvl.dim = c_ast.BinaryOp(op = '*', left = array2lvl.dim, right = array1lvl.dim, parent = array1lvl) # c_ast.Constant(type = 'int', value = newdim);
 
       MatrixRefToVect(nrows = self.nrows, ncols = self.ncols, arrayDeclName = array1lvl.parent.name).fast_apply_all(self.start_ast)      
 
@@ -144,38 +143,20 @@ class MatrixRefToVect(AbstractMutator):
   
    def mutatorFunction(self, ast):
       """ Mutator code """
-      def get_str(node):
-         if hasattr(node, 'name'):
-            return node.name
-         elif hasattr(node, 'value'):
-            return node.value
-         elif type(node) == c_ast.ID:
-            return node.name.name
-
+      
       array1lvl = ast
       array2lvl = ast.name
       # Ensure we're working with a matrix
       assert type(array2lvl) == c_ast.ArrayRef
 
-      i = j = None
 
-      if type(array1lvl.subscript) == c_ast.BinaryOp:
-         i = get_str(array1lvl.subscript.left) + array1lvl.subscript.op + get_str(array1lvl.subscript.right)
-      else:
-         i = get_str(array1lvl.subscript)
- 
-      if type(array2lvl.subscript) == c_ast.BinaryOp:
-         j = get_str(array2lvl.subscript.left) + array2lvl.subscript.op + get_str(array2lvl.subscript.right)
-      else:
-         j = get_str(array2lvl.subscript)
-
-
-      # i*M+j
-#      newsubscript = c_ast.BinaryOp(right = c_ast.BinaryOp(left=c_ast.Constant(type='int', value=str(i)), op = " * ", right=c_ast.Constant(type='int', value=str(self.ncols))), op = " + ", left = c_ast.Constant(type='int', value=str(j)))
-      newsubscript = str(i) + "*" + str(self.ncols) + "+" + str(j)
-
+      # j*M+i
+      # newsubscript = str(i) + "*" + str(self.ncols) + "+" + str(j)
+      ncols = c_ast.BinaryOp(op = '*', left = array1lvl.subscript, right = self.ncols, parent = None) 
+      newsubscript = c_ast.BinaryOp(op = '+', left = ncols, right = array2lvl.subscript, parent = array1lvl)
+      ncols.parent = newsubscript
       array1lvl.name = array2lvl.name
-      array1lvl.subscript = c_ast.Constant(type = 'int', value = newsubscript);
+      array1lvl.subscript = newsubscript
 
 
 
