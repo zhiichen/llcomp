@@ -115,7 +115,6 @@ class MatrixRefFilter(GenericFilterVisitor):
    def __init__(self, idname):
       def condition(node):
          if type(node) == c_ast.ArrayRef and type(node.name) == c_ast.ArrayRef:
-            node.show()
             if node.name.name.name == idname:
                return True
          return False

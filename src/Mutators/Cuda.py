@@ -370,35 +370,43 @@ void checkCUDAError (const char *msg)
       else:
           print " Loading frozen template of KernelBuild "
           tree = Dump.load(self.kernel_name)
-      # OpenMP shared vars are parameters of the kernel function
-      # Note: we need to mutate the declaration subtree into a param declaration (ArrayRef to Pointer and so on...)
-      reduction_vars = copy.deepcopy(reduction_list)
-      for elem in reduction_vars:
-         # Replace the name of the declaration. The type_declaration doesn't change, so maybe we'll get problems later?
-         IDNameMutator(old = c_ast.ID(elem.name), new = c_ast.ID('reduction_cu_' + elem.name)).apply_all(elem)
-         PointerMutator().apply(elem)
-      shared_vars = copy.deepcopy(shared_list)
-      # TODO: Move this to DeclsToParamsMutator
-      for elem in shared_vars:
-         # Replace the name of the declaration. 
-         if isinstance(elem.type, c_ast.ArrayDecl) or isinstance(elem.type, c_ast.Struct):
-            mut = IDNameMutator(old = c_ast.ID(elem.name), new = c_ast.ID(elem.name + '_cu'))
-            mut.apply_all(elem)
-            mut.apply_all(loop.stmt)
-            # Pointer instead of array 
-            elem.type = elem.type.type
-            PointerMutator().apply(elem)
 
-      # Add the declarations to the parameters of the functions
-      DeclsToParamsMutator(decls = reduction_vars).apply(tree.ext[-1].function.decl.type.args)
-      DeclsToParamsMutator(decls = shared_vars).apply(tree.ext[-1].function.decl.type.args)
+      # Note: we need to mutate the declaration subtree into a param declaration (ArrayRef to Pointer and so on...)
+      # Check if we have reductions
+      if reduction_list:
+         reduction_vars = copy.deepcopy(reduction_list)
+         for elem in reduction_vars:
+            # Replace the name of the declaration. The type_declaration doesn't change, so maybe we'll get problems later?
+            IDNameMutator(old = c_ast.ID(elem.name), new = c_ast.ID('reduction_cu_' + elem.name)).apply_all(elem)
+            PointerMutator().apply(elem)
+         # Add the declarations to the parameters of the functions
+         DeclsToParamsMutator(decls = reduction_vars).apply(tree.ext[-1].function.decl.type.args)
+      
+      # OpenMP shared vars are parameters of the kernel function
+      if shared_list:
+         shared_vars = copy.deepcopy(shared_list)
+         # TODO: Move this to DeclsToParamsMutator
+         for elem in shared_vars:
+            # Replace the name of the declaration. 
+            if isinstance(elem.type, c_ast.ArrayDecl) or isinstance(elem.type, c_ast.Struct):
+               mut = IDNameMutator(old = c_ast.ID(elem.name), new = c_ast.ID(elem.name + '_cu'))
+               mut.apply_all(elem)
+               mut.apply_all(loop.stmt)
+               # Pointer instead of array 
+               elem.type = elem.type.type
+               PointerMutator().apply(elem)
+         # Add the declarations to the parameters of the functions
+         DeclsToParamsMutator(decls = shared_vars).apply(tree.ext[-1].function.decl.type.args)
+
       # Remove the template declaration
       RemoveTool(tree.ext[-1].function.decl.type.args.params[0]).apply(tree.ext[-1].function.decl.type.args, 'params')
+
       # OpenMP Private vars need to be declared inside kernel
       #    - we build a tmp Compound to group all declarations, and insert them once
       tmp = c_ast.Compound(decls= private_list, stmts=None)
       #    - Insert tool removes the parent node of the inserted subtree
       InsertTool(subtree = tmp, position = "end").apply(tree.ext[-1].function.body, 'decls')
+
       # Add the loop statements, (but not the reduction)
       IDNameMutator(old = loop.init.lvalue, new = c_ast.ID('idx')).apply_all(loop.stmt)
       # Identify function calls inside kernel and replace the definitions to __device__ 
@@ -406,7 +414,7 @@ void checkCUDAError (const char *msg)
          for func_call in FuncCallFilter().iterate(loop.stmt):
            # func_call.show()
            # DotDebugTool(highlight = [func_call]).apply(loop.stmt)
-           print " Writing " + func_call.name.name + " to device "
+           # print " Writing " + func_call.name.name + " to device "
            try:
               fcm = FuncToDeviceMutator(func_call = func_call).apply(ast)
            except IgnoreMutationException as ime:
@@ -421,7 +429,12 @@ void checkCUDAError (const char *msg)
       # TODO: This is incorrect, we should write a subtree instead of a bare string...
       for elem in reduction_list:
          IDNameMutator(old = c_ast.ID(name = elem.name, parent = elem.parent), new = c_ast.ID(name = 'reduction_cu_' + str(elem.name) + '[idx]', parent = elem.parent)).apply_all(loop.stmt)
-      InsertTool(subtree = loop.stmt, position = "begin").apply(tree.ext[-1].function.body, 'stmts')
+      # Insert the code inside kernel
+      if type(loop.stmt) == c_ast.Compound:
+         InsertTool(subtree = loop.stmt, position = "begin").apply(tree.ext[-1].function.body, 'stmts')
+      else:
+        tmp = c_ast.Compound(decls = None, stmts=[loop.stmt], parent = tree.ext[-1].function.body)
+        InsertTool(subtree = tmp, position = "begin").apply(tree.ext[-1].function.body, 'stmts')
 #~      DotDebugTool().apply(loop.stmt)
       return c_ast.FileAST(ext = [tree.ext[-1]])
 
