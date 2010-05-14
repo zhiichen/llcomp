@@ -239,6 +239,18 @@ class OmpForFilter(GenericFilterVisitor):
    def get_func_def(self):
       return self._funcdef
 
+   def iterate(self, ast):
+       """ Iterate through matching nodes """
+       visited_nodes = []
+       try:
+         while 1:
+            visited_nodes.append(self.apply(ast, ignore = visited_nodes))
+            yield visited_nodes[-1]
+       except NodeNotFound:
+#         print "   *** Node not found on iterate, will raise StopIteration *** "
+#         raise NodeNotFound("Not")
+         raise StopIteration
+
 
 class OmpParallelFilter(GenericFilterVisitor):
    """ Returns a OmpFor node , the parallel container and the function container

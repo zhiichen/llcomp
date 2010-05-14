@@ -27,6 +27,35 @@ class CM_OmpFor(CudaMutator):
       self._parallel = f.get_parallel()
       return node
 
+#   def filter_iterator(self, ast):
+#      """ Iterative filter, looking for OmpFor """
+#      return OmpForFilter().iterate(ast)
+
+   def apply_all(self, parent_parallel_node, ast):
+      """ Apply mutation to all matches """
+      start_node = None
+      self.ast = ast
+      f = OmpForFilter()
+      num = 0;
+ #        start_node = self.filter(ast)
+ #        self.mutatorFunction(ast, start_node)
+
+      try:
+         for elem in f.iterate(ast):
+            self.kernel_name = 'loopKernel' + str(num)
+            self._func_def = f.get_func_def()
+            self._parallel = f.get_parallel()
+            if self._parallel != parent_parallel_node:
+               raise StopIteration
+            start_node = self.mutatorFunction(ast, elem)
+            num += 1;
+      except NodeNotFound as nf:
+         print str(nf)
+      except StopIteration:
+         return self._parallel
+      return start_node
+
+
    def buildDeclarations(self, numThreads, reduction_node_list):
       """ Builds the declaration section 
           @param numThreads number of threads

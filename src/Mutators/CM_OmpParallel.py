@@ -99,8 +99,9 @@ class CM_OmpParallel(CudaMutator):
       private_params.extend(threadprivate)
 
       # Loops inside parallel region (wired for now)
-      CM_OmpFor(clause_dict, kernel_name = 'initKernel').apply(ast)
-      CM_OmpFor(clause_dict, kernel_name = 'loopKernel').apply(ast)
+ #     CM_OmpFor(clause_dict, kernel_name = 'initKernel').apply(ast)
+  #    CM_OmpFor(clause_dict, kernel_name = 'loopKernel').apply(ast)
+      CM_OmpFor(clause_dict, kernel_name = 'loopKernel').apply_all(ompParallel_node, ast)
 
       ##################### Statement for cuda
       cuda_stmts = c_ast.Compound(stmts = [], decls = []);
