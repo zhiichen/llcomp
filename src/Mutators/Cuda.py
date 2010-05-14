@@ -403,12 +403,15 @@ void checkCUDAError (const char *msg)
 
       # OpenMP Private vars need to be declared inside kernel
       #    - we build a tmp Compound to group all declarations, and insert them once
-      tmp = c_ast.Compound(decls= private_list, stmts=None)
+      tmp = c_ast.Compound(decls= private_list, stmts=[])
       #    - Insert tool removes the parent node of the inserted subtree
       InsertTool(subtree = tmp, position = "end").apply(tree.ext[-1].function.body, 'decls')
 
       # Add the loop statements, (but not the reduction)
       IDNameMutator(old = loop.init.lvalue, new = c_ast.ID('idx')).apply_all(loop.stmt)
+      # Add the loop statements, (but not the reduction)
+      IDNameMutator(old = loop.init.lvalue, new = c_ast.ID('idx')).apply_all(loop.cond)
+
       # Identify function calls inside kernel and replace the definitions to __device__ 
       try:
          for func_call in FuncCallFilter().iterate(loop.stmt):
@@ -430,12 +433,9 @@ void checkCUDAError (const char *msg)
       for elem in reduction_list:
          IDNameMutator(old = c_ast.ID(name = elem.name, parent = elem.parent), new = c_ast.ID(name = 'reduction_cu_' + str(elem.name) + '[idx]', parent = elem.parent)).apply_all(loop.stmt)
       # Insert the code inside kernel
-      if type(loop.stmt) == c_ast.Compound:
-         InsertTool(subtree = loop.stmt, position = "begin").apply(tree.ext[-1].function.body, 'stmts')
-      else:
-        tmp = c_ast.Compound(decls = None, stmts=[loop.stmt], parent = tree.ext[-1].function.body)
-        InsertTool(subtree = tmp, position = "begin").apply(tree.ext[-1].function.body, 'stmts')
-#~      DotDebugTool().apply(loop.stmt)
+      # We need to check if the idx is inside for limits (in case we have more threads than iterations)
+      check_boundary_node = c_ast.Compound(decls = None, stmts = [c_ast.If(cond = loop.cond, iftrue = loop.stmt, iffalse = None)], parent = tree.ext[-1].function.body)
+      InsertTool(subtree = check_boundary_node, position = "begin").apply(tree.ext[-1].function.body, 'stmts')
       return c_ast.FileAST(ext = [tree.ext[-1]])
 
    def mutatorFunction(self, ast, ompFor_node):
