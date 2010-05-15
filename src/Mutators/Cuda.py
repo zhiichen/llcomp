@@ -8,7 +8,8 @@ from Tools.Parse import parse_template
 from Mutators.AstSupport import DeclsToParamsMutator, IDNameMutator, FuncToDeviceMutator, PointerMutator
 from Mutators.AbstractMutator import IgnoreMutationException
 
-from string import Template
+#from string import Template
+from mako.template import Template
 
 import subprocess
 from cStringIO import StringIO
@@ -68,7 +69,10 @@ class CudaMutator(object):
 
    def parse_snippet(self, template_code, subs_dir, name):
       subtree = None
-      template_code = Template(template_code).substitute(subs_dir)
+ #     template_code = Template(template_code).substitute(subs_dir)
+      if subs_dir:
+         template_code = Template(template_code).render(**subs_dir)
+ #        print " Tempalte " + str(template_code)
       try:
          subtree = parse_template(template_code, name)
       except c_parser.ParseError, e:
@@ -237,7 +241,7 @@ class CudaMutator(object):
       return self.parse_snippet(template_code, None, name = 'SendData').ext[-1].body
 
    def buildRetrieve(self, reduction_vars, modified_shared_vars):
-      memcpy_lines = ""
+      memcpy_lines = ";"
       # CudaMemCpy lines 
       for elem in reduction_vars:
          memcpy_lines += "cudaMemcpy(reduction_loc_" + (elem.name) + ", reduction_cu_" + elem.name + ", memSize, cudaMemcpyDeviceToHost);\n"
@@ -251,7 +255,7 @@ class CudaMutator(object):
       template_code = """
       int fake() {
 /*      cudaMemcpy(reduction_loc, reduction_cu, memSize, cudaMemcpyDeviceToHost); */
-        $cudaMemcpyLines
+        ${cudaMemcpyLines}
       checkCUDAError("memcpy");
       }
       """ 
@@ -292,7 +296,7 @@ class CudaMutator(object):
               dim3 dimGrid (numBlocks);
      	        dim3 dimBlock (numThreadsPerBlock);
 
-          $kernelName <<< dimGrid, dimBlock >>> ($kernelParameters);
+          ${kernelName} <<< dimGrid, dimBlock >>> (${kernelParameters});
        }
        """
        # The last element is the object function
@@ -317,11 +321,11 @@ class CudaMutator(object):
       template_code = """
       int fake() {
 /*      #define LLC_REDUCTION_FUNC(dest, fuente) dest = dest + fuente*/
-      $var = kernelReduction_$type(reduction_cu_$var, numElems, $var);
+      ${var} = kernelReduction_${type}(reduction_cu_${var}, numElems, ${var});
 
       /* By default, omp for has a wait at the end */
-      $wait
-      $free_lines
+      ${wait}
+      ${free_lines}
       }
       """
       return self.parse_snippet(template_code, {'var' : elem.name, 'type' : self.get_names(elem, ast)[0], 'free_lines' : free_lines, 'wait' : wait_lines}, name = 'HostReduction').ext[0].body
@@ -358,7 +362,7 @@ void checkCUDAError (const char *msg)
       if not Dump.exists(self.kernel_name):
           template_code = """
          #include "llcomp_cuda.h" 
-          __global__ void $kernelName (double * reduction_cu)
+          __global__ void ${kernelName} (double * reduction_cu)
           {
           int idx = blockIdx.x * blockDim.x + threadIdx.x;
           ;

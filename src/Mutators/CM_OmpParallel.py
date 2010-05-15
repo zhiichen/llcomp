@@ -71,7 +71,7 @@ class CM_OmpParallel(CudaMutator):
       template_code = """
       int fake() {
 /*      cudaMemcpy(reduction_loc, reduction_cu, memSize, cudaMemcpyDeviceToHost); */
-        $cudaMemcpyLines
+        ${cudaMemcpyLines}
       checkCUDAError("memcpy");
       }
       """ 
@@ -87,7 +87,7 @@ class CM_OmpParallel(CudaMutator):
       threadprivate = []
       for elem in OmpThreadPrivateFilter().dfs_iter(ast):
          threadprivate.extend([decl_of_id(it, ast) for it in elem.identifiers.params])
-      print " Threadprivate : " + str(threadprivate)
+      # print " Threadprivate : " + str(threadprivate)
 
       clause_dict = self._get_dict_from_clauses(ompParallel_node.clauses, ast)
       shared_params = clause_dict['SHARED']

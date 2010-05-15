@@ -103,7 +103,7 @@ class CM_OmpFor(CudaMutator):
       template_code = """
       int fake() {
 /*      cudaMemcpy(reduction_loc, reduction_cu, memSize, cudaMemcpyDeviceToHost); */
-        $cudaMemcpyLines
+        ${cudaMemcpyLines}
       checkCUDAError("memcpy");
       }
       """ 
