@@ -137,7 +137,9 @@ void compute(int np, int nd,
   kin = 0.0;
   
   /* The computation of forces and energies is fully parallel. */
-#pragma omp parallel for shared(f, vel, pos, np, nd, box) private(i, j, k, rij, d) reduction(+ : pot, kin)
+#pragma omp parallel  shared(f, vel, pos, np, nd, box) private(i, j, k, rij, d) 
+{ 
+  #pragma omp for reduction(+ : pot, kin)
   for (i = 0; i < np; i++) {
     /* compute potential energy and forces */
     for (j = 0; j < nd; j++)
@@ -154,8 +156,9 @@ void compute(int np, int nd,
       }
     }
     /* compute kinetic energy */
-    kin = kin + dotr8(nd,vel[i],vel[j]);
+    kin = kin + dotr8(nd,vel[i],vel[i]);
   }
+}
   
   kin = kin*0.5*mass;
 
@@ -166,7 +169,7 @@ void compute(int np, int nd,
 /***********************************************************************
  * Perform the time integration, using a velocity Verlet algorithm
  ***********************************************************************/
-void update(int np, int nd, vnd_t *pos, vnd_t *vel, vnd_t *f, vnd_t *a,
+void update(int np, int nd, vnd_t pos[nparts], vnd_t vel[nparts] , vnd_t f[nparts] , vnd_t a [nparts],
 	    double mass, real8 dt)
 {
   int i, j;
@@ -175,7 +178,9 @@ void update(int np, int nd, vnd_t *pos, vnd_t *vel, vnd_t *f, vnd_t *a,
   rmass = 1.0/mass;
   
   /* The time integration is fully parallel */
-/* #pragma omp parallel for default(shared) private(i,j) firstprivate(rmass, dt) */
+#pragma omp parallel  shared(pos, vel, a, f, np, nd, dt, rmass) private(i,j)
+{
+  #pragma omp for
   for (i = 0; i < np; i++) {
     for (j = 0; j < nd; j++) {
       pos[i][j] = pos[i][j] + vel[i][j]*dt + 0.5*dt*dt*a[i][j];
@@ -183,6 +188,7 @@ void update(int np, int nd, vnd_t *pos, vnd_t *vel, vnd_t *f, vnd_t *a,
       a[i][j] = f[i][j]*rmass;
     }
   }
+}
 }
 
 /******************

@@ -90,6 +90,9 @@ try:
    # t = CudaMutator()
    t = CM_OmpParallel()
    new_ast = t.apply(ast)
+   link_all_parents(new_ast)
+   t2 = CM_OmpParallel()
+   new_ast = t2.apply(new_ast)
 except CudaMutatorError as cme:
    print " Error while mutating tree "
    print cme
