@@ -98,18 +98,18 @@ class TestCudaMutatorFunctions(unittest.TestCase):
         self.good_tree.show(good_str)
         self.assertEqual(ast_str.getvalue(), good_str.getvalue())
  
-    def test_mandelcu(self):
-        template_code = open('examples/mandel.c', 'r').read()
-        ast = parse_template(template_code, 'mandel_test')
-        link_all_parents(ast)
-        new_ast = CudaMutator().apply(ast)
-
-        self.good_tree = Dump.load('tests/mandelcu_tree')
-        new_ast_str = StringIO();
-        good_str = StringIO();
-        new_ast.show(new_ast_str)
-        self.good_tree.show(good_str)
-        self.assertEqual(new_ast_str.getvalue(), good_str.getvalue())
+#    def test_mandelcu(self):
+#        template_code = open('examples/mandel.c', 'r').read()
+#        ast = parse_template(template_code, 'mandel_test')
+#        link_all_parents(ast)
+#        new_ast = CudaMutator().apply(ast)
+#
+#        self.good_tree = Dump.load('tests/mandelcu_tree')
+#        new_ast_str = StringIO();
+#        good_str = StringIO();
+#        new_ast.show(new_ast_str)
+#        self.good_tree.show(good_str)
+#        self.assertEqual(new_ast_str.getvalue(), good_str.getvalue())
      
 
 if __name__ == '__main__':
