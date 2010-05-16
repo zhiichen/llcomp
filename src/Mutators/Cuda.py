@@ -317,7 +317,7 @@ class CudaMutator(object):
       reduction_lines = ""
       free_lines = ""
       for elem in reduction_vars:
-         reduction_lines += elem.name + "+= reduction_loc_" + (elem.name) + "[__i__];\n"
+ #        reduction_lines += elem.name + "+= reduction_loc_" + (elem.name) + "[__i__];\n"
          free_lines += "cudaFree(reduction_cu_" + (elem.name) + ");\n"
          free_lines += "free(reduction_loc_" + (elem.name) + ");\n"
       # TODO: Add shared vars to free
@@ -327,14 +327,16 @@ class CudaMutator(object):
       template_code = """
       int fake() {
 /*      #define LLC_REDUCTION_FUNC(dest, fuente) dest = dest + fuente*/
+   % for var in reduction_vars:
       ${var} = kernelReduction_${type}(reduction_cu_${var}, numElems, ${var});
+   % endfor
 
       /* By default, omp for has a wait at the end */
       ${wait}
       ${free_lines}
       }
       """
-      return self.parse_snippet(template_code, {'var' : elem.name, 'type' : self.get_names(elem, ast)[0], 'free_lines' : free_lines, 'wait' : wait_lines}, name = 'HostReduction').ext[0].body
+      return self.parse_snippet(template_code, {'reduction_vars' : [elem.name for elem in reduction_vars], 'type' : self.get_names(elem, ast)[0], 'free_lines' : free_lines, 'wait' : wait_lines}, name = 'HostReduction').ext[0].body
 
    def buildSupport(self):
       """ CUDA Support subroutines """
