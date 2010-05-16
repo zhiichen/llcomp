@@ -240,25 +240,33 @@ class CudaMutator(object):
    
       return self.parse_snippet(template_code, None, name = 'SendData').ext[-1].body
 
-   def buildRetrieve(self, reduction_vars, modified_shared_vars):
+   def buildRetrieve(self, reduction_vars, modified_shared_vars, ast = None):
       memcpy_lines = []
       # If a shared var is modified inside kernel, we retrieve it from device
       for elem in modified_shared_vars:
          # Only malloc / send if it is a complex type
-         if isinstance(elem.type, c_ast.ArrayDecl) or isinstance(elem.type, c_ast.Struct):
-            memcpy_lines += [elem.name]
-     
+#         if isinstance(elem.type, c_ast.ArrayDecl) or isinstance(elem.type, c_ast.Struct):
+#            memcpy_lines += [elem.name]
+         if isinstance(elem.type, c_ast.ArrayDecl): 
+            memcpy_lines.append([ elem.name, "sizeof(" + " ".join(self.get_names(elem, ast)) +  ") * " +  elem.type.dim.value])
+         elif isinstance(elem.type, c_ast.Struct):
+            memcpy_lines.append([elem.name,  "sizeof(" + " ".join(self.get_names(elem, ast)) +  ")"])
+
       # Template source
       template_code = """
       int fake() {
-      % for name in ${var_names}:
+      % for name in reduction_names:
         cudaMemcpy(reduction_loc_${name}, reduction_cu_${name}, memSize, cudaMemcpyDeviceToHost);
       % endfor
+
+      % for elem in shared_names:
+        cudaMemcpy(${elem[0]}, ${elem[0]}_cu, ${elem[1]}, cudaMemcpyDeviceToHost);
+      % endfor
+
       checkCUDAError("memcpy");
       }
       """ 
-
-      return self.parse_snippet(template_code, {'var_names' : reduction_vars + memcpy_lines}, name = 'Retrieve').ext[0].body
+      return self.parse_snippet(template_code, {'reduction_names' : reduction_vars, 'shared_names' : memcpy_lines}, name = 'Retrieve').ext[0].body
       
    def buildKernelLaunch(self, reduction_vars, shared_vars, ast):
        # FIXME : reduction_vars is now an array of declarations

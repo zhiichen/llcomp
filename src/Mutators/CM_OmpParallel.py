@@ -55,28 +55,28 @@ class CM_OmpParallel(CudaMutator):
    
       return self.parse_snippet(template_code, None, name = 'SendData').ext[-1].body
 
-   def buildRetrieve(self, modified_shared_vars, ast):
-      memcpy_lines = ""
-      # CudaMemCpy lines 
-      for elem in modified_shared_vars:
- #        memcpy_lines += "cudaMemcpy(reduction_loc_" + (elem.name) + ", reduction_cu_" + elem.name + ", memSize, cudaMemcpyDeviceToHost);\n"
-         # Only malloc / recieve if it is a complex type
-         if isinstance(elem.type, c_ast.ArrayDecl): 
-            memcpy_lines += "cudaMemcpy(" + str(elem.name) + ", " + str(elem.name) + "_cu, sizeof(" + " ".join(self.get_names(elem, ast)) +  ") * " +  elem.type.dim.value + ", cudaMemcpyDeviceToHost);"
-         elif isinstance(elem.type, c_ast.Struct):
-            memcpy_lines += "cudaMemcpy(" + str(elem.name) + ", " + str(elem.name) + "_cu, sizeof(" + " ".join(self.get_names(elem, ast)) +  "), cudaMemcpyDeviceToHost);"
-
-     
-      # Template source
-      template_code = """
-      int fake() {
-/*      cudaMemcpy(reduction_loc, reduction_cu, memSize, cudaMemcpyDeviceToHost); */
-        ${cudaMemcpyLines}
-      checkCUDAError("memcpy");
-      }
-      """ 
-
-      return self.parse_snippet(template_code, {'cudaMemcpyLines' : memcpy_lines}, name = 'Retrieve').ext[0].body
+#   def buildRetrieve(self, modified_shared_vars, ast):
+#      memcpy_lines = ""
+#      # CudaMemCpy lines 
+#      for elem in modified_shared_vars:
+# #        memcpy_lines += "cudaMemcpy(reduction_loc_" + (elem.name) + ", reduction_cu_" + elem.name + ", memSize, cudaMemcpyDeviceToHost);\n"
+#         # Only malloc / recieve if it is a complex type
+#         if isinstance(elem.type, c_ast.ArrayDecl): 
+#            memcpy_lines += "cudaMemcpy(" + str(elem.name) + ", " + str(elem.name) + "_cu, sizeof(" + " ".join(self.get_names(elem, ast)) +  ") * " +  elem.type.dim.value + ", cudaMemcpyDeviceToHost);"
+#         elif isinstance(elem.type, c_ast.Struct):
+#            memcpy_lines += "cudaMemcpy(" + str(elem.name) + ", " + str(elem.name) + "_cu, sizeof(" + " ".join(self.get_names(elem, ast)) +  "), cudaMemcpyDeviceToHost);"
+#
+#     
+#      # Template source
+#      template_code = """
+#      int fake() {
+#/*      cudaMemcpy(reduction_loc, reduction_cu, memSize, cudaMemcpyDeviceToHost); */
+#        ${cudaMemcpyLines}
+#      checkCUDAError("memcpy");
+#      }
+#      """ 
+#
+#      return self.parse_snippet(template_code, {'cudaMemcpyLines' : memcpy_lines}, name = 'Retrieve').ext[0].body
 
 
    def mutatorFunction(self, ast, ompParallel_node):
@@ -120,7 +120,7 @@ class CM_OmpParallel(CudaMutator):
       InsertTool(subtree = initialization_subtree, position = "begin").apply(cuda_stmts, 'stmts')
 
       # Retrieve data
-      retrieve_subtree = self.buildRetrieve(modified_shared_vars = shared_params, ast = ast)
+      retrieve_subtree = self.buildRetrieve(reduction_vars = [], modified_shared_vars = shared_params, ast = ast)
       InsertTool(subtree = retrieve_subtree, position = "end").apply(cuda_stmts, 'stmts')
 
 
