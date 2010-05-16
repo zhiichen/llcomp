@@ -173,8 +173,8 @@ class FuncToDeviceMutator(AbstractMutator):
 
       cuda_node = c_ast.CUDAKernel(name = self.func_call.name.name, type = 'both', function = ast, parent=file_ast)
       ast.parent = cuda_node
-      from Tools.Debug import DotDebugTool
-      DotDebugTool(highlight = [ast]).apply(file_ast)
+#      from Tools.Debug import DotDebugTool
+#      DotDebugTool(highlight = [ast]).apply(file_ast)
 #      ast.show()
       ReplaceTool(new_node = cuda_node, old_node = ast).apply(file_ast, 'ext')
       return cuda_node
