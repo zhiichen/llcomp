@@ -42,12 +42,14 @@ class CM_OmpFor(CudaMutator):
 
       try:
          for elem in f.iterate(ast):
-            self.kernel_name = 'loopKernel' + str(num)
+            old_name = self.kernel_name
+            self.kernel_name = self.kernel_name + str(num)
             self._func_def = f.get_func_def()
             self._parallel = f.get_parallel()
             if self._parallel != parent_parallel_node:
                raise StopIteration
             start_node = self.mutatorFunction(ast, elem)
+            self.kernel_name = old_name
             num += 1;
       except NodeNotFound as nf:
          print str(nf)

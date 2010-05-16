@@ -29,11 +29,12 @@ class CudaMutator(object):
    """ This  mutator locates a omp parallel for reduction, and then
       translate the original source to an equivalent cuda implementation 
    """
-   def __init__(self, clauses = {}, kernel_name = 'loopKernel'):
+   def __init__(self, clauses = {}, kernel_name = 'loopKernel', kernel_prefix = ''):
       """ Constructor """
       # BUG: Don't work with optimize
       self.template_parser = c_parser.CParser(lex_optimize = False, yacc_optimize = False)
       self.kernel_name = kernel_name
+      self.kernel_prefix = kernel_prefix
       self._func_def = None
       self._parallel = None
       self._clauses = clauses
