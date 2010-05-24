@@ -3,23 +3,12 @@ from pycparser import c_parser, c_ast
 source_code = """
 
 int x;
-#pragma omp threadprivate(x)
 
 int main() {
-    int i, l;
-
-    #pragma omp parallel private(i) shared(l, a) copyin(x) schedule(static)
-    {
-      for  (i = 0/*Pututu*/; i <= 10; i++) {
-         a = 0;
-      }
-	    #pragma omp for
-	    for (i = 0; i <= 10; i++) {
-		a = a + i;
-	    }
-      #pragma omp critical
-      l = 0;
-    }
+	#pragma omp parallel device(cuda)
+	{
+	   x = 1;
+	}
 }
 
 """

@@ -22,7 +22,7 @@ Index: pycparser/c_parser.py
          typename = spec['type']
          declaration = self._fix_decl_name_type(declaration, typename)
          return c_ast.FuncDef(
-@@ -362,12 +363,147 @@
+@@ -362,12 +363,153 @@
          """
          p[0] = p[1]
  
@@ -139,8 +139,10 @@ Index: pycparser/c_parser.py
 +       """ clause : SHARED LPAREN identifier_list RPAREN 
 +                  | PRIVATE LPAREN identifier_list RPAREN 
 +                  | COPYIN LPAREN identifier_list RPAREN 
-+                  | FLUSH LPAREN identifier_list RPAREN"""
++                  | FLUSH LPAREN identifier_list RPAREN
++       """
 +       p[0] = [c_ast.OmpClause(type = 'memory', name = str(p[1]).upper(), identifiers = p[3], coord = self._coord(p.lineno(1)))]
++
 +
 +    def p_clause_2(self, p):
 +       """ clause : REDUCTION LPAREN reduction_operator  COLON identifier_list RPAREN """
@@ -157,6 +159,10 @@ Index: pycparser/c_parser.py
 +       """
 +       p[0] = [c_ast.OmpSchedule(type = str(p[1]) , name = str(p[1]).upper(), chunk_size = p[5] if len(p) > 5 else 0, kind = p[3], coord = self._coord(p.lineno(1)))]
 +
++    def p_clause_4(self, p):
++       """ clause : DEVICE LPAREN CUDA RPAREN """
++       p[0] = [c_ast.OmpClause(type = 'device', name = "cuda", identifiers = None, coord = self._coord(p.lineno(1)))]
++
 +
 +    def p_reduction_operator(self, p):
 +       """ reduction_operator  : PLUS 
@@ -172,7 +178,7 @@ Index: pycparser/c_parser.py
      # In function definitions, the declarator can be followed by
      # a declaration list, for old "K&R style" function definitios.
      #
-@@ -404,6 +540,13 @@
+@@ -404,6 +546,13 @@
          """
          p[0] = p[1]
  
@@ -186,7 +192,7 @@ Index: pycparser/c_parser.py
      # In C, declarations can come several in a line:
      #   int x, *px, romulo = 5;
      #
-@@ -1176,6 +1319,15 @@
+@@ -1176,6 +1325,15 @@
          """
          p[0] = c_ast.UnaryOp('p' + p[2], p[1], p[1].coord)
  

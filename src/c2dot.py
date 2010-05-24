@@ -86,7 +86,9 @@ new_ast = ast
 # for elem in FuncCallFilter().dfs_iter(ast):
 #   print "Elem: " + str(elem.name.name)
 
-from Mutators.Optimizer import ConstantCalc
+from Mutators.Optimizer import MatrixDeclToPtr, ConstantCalc
+
+MatrixDeclToPtr(start_ast = new_ast).fast_apply_all(new_ast)
 
 ConstantCalc().fast_apply_all(ast)
 

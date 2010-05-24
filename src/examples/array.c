@@ -1,5 +1,5 @@
 
-void testfunc (double vnd[10][10]) {
+/* void testfunc (double vnd[10][10]) {
   int i, j;
 
 
@@ -10,22 +10,17 @@ void testfunc (double vnd[10][10]) {
   }
 
 }
-
-
-int main (int a) {
-
+*/
+int main () {
   double vnd[10][20];
-  double t[3] = {1.0, 2.0, 3.0};
   int i, j;
-	
   vnd[i][j] = 3.0;
-
   for (i = 0; i < 10; i++) {
     for (j = 0; j < 10; j++) 
      vnd[i][j] = -1.0;
     
   }
 
-  testfunc(vnd);
+//   testfunc(vnd);
 
 }
