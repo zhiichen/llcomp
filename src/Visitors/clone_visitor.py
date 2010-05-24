@@ -1,5 +1,4 @@
 from pycparser import c_parser, c_ast
-
 import sys
 
 tab_size = 2;
@@ -440,12 +439,20 @@ class OmpWriter(CWriter):
       self.write_blank();  
 
    def visit_OmpClause(self, node, offset):
-      self.write(offset, node.name.lower())
+      # Handwrite the case of device clause
+      if node.name == 'cuda':
+         self.write(offset, 'device(' + node.name.lower() + "'")
+      else:
+         self.write(offset, node.name.lower())
+      
       if node.name == 'REDUCTION':
          self.write(0, '(');
          self.write(0, node.type)
          self.write(0, ':')
-      self.visit(node.identifiers)
+
+      if node.identifiers:
+	      self.visit(node.identifiers)
+
       if node.name == 'REDUCTION':
          self.write(0, ')');
 

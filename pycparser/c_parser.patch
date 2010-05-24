@@ -159,7 +159,7 @@ Index: pycparser/c_parser.py
 +       """
 +       p[0] = [c_ast.OmpSchedule(type = str(p[1]) , name = str(p[1]).upper(), chunk_size = p[5] if len(p) > 5 else 0, kind = p[3], coord = self._coord(p.lineno(1)))]
 +
-+    def p_clause_4(self, p):
++    def p_clause_5(self, p):
 +       """ clause : DEVICE LPAREN CUDA RPAREN """
 +       p[0] = [c_ast.OmpClause(type = 'device', name = "cuda", identifiers = None, coord = self._coord(p.lineno(1)))]
 +
