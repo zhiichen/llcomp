@@ -152,8 +152,8 @@ class FuncToDeviceMutator(AbstractMutator):
             raise FilterError("Cannot use external declarations inside kernel")
          af = FuncDeclOfNameFilter(name = self.func_call.name)
          id_node = af.apply(ast)
-         print " Declaration " + str(self.func_call.name) + " is " + str(id_node) 
-         print " Definition " + str(id_node.parent.parent)
+#         print " Declaration " + str(self.func_call.name) + " is " + str(id_node) 
+#         print " Definition " + str(id_node.parent.parent)
       except NodeNotFound:
          print " *** Node not found *** "
          return None

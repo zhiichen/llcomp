@@ -186,9 +186,10 @@ class CudaMutator(object):
       # Position in the template for dimA declaration, just in case we change it
       DIMA_POS = 0
       MEMSIZE_POS = 4
-      reduction_vars = [ [' '.join(self.get_names(elem, ast)), elem.name] for elem in reduction_node_list ]
+      # TODO : Move this array creation to a tempalte filter (something like |type)
+      reduction_vars = [ [' '.join(self.get_names(elem, ast)), elem.name, elem.type] for elem in reduction_node_list ]
 
-      shared_vars = [ [' '.join(self.get_names(elem, ast)), elem.name] for elem in shared_node_list ]
+      shared_vars = [ [' '.join(self.get_names(elem, ast)), elem.name, elem.type] for elem in shared_node_list if isinstance(elem, c_ast.ArrayDecl) or isinstance(elem, c_ast.Struct)]
 
       template_code = """
               /* Kernel configuration */
@@ -209,7 +210,6 @@ class CudaMutator(object):
               % endfor
               /* Initialization */
               % for var in reduction_names:
-##               reduction_cu_${var[1]} = malloc(numElems * sizeof(${var[0]}));
               cudaMalloc((void **) (&reduction_cu_${var[1]}), numElems * sizeof(${var[0]}));
                /* This may be incorrect in case reduction don't start with 0 or 1 */
               cudaMemset(reduction_cu_${var[1]}, (int) ${var[1]}, numElems * sizeof(${var[0]}));
@@ -218,7 +218,7 @@ class CudaMutator(object):
               % for var in shared_vars:
               ${var[1]}_cu = malloc(numElems * sizeof(${var[0]}));
               cudaMalloc((void **) (&${var[1]}_cu), numElems * sizeof(${var[0]}));
-              cudaMemset(${var[1]}_cu, (int) ${var[1]}, numElems * sizeof(${var[0]})); 
+              cudaMemcpy(${var[1]}_cu, (int) ${var[1]}, numElems * sizeof(${var[0]})); 
               % endfor
          }
 
@@ -230,29 +230,6 @@ class CudaMutator(object):
       return kernel_init
 
 
-
-#   def buildInitialization(self, reduction_vars, shared_vars, ast):
-#      """ Initialization """
-#      reduction_dict = {} 
-# 
-#      shared_dict = {} 
-#      for elem in shared_vars:
-#         # Only malloc / send if it is a complex type
-#         if isinstance(elem.type, c_ast.ArrayDecl): 
-#            # print "Array Decl: " + elem.name
-#            shared_dict[elem.name] = "sizeof(" + " ".join(self.get_names(elem, ast)) +  ") * " +  elem.type.dim.value
-#         elif isinstance(elem.type, c_ast.Struct):
-#            shared_dict[elem.name] = "sizeof(" + " ".join(self.get_names(elem, ast)) +  ")"
-#
-#      shared_malloc_lines = "\n".join(["cudaMalloc((void **) &" + str(key) + "_cu," + str(value) + ");" for key,value in shared_dict.items()])
-#      shared_malloc_lines += "\n".join(["cudaMemcpy(" + str(key) + "_cu," + str(key) + ", " + str(value) + ", cudaMemcpyHostToDevice);" for key,value in shared_dict.items()])
-#      # Template source
-#      template_code = """
-#      #include "llcomp_cuda.h" 
-#      int fake() {
-#      """ + shared_malloc_lines  + self._build_reduction_malloc_lines(ast, reduction_vars) + "\n}"
-   
-#      return self.parse_snippet(template_code, None, name = 'SendData').ext[-1].body
 
    def buildRetrieve(self, reduction_vars, modified_shared_vars, ast = None):
       memcpy_lines = []

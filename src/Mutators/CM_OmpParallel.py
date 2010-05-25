@@ -45,10 +45,7 @@ class CM_OmpParallel(CudaMutator):
           @return Parallel Declarations subtree
       """ 
       # Position in the template for dimA declaration, just in case we change it
-      DIMA_POS = 0
-      MEMSIZE_POS = 4
-
-      shared_vars = [ [' '.join(self.get_names(elem, ast)), elem.name] for elem in shared_node_list ]
+      shared_vars = [ [' '.join(self.get_names(elem, ast)), elem.name, elem.type.dim.value or 1] for elem in shared_node_list if isinstance(elem.type, c_ast.ArrayDecl) or isinstance(elem.type, c_ast.Struct)]
 
       template_code = """
          int main() {
@@ -56,9 +53,8 @@ class CM_OmpParallel(CudaMutator):
                   ${var[0]} * ${var[1]}_cu;
               % endfor
               % for var in shared_vars:
-              ${var[1]}_cu = malloc(numElems * sizeof(${var[0]}));
-              cudaMalloc((void **) (&${var[1]}_cu), numElems * sizeof(${var[0]}));
-              cudaMemset(${var[1]}_cu, (int) ${var[1]}, numElems * sizeof(${var[0]})); 
+              cudaMalloc((void **) (&${var[1]}_cu), ${var[2]} * sizeof(${var[0]}));
+              cudaMemcpy(${var[1]}_cu, (int) ${var[1]}, ${var[2]} * sizeof(${var[0]})); 
               % endfor
          }
 
