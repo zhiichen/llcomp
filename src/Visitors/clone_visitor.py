@@ -244,6 +244,13 @@ class CWriter(OffsetNodeVisitor):
       self.write(0, ")")
       self.visit(node.stmt)
 
+   def visit_DoWhile(self, node, offset = 0):
+      self.write(offset, "do")
+      self.visit(node.stmt)
+      self.write(offset, "while (")
+      self.visit(node.cond)
+      self.write(0, ")")
+
 
    # ******************** Expressions ********************
    def visit_Assignment(self, node, offset = 0):
@@ -441,10 +448,10 @@ class OmpWriter(CWriter):
    def visit_OmpClause(self, node, offset):
       # Handwrite the case of device clause
       if node.name == 'cuda':
-         self.write(offset, 'device(' + node.name.lower() + "'")
+         self.write(offset, 'device(' + node.name.lower() + ")")
       else:
          self.write(offset, node.name.lower())
-      
+      # TODO: Fix reduction parenthesis error
       if node.name == 'REDUCTION':
          self.write(0, '(');
          self.write(0, node.type)

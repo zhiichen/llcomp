@@ -40,6 +40,7 @@ class CudaMutator(object):
       self._clauses = clauses
 
    # TODO: Clean this function, it has an strange behaviour
+   # TODO: Change function name
    def get_names(self, elem, ast):
       """ Return a list of names for a type """
       type = type_of_id(elem, ast)
@@ -73,7 +74,7 @@ class CudaMutator(object):
  #     template_code = Template(template_code).substitute(subs_dir)
       if subs_dir:
          template_code = Template(template_code).render(**subs_dir)
- #        print " Tempalte " + str(template_code)
+#         print " Template " + str(template_code)
       try:
          subtree = parse_template(template_code, name)
       except c_parser.ParseError, e:
@@ -117,69 +118,67 @@ class CudaMutator(object):
       self._clauses = clause_dict
       return  clause_dict
 
-   def _build_shared_memory_decls_cu(self, shared_node_list, parent, ast = None):
-   # Build shared memory declarations on host
-      tmp = copy.deepcopy(shared_node_list)
-      shared_cu_pointer_decls = []
-      for elem in tmp:
-         if isinstance(elem.type, c_ast.ArrayDecl):
-            ptr = c_ast.Decl(elem.name + '_cu', elem.quals, [], elem.type.type, None, None, None, parent)
-            PointerMutator().apply(ptr)
-            shared_cu_pointer_decls.append(ptr)
-         elif isinstance(elem.type, c_ast.Struct):
-            IDNameMutator(old = c_ast.ID(elem.name), new = c_ast.ID(elem.name +'_cu')).apply_all(elem)
-            PointerMutator().apply(elem)
-      return shared_cu_pointer_decls
+#   def _build_shared_memory_decls_cu(self, shared_node_list, parent, ast = None):
+#   # Build shared memory declarations on host
+#      tmp = copy.deepcopy(shared_node_list)
+#      shared_cu_pointer_decls = []
+#      for elem in tmp:
+#         if isinstance(elem.type, c_ast.ArrayDecl):
+#            ptr = c_ast.Decl(elem.name + '_cu', elem.quals, [], elem.type.type, None, None, None, parent)
+#            PointerMutator().apply(ptr)
+#            shared_cu_pointer_decls.append(ptr)
+#         elif isinstance(elem.type, c_ast.Struct):
+#            IDNameMutator(old = c_ast.ID(elem.name), new = c_ast.ID(elem.name +'_cu')).apply_all(elem)
+#            PointerMutator().apply(elem)
+#      return shared_cu_pointer_decls
+#
+#
+#   def _build_shared_memory_init_cu(self, shared_node_list, ast):
+#      shared_dict = {} 
+#      for elem in shared_node_list:
+#         # Only malloc / send if it is a complex type
+#         if isinstance(elem.type, c_ast.ArrayDecl): 
+#            shared_dict[elem.name] = "sizeof(" + " ".join(self.get_names(elem, ast)) +  ") * " +  elem.type.dim.value
+#         elif isinstance(elem.type, c_ast.Struct):
+#            shared_dict[elem.name] = "sizeof(" + " ".join(self.get_names(elem, ast)) +  ")"
+#
+#      shared_malloc_lines = "\n".join(["cudaMalloc((void **) &" + str(key) + "_cu," + str(value) + ");" for key,value in shared_dict.items()])
+#      shared_malloc_lines += "\n".join(["cudaMemcpy(" + str(key) + "_cu," + str(key) + ", " + str(value) + ", cudaMemcpyHostToDevice);" for key,value in shared_dict.items()])
+#
+#      return shared_malloc_lines
+#
+#
+#   def _build_reduction_decls(self, reduction_pointer_decls):
+#      reduction_cu_pointer_decls = copy.deepcopy(reduction_pointer_decls)
+#      # Build local reduction vars
+#      for elem in reduction_pointer_decls:
+#         IDNameMutator(old = c_ast.ID(elem.name), new = c_ast.ID('reduction_loc_' + elem.name)).apply_all(elem)
+#         PointerMutator().apply(elem)
+#      # Build cuda reduction arrays
+#      for elem in reduction_cu_pointer_decls:
+#         IDNameMutator(old = c_ast.ID(elem.name), new = c_ast.ID('reduction_cu_' + elem.name)).apply_all(elem)
+#         PointerMutator().apply(elem)
+#      return reduction_cu_pointer_decls
+#
+#
+#   def _build_reduction_malloc_lines(self, ast, reduction_vars):
+#      reduction_dict = {} 
+#      # Host memory allocation (malloc lines)
+#      for elem in reduction_vars:
+#          reduction_dict[str(elem.name)] = self.get_names(elem, ast)[0]
+#      reduction_malloc_lines = "\n".join(["reduction_loc_" + str(key) + " = (" + str(value) +"*) malloc(numElems * sizeof(" + str(value) + "));" for key,value in reduction_dict.items()])
+#      reduction_dict = {} 
+#
+#
+#      # Device memory allocation (cudaMalloc lines)
+#      for elem in reduction_vars:
+#         reduction_dict[str(elem.name)] = "sizeof(" + "reduction_cu_".join(self.get_names(elem, ast)) +")"
+#      reduction_malloc_lines += "\n".join(["cudaMalloc((void **) &" + "reduction_cu_" + str(key) + ", numElems * " + str(value) + ");" for key,value in reduction_dict.items()])
+#      # TODO: Initial value for * reduction must be 1 instead of 0
+#      reduction_malloc_lines += "\n".join(["cudaMemset(reduction_cu_" + str(key) + ", (int)" + str(key) + ", numElems * " + str(value) + ");" for key,value in reduction_dict.items()])
+#      return reduction_malloc_lines
 
-
-   def _build_shared_memory_init_cu(self, shared_node_list, ast):
-      shared_dict = {} 
-      for elem in shared_node_list:
-         # Only malloc / send if it is a complex type
-         if isinstance(elem.type, c_ast.ArrayDecl): 
-            shared_dict[elem.name] = "sizeof(" + " ".join(self.get_names(elem, ast)) +  ") * " +  elem.type.dim.value
-         elif isinstance(elem.type, c_ast.Struct):
-            shared_dict[elem.name] = "sizeof(" + " ".join(self.get_names(elem, ast)) +  ")"
-
-      shared_malloc_lines = "\n".join(["cudaMalloc((void **) &" + str(key) + "_cu," + str(value) + ");" for key,value in shared_dict.items()])
-      shared_malloc_lines += "\n".join(["cudaMemcpy(" + str(key) + "_cu," + str(key) + ", " + str(value) + ", cudaMemcpyHostToDevice);" for key,value in shared_dict.items()])
-
-      return shared_malloc_lines
-
-
-   def _build_reduction_decls(self, reduction_pointer_decls):
-      reduction_cu_pointer_decls = copy.deepcopy(reduction_pointer_decls)
-      # Build local reduction vars
-      for elem in reduction_pointer_decls:
-         IDNameMutator(old = c_ast.ID(elem.name), new = c_ast.ID('reduction_loc_' + elem.name)).apply_all(elem)
-         PointerMutator().apply(elem)
-      # Build cuda reduction arrays
-      for elem in reduction_cu_pointer_decls:
-         IDNameMutator(old = c_ast.ID(elem.name), new = c_ast.ID('reduction_cu_' + elem.name)).apply_all(elem)
-         PointerMutator().apply(elem)
-      return reduction_cu_pointer_decls
-
-
-   def _build_reduction_malloc_lines(self, ast, reduction_vars):
-      reduction_dict = {} 
-      # Host memory allocation (malloc lines)
-      for elem in reduction_vars:
-          reduction_dict[str(elem.name)] = self.get_names(elem, ast)[0]
-      reduction_malloc_lines = "\n".join(["reduction_loc_" + str(key) + " = (" + str(value) +"*) malloc(numElems * sizeof(" + str(value) + "));" for key,value in reduction_dict.items()])
-      reduction_dict = {} 
-
-
-      # Device memory allocation (cudaMalloc lines)
-      for elem in reduction_vars:
-         reduction_dict[str(elem.name)] = "sizeof(" + "reduction_cu_".join(self.get_names(elem, ast)) +")"
-      reduction_malloc_lines += "\n".join(["cudaMalloc((void **) &" + "reduction_cu_" + str(key) + ", numElems * " + str(value) + ");" for key,value in reduction_dict.items()])
-      # TODO: Initial value for * reduction must be 1 instead of 0
-      reduction_malloc_lines += "\n".join(["cudaMemset(reduction_cu_" + str(key) + ", (int)" + str(key) + ", numElems * " + str(value) + ");" for key,value in reduction_dict.items()])
-      return reduction_malloc_lines
-
-
-
-   def buildDeclarations(self, numThreads, reduction_node_list, shared_node_list):
+   def buildDeclarations(self, numThreads, reduction_node_list, shared_node_list, ast):
       """ Builds the declaration section 
           @param numThreads number of threads
           @return Declarations subtree
@@ -187,59 +186,73 @@ class CudaMutator(object):
       # Position in the template for dimA declaration, just in case we change it
       DIMA_POS = 0
       MEMSIZE_POS = 4
-      if not Dump.exists('Declarations' + self.kernel_name):
-         constant_template_code = """
+      reduction_vars = [ [' '.join(self.get_names(elem, ast)), elem.name] for elem in reduction_node_list ]
+
+      shared_vars = [ [' '.join(self.get_names(elem, ast)), elem.name] for elem in shared_node_list ]
+
+      template_code = """
+              /* Kernel configuration */
+       void kernel_func() {
               int dimA = 1;
               int numThreadsPerBlock = 512;
               int numBlocks = dimA / numThreadsPerBlock + (dimA % numThreadsPerBlock?1:0);
               int numElems = numBlocks * numThreadsPerBlock;
               int memSize = numElems * sizeof(double);
-        /*    double *reduction_loc_varname;
-              double *reduction_cu_varname;  
-              */
+
+              /* Variable declaration */
+              % for var in reduction_names:
+                  ${var[0]} * reduction_cu_${var[1]};
+              % endfor
+
+              % for var in shared_vars:
+                  ${var[0]} * ${var[1]}_cu;
+              % endfor
+              /* Initialization */
+              % for var in reduction_names:
+##               reduction_cu_${var[1]} = malloc(numElems * sizeof(${var[0]}));
+              cudaMalloc((void **) (&reduction_cu_${var[1]}), numElems * sizeof(${var[0]}));
+               /* This may be incorrect in case reduction don't start with 0 or 1 */
+              cudaMemset(reduction_cu_${var[1]}, (int) ${var[1]}, numElems * sizeof(${var[0]}));
+              % endfor
+
+              % for var in shared_vars:
+              ${var[1]}_cu = malloc(numElems * sizeof(${var[0]}));
+              cudaMalloc((void **) (&${var[1]}_cu), numElems * sizeof(${var[0]}));
+              cudaMemset(${var[1]}_cu, (int) ${var[1]}, numElems * sizeof(${var[0]})); 
+              % endfor
+         }
+
          """
-         tree = self.parse_snippet(constant_template_code, None, name = 'Declarations' + self.kernel_name)
-         Dump.save('Declarations' + self.kernel_name, tree)
-      else:
-         print " Loading frozen template of Declarations " + self.kernel_name
-         tree = Dump.load('Declarations' + self.kernel_name)
-      declarations =  tree
-      # Maybe we haven't got a reduction clause
-      if len(reduction_node_list):
-         reduction_pointer_decls = copy.deepcopy(reduction_node_list)
-         # Set Type of reduction_decls  for memSize sizeof (All of the reduction vars must be of the same type)
-         declarations.ext[MEMSIZE_POS].init.right.expr.type = reduction_pointer_decls[0].type
-         reduction_cu_pointer_decls = self._build_reduction_decls(reduction_pointer_decls)
-         # Insert into tree
-         declarations.ext.extend(reduction_pointer_decls)
-         declarations.ext.extend(reduction_cu_pointer_decls)
-      declarations.ext.extend(self._build_shared_memory_decls_cu(shared_node_list, declarations))
-      declarations.ext[DIMA_POS].init = numThreads
-      return declarations 
+      kernel_init = self.parse_snippet(template_code, {'reduction_names' : reduction_vars, 'shared_vars' : shared_vars}, name = 'Initialization of ' + self.kernel_name).ext[-1].body
+#~    from Tools.Debug import DotDebugTool
+#~    DotDebugTool().apply(kernel_init)
+      kernel_init.decls[DIMA_POS].init = numThreads
+      return kernel_init
 
 
-   def buildInitialization(self, reduction_vars, shared_vars, ast):
-      """ Initialization """
-      reduction_dict = {} 
- 
-      shared_dict = {} 
-      for elem in shared_vars:
-         # Only malloc / send if it is a complex type
-         if isinstance(elem.type, c_ast.ArrayDecl): 
-            # print "Array Decl: " + elem.name
-            shared_dict[elem.name] = "sizeof(" + " ".join(self.get_names(elem, ast)) +  ") * " +  elem.type.dim.value
-         elif isinstance(elem.type, c_ast.Struct):
-            shared_dict[elem.name] = "sizeof(" + " ".join(self.get_names(elem, ast)) +  ")"
 
-      shared_malloc_lines = "\n".join(["cudaMalloc((void **) &" + str(key) + "_cu," + str(value) + ");" for key,value in shared_dict.items()])
-      shared_malloc_lines += "\n".join(["cudaMemcpy(" + str(key) + "_cu," + str(key) + ", " + str(value) + ", cudaMemcpyHostToDevice);" for key,value in shared_dict.items()])
-      # Template source
-      template_code = """
-      #include "llcomp_cuda.h" 
-      int fake() {
-      """ + shared_malloc_lines  + self._build_reduction_malloc_lines(ast, reduction_vars) + "\n}"
+#   def buildInitialization(self, reduction_vars, shared_vars, ast):
+#      """ Initialization """
+#      reduction_dict = {} 
+# 
+#      shared_dict = {} 
+#      for elem in shared_vars:
+#         # Only malloc / send if it is a complex type
+#         if isinstance(elem.type, c_ast.ArrayDecl): 
+#            # print "Array Decl: " + elem.name
+#            shared_dict[elem.name] = "sizeof(" + " ".join(self.get_names(elem, ast)) +  ") * " +  elem.type.dim.value
+#         elif isinstance(elem.type, c_ast.Struct):
+#            shared_dict[elem.name] = "sizeof(" + " ".join(self.get_names(elem, ast)) +  ")"
+#
+#      shared_malloc_lines = "\n".join(["cudaMalloc((void **) &" + str(key) + "_cu," + str(value) + ");" for key,value in shared_dict.items()])
+#      shared_malloc_lines += "\n".join(["cudaMemcpy(" + str(key) + "_cu," + str(key) + ", " + str(value) + ", cudaMemcpyHostToDevice);" for key,value in shared_dict.items()])
+#      # Template source
+#      template_code = """
+#      #include "llcomp_cuda.h" 
+#      int fake() {
+#      """ + shared_malloc_lines  + self._build_reduction_malloc_lines(ast, reduction_vars) + "\n}"
    
-      return self.parse_snippet(template_code, None, name = 'SendData').ext[-1].body
+#      return self.parse_snippet(template_code, None, name = 'SendData').ext[-1].body
 
    def buildRetrieve(self, reduction_vars, modified_shared_vars, ast = None):
       memcpy_lines = []

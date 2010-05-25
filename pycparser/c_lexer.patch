@@ -2,7 +2,7 @@ Index: pycparser/c_lexer.py
 ===================================================================
 --- pycparser/c_lexer.py	(revisión: 95)
 +++ pycparser/c_lexer.py	(copia de trabajo)
-@@ -157,6 +157,37 @@
+@@ -157,6 +157,54 @@
          
          # pre-processor 
          'PPHASH',      # '#'
@@ -25,11 +25,13 @@ Index: pycparser/c_lexer.py
 +
 +   # Clauses
 +   'SHARED', 'PRIVATE', 'REDUCTION', 'NOWAIT', 'THREADPRIVATE', 'COPYIN', 'SCHEDULE', 'OMP_SCHEDULE_KIND',
-+   'MASTER', 'CRITICAL', 'ATOMIC', 'BARRIER', 'FLUSH',
++   'MASTER', 'CRITICAL', 'ATOMIC', 'BARRIER', 'FLUSH', 'SINGLE',
 +
++   ####################
 +   # New clauses
++   # From  "A proposal to extend the OpenMP Tasking Model for Heterogeneous Architectures" (2009)
 +
-+   'DEVICE',
++   'DEVICE', 'TARGET',
 +
 +   ####################
 +   # CUDA syntax
@@ -37,10 +39,25 @@ Index: pycparser/c_lexer.py
 +        'LKLAUNCH', 'RKLAUNCH', # CUDA kernel launch
 +        'GLOBAL',
 +        'CUDA', # CUDA keyword for device
++
++   ####################
++   # CELL syntax
++        'CELL',
++
++
++   ####################
++   # FPGA syntax
++        'FPGA',
++
++   ####################
++   # MPI syntax
++        'MPI', 'HYBRID', 'SMP',
++
++
      )
  
      ##
-@@ -209,6 +240,7 @@
+@@ -209,6 +257,7 @@
          # ppline: preprocessor line directives
          # 
          ('ppline', 'exclusive'),
@@ -48,7 +65,7 @@ Index: pycparser/c_lexer.py
      )
      
      def t_PPHASH(self, t):
-@@ -216,14 +248,135 @@
+@@ -216,14 +265,148 @@
          m = self.line_pattern.match(
              t.lexer.lexdata, pos=t.lexer.lexpos)
          
@@ -66,6 +83,7 @@ Index: pycparser/c_lexer.py
 +
 +    ####################
 +    # Ruyk
++    # TODO: CLEAN THIS Make a common method for all tokens
 +    def t_directive_PRAGMA(self, t):
 +        r'pragma'
 +        t.type = 'PRAGMA'
@@ -146,10 +164,22 @@ Index: pycparser/c_lexer.py
 +        t.type = 'DEVICE'
 +        return t
 +
++    def t_directive_TARGET(self, t):
++        r'target'
++        t.type = 'TARGET'
++        return t
++
++
 +    def t_directive_CUDA(self, t):
 +        r'cuda'
 +        t.type = 'CUDA'
 +        return t
++
++    def t_directive_SINGLE(self, t):
++        r'single'
++        t.type = 'SINGLE'
++        return t
++
 +
 +    def t_directive_OMP_SCHEDULE_KIND(self, t):
 +        r'static|dynamic'
@@ -186,7 +216,7 @@ Index: pycparser/c_lexer.py
      ##
      ## Rules for the ppline state
      ##
-@@ -267,6 +420,18 @@
+@@ -267,6 +450,18 @@
          msg = 'invalid #line directive'
          self._error(msg, t)
  
@@ -205,7 +235,7 @@ Index: pycparser/c_lexer.py
      ##
      ## Rules for the normal state
      ##
-@@ -298,7 +463,12 @@
+@@ -298,7 +493,12 @@
      t_GE                = r'>='
      t_EQ                = r'=='
      t_NE                = r'!='
@@ -218,7 +248,7 @@ Index: pycparser/c_lexer.py
      # Assignment operators
      t_EQUALS            = r'='
      t_TIMESEQUAL        = r'\*='
-@@ -337,7 +507,7 @@
+@@ -337,7 +537,7 @@
  
      t_STRING_LITERAL    = string_literal
      
@@ -227,7 +257,7 @@ Index: pycparser/c_lexer.py
      # functions to impose a strict order (otherwise, decimal
      # is placed before the others because its regex is longer,
      # and this is bad)
-@@ -410,7 +580,8 @@
+@@ -410,7 +610,8 @@
  
  
  if __name__ == "__main__":

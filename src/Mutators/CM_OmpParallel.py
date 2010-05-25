@@ -24,60 +24,74 @@ class CM_OmpParallel(CudaMutator):
       self._parallel = node
       return node
 
-   def buildDeclarations(self, shared_node_list, ast):
-      """ Builds the declaration section 
-          @return Declarations subtree
+#   def buildDeclarations(self, shared_node_list, ast):
+#      """ Builds the declaration section 
+#          @return Declarations subtree
+#      """ 
+#      # Position in the template for dimA declaration, just in case we change it
+#      declarations =  c_ast.FileAST(ext = [])
+#      declarations.ext.extend(self._build_shared_memory_decls_cu(shared_node_list, declarations, ast))
+#      return declarations 
+#
+
+
+   def buildParallelDeclarations(self, shared_node_list, ast):
+      """ Builds the declaration section of a Parallel Region
+            This code handles memory transfers between host and cuda
+           
+            @param shared_node_list List of shared variable declarations
+            @param ast Full ast (for type search)
+
+          @return Parallel Declarations subtree
       """ 
       # Position in the template for dimA declaration, just in case we change it
-      declarations =  c_ast.FileAST(ext = [])
-      declarations.ext.extend(self._build_shared_memory_decls_cu(shared_node_list, declarations, ast))
-      return declarations 
+      DIMA_POS = 0
+      MEMSIZE_POS = 4
 
-   def buildInitialization(self, shared_vars, ast):
-      """ Initialization """
-      reduction_dict = {} 
- 
-      shared_dict = {} 
-      for elem in shared_vars:
-         # Only malloc / send if it is a complex type
-         if isinstance(elem.type, c_ast.ArrayDecl): 
-            shared_dict[elem.name] = "sizeof(" + " ".join(self.get_names(elem, ast)) +  ") * " +  elem.type.dim.value
-         elif isinstance(elem.type, c_ast.Struct):
-            shared_dict[elem.name] = "sizeof(" + " ".join(self.get_names(elem, ast)) +  ")"
+      shared_vars = [ [' '.join(self.get_names(elem, ast)), elem.name] for elem in shared_node_list ]
 
-      shared_malloc_lines = "\n".join(["cudaMalloc((void **) &" + str(key) + "_cu," + str(value) + ");" for key,value in shared_dict.items()])
-      shared_malloc_lines += "\n".join(["cudaMemcpy(" + str(key) + "_cu," + str(key) + ", " + str(value) + ", cudaMemcpyHostToDevice);" for key,value in shared_dict.items()])
-      # Template source
       template_code = """
-      #include "llcomp_cuda.h"
-      int fake() {
-      """ + shared_malloc_lines + "\n}"
-   
-      return self.parse_snippet(template_code, None, name = 'SendData').ext[-1].body
+         int main() {
+             % for var in shared_vars:
+                  ${var[0]} * ${var[1]}_cu;
+              % endfor
+              % for var in shared_vars:
+              ${var[1]}_cu = malloc(numElems * sizeof(${var[0]}));
+              cudaMalloc((void **) (&${var[1]}_cu), numElems * sizeof(${var[0]}));
+              cudaMemset(${var[1]}_cu, (int) ${var[1]}, numElems * sizeof(${var[0]})); 
+              % endfor
+         }
 
-#   def buildRetrieve(self, modified_shared_vars, ast):
-#      memcpy_lines = ""
-#      # CudaMemCpy lines 
-#      for elem in modified_shared_vars:
-# #        memcpy_lines += "cudaMemcpy(reduction_loc_" + (elem.name) + ", reduction_cu_" + elem.name + ", memSize, cudaMemcpyDeviceToHost);\n"
-#         # Only malloc / recieve if it is a complex type
+         """
+      parallel_init = self.parse_snippet(template_code, {'shared_vars' : shared_vars}, name = 'Initialization of Parallel Region ' + self.kernel_name).ext[-1].body
+#~    from Tools.Debug import DotDebugTool
+#~    DotDebugTool().apply(kernel_init)
+      return parallel_init
+
+
+
+#   def buildInitialization(self, shared_vars, ast):
+#      """ Initialization """
+#      reduction_dict = {} 
+# 
+#      shared_dict = {} 
+#      for elem in shared_vars:
+#         # Only malloc / send if it is a complex type
 #         if isinstance(elem.type, c_ast.ArrayDecl): 
-#            memcpy_lines += "cudaMemcpy(" + str(elem.name) + ", " + str(elem.name) + "_cu, sizeof(" + " ".join(self.get_names(elem, ast)) +  ") * " +  elem.type.dim.value + ", cudaMemcpyDeviceToHost);"
+#            shared_dict[elem.name] = "sizeof(" + " ".join(self.get_names(elem, ast)) +  ") * " +  elem.type.dim.value
 #         elif isinstance(elem.type, c_ast.Struct):
-#            memcpy_lines += "cudaMemcpy(" + str(elem.name) + ", " + str(elem.name) + "_cu, sizeof(" + " ".join(self.get_names(elem, ast)) +  "), cudaMemcpyDeviceToHost);"
+#            shared_dict[elem.name] = "sizeof(" + " ".join(self.get_names(elem, ast)) +  ")"
 #
-#     
+#      shared_malloc_lines = "\n".join(["cudaMalloc((void **) &" + str(key) + "_cu," + str(value) + ");" for key,value in shared_dict.items()])
+#      shared_malloc_lines += "\n".join(["cudaMemcpy(" + str(key) + "_cu," + str(key) + ", " + str(value) + ", cudaMemcpyHostToDevice);" for key,value in shared_dict.items()])
 #      # Template source
 #      template_code = """
+#      #include "llcomp_cuda.h"
 #      int fake() {
-#/*      cudaMemcpy(reduction_loc, reduction_cu, memSize, cudaMemcpyDeviceToHost); */
-#        ${cudaMemcpyLines}
-#      checkCUDAError("memcpy");
-#      }
-#      """ 
+#      """ + shared_malloc_lines + "\n}"
+#   
+#      return self.parse_snippet(template_code, None, name = 'SendData').ext[-1].body
 #
-#      return self.parse_snippet(template_code, {'cudaMemcpyLines' : memcpy_lines}, name = 'Retrieve').ext[0].body
-
 
    def mutatorFunction(self, ast, ompParallel_node):
       """ CUDA mutator, writes memory transfer operations for a parallel region
@@ -111,13 +125,13 @@ class CM_OmpParallel(CudaMutator):
 
       ##################### Declarations
 
-      declarations_subtree = self.buildDeclarations(shared_node_list = shared_params, ast = ast)
+      declarations_subtree = self.buildParallelDeclarations(shared_node_list = shared_params, ast = ast)
       InsertTool(subtree = declarations_subtree, position = "begin").apply(cuda_stmts, 'decls')
 
       # Initialization
-      initialization_subtree = self.buildInitialization(shared_vars = shared_params, ast = ast)
+#      initialization_subtree = self.buildInitialization(shared_vars = shared_params, ast = ast)
       InsertTool(subtree = self._parallel.stmt, position = "begin").apply(cuda_stmts, 'stmts')
-      InsertTool(subtree = initialization_subtree, position = "begin").apply(cuda_stmts, 'stmts')
+#      InsertTool(subtree = initialization_subtree, position = "begin").apply(cuda_stmts, 'stmts')
 
       # Retrieve data
       retrieve_subtree = self.buildRetrieve(reduction_vars = [], modified_shared_vars = shared_params, ast = ast)

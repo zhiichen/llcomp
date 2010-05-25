@@ -22,7 +22,7 @@ Index: pycparser/c_parser.py
          typename = spec['type']
          declaration = self._fix_decl_name_type(declaration, typename)
          return c_ast.FuncDef(
-@@ -362,12 +363,153 @@
+@@ -362,12 +363,165 @@
          """
          p[0] = p[1]
  
@@ -126,7 +126,8 @@ Index: pycparser/c_parser.py
 +                  | MASTER
 +                  | ATOMIC
 +                  | FLUSH
-+                  | BARRIER  """
++                  | BARRIER 
++                  | SINGLE  """
 +       p[0] = c_ast.OmpSyncronization(name = p[0], identifiers = None, coord = self._coord(p.lineno(1)))
 +
 +
@@ -160,8 +161,19 @@ Index: pycparser/c_parser.py
 +       p[0] = [c_ast.OmpSchedule(type = str(p[1]) , name = str(p[1]).upper(), chunk_size = p[5] if len(p) > 5 else 0, kind = p[3], coord = self._coord(p.lineno(1)))]
 +
 +    def p_clause_5(self, p):
-+       """ clause : DEVICE LPAREN CUDA RPAREN """
++       """ clause : TARGET DEVICE LPAREN device_list RPAREN
++       """
 +       p[0] = [c_ast.OmpClause(type = 'device', name = "cuda", identifiers = None, coord = self._coord(p.lineno(1)))]
++
++    def p_device_list(self, p):
++       """ device_list  : CUDA
++                               | FPGA
++                               | CELL 
++                               | MPI
++                               | SMP
++                               | HYBRID """
++       p[0] = p[1]
++
 +
 +
 +    def p_reduction_operator(self, p):
@@ -178,7 +190,7 @@ Index: pycparser/c_parser.py
      # In function definitions, the declarator can be followed by
      # a declaration list, for old "K&R style" function definitios.
      #
-@@ -404,6 +546,13 @@
+@@ -404,6 +558,13 @@
          """
          p[0] = p[1]
  
@@ -192,7 +204,7 @@ Index: pycparser/c_parser.py
      # In C, declarations can come several in a line:
      #   int x, *px, romulo = 5;
      #
-@@ -1176,6 +1325,15 @@
+@@ -1176,6 +1337,15 @@
          """
          p[0] = c_ast.UnaryOp('p' + p[2], p[1], p[1].coord)
  

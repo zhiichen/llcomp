@@ -256,12 +256,20 @@ class OmpParallelFilter(GenericFilterVisitor):
    """ Returns a OmpFor node , the parallel container and the function container
    """
    
-   def __init__(self, prev_brother = None):
+   def __init__(self, prev_brother = None, device = None):
       self._parallel = None
       self._funcdef = None
       def condition(node):
-         """ OmpFor filter """
-         return type(node) == c_ast.OmpParallel
+         """ OmpParallel filter """ 
+         if isinstance(node, c_ast.OmpParallel):
+            if device:
+               # Check if a specific device clause is present
+               for clause in node.clauses:
+                  if clause.name == device:
+                     return True
+            else:
+               return True
+         return False
       super(OmpParallelFilter, self).__init__(condition_func = condition, prev_brother = prev_brother)
 
    #############################################

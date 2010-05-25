@@ -5,9 +5,13 @@ source_code = """
 int x;
 
 int main() {
-	#pragma omp parallel device(cuda)
+   int cuda = 3;
+
+	#pragma omp parallel target device(cuda)
 	{
 	   x = 1;
+      #pragma omp single
+      cuda = 4;
 	}
 }
 

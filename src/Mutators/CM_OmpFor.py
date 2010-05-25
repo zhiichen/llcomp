@@ -42,58 +42,26 @@ class CM_OmpFor(CudaMutator):
 
       try:
          for elem in f.iterate(ast):
+            # Save previous state
             old_name = self.kernel_name
+            old_clauses = self._clauses
             self.kernel_name = self.kernel_name + str(num)
+            # Current scope variables
             self._func_def = f.get_func_def()
             self._parallel = f.get_parallel()
+            # If current node is not child of first parallel node, stop
             if self._parallel != parent_parallel_node:
                raise StopIteration
             start_node = self.mutatorFunction(ast, elem)
+            # Restore previous state
             self.kernel_name = old_name
+            self._clauses = old_clauses
             num += 1;
       except NodeNotFound as nf:
          print str(nf)
       except StopIteration:
          return self._parallel
       return start_node
-
-
-   def buildDeclarations(self, numThreads, reduction_node_list):
-      """ Builds the declaration section 
-          @param numThreads number of threads
-          @return Declarations subtree
-      """ 
-      # Position in the template for dimA declaration, just in case we change it
-      DIMA_POS = 0
-      MEMSIZE_POS = 4
-      if not Dump.exists('Declarations' + self.kernel_name):
-         constant_template_code = """
-              int dimA = 1;
-              int numThreadsPerBlock = 512;
-              int numBlocks = dimA / numThreadsPerBlock + (dimA % numThreadsPerBlock?1:0);
-              int numElems = numBlocks * numThreadsPerBlock;
-              int memSize = numElems * sizeof(double);
-        /*    double *reduction_loc_varname;
-              double *reduction_cu_varname;  
-              */
-         """
-         tree = self.parse_snippet(constant_template_code, None, name = 'Declarations' + self.kernel_name)
-         Dump.save('Declarations' + self.kernel_name, tree)
-      else:
-         print " Loading frozen template of Declarations " + self.kernel_name
-         tree = Dump.load('Declarations' + self.kernel_name)
-      declarations =  tree
-      if len(reduction_node_list) > 0:
-         reduction_pointer_decls = copy.deepcopy(reduction_node_list)
-         # Set Type of reduction_decls  for memSize sizeof (All of the reduction vars must be of the same type)
-         declarations.ext[MEMSIZE_POS].init.right.expr.type = reduction_pointer_decls[0].type
-         reduction_cu_pointer_decls = self._build_reduction_decls(reduction_pointer_decls)
-         # Insert into tree
-         declarations.ext.extend(reduction_pointer_decls)
-         declarations.ext.extend(reduction_cu_pointer_decls)
-      declarations.ext[DIMA_POS].init = numThreads
-      return declarations 
-
 
    def buildRetrieve(self, reduction_vars, modified_shared_vars):
       memcpy_lines = ""
@@ -111,17 +79,6 @@ class CM_OmpFor(CudaMutator):
       """ 
 
       return self.parse_snippet(template_code, {'cudaMemcpyLines' : memcpy_lines}, name = 'Retrieve').ext[0].body
-
-   def buildInitialization(self, reduction_vars, ast):
-      """ Initialization """
-#      _self.build_reduction_malloc_lines()  
-            # Template source
-      template_code = """
-      #include "llcomp_cuda.h"
-      int fake() {
-      """ + self._build_reduction_malloc_lines(ast, reduction_vars) + "\n}"
-   
-      return self.parse_snippet(template_code, None, name = 'SendData').ext[-1].body
 
 
    def mutatorFunction(self, ast, ompFor_node):
@@ -145,12 +102,8 @@ class CM_OmpFor(CudaMutator):
 
       ##################### Declarations
 
-      declarations_subtree = self.buildDeclarations(numThreads = maxThreadNumber_node, reduction_node_list = reduction_params)
-      InsertTool(subtree = declarations_subtree, position = "begin").apply(cuda_stmts, 'decls')
-      # Initialization
-      initialization_subtree = self.buildInitialization(reduction_vars = reduction_params, ast = ast)
-
-      InsertTool(subtree = initialization_subtree, position = "begin").apply(cuda_stmts, 'stmts')
+      kernel_init_subtree = self.buildDeclarations(numThreads = maxThreadNumber_node, reduction_node_list = reduction_params, shared_node_list = [], ast = ast)
+      InsertTool(subtree = kernel_init_subtree, position = "begin").apply(cuda_stmts, 'decls')
       
 
       ##################### Cuda Kernel 
@@ -163,14 +116,14 @@ class CM_OmpFor(CudaMutator):
 
       # Function declaration
       # - Build a node without body
-      tmp = c_ast.CUDAKernel(function = copy.deepcopy(kernel_subtree.ext[0].function), type = 'global', name = kernel_subtree.ext[0].name)
-      tmp.function.body = c_ast.Compound(stmts = None, decls = None); # If both of stmts and decls are none, it won't be printed
-      kernel_decl = c_ast.Compound(stmts = [tmp], decls = None)
+#      tmp = c_ast.CUDAKernel(function = copy.deepcopy(kernel_subtree.ext[0].function), type = 'global', name = kernel_subtree.ext[0].name)
+#      tmp.function.body = c_ast.Compound(stmts = None, decls = None); # If both of stmts and decls are none, it won't be printed
+#      kernel_decl = c_ast.Compound(stmts = [tmp], decls = None)
       
 #      # Find container function
-      InsertTool(subtree = kernel_decl, position = "begin", node = self._func_def).apply(ast, 'ext')
+#      InsertTool(subtree = kernel_decl, position = "begin", node = self._func_def).apply(ast, 'ext')
       # Function definition
-      InsertTool(subtree = kernel_subtree, position = "end" ).apply(ast, 'ext')
+      InsertTool(subtree = kernel_subtree, position = "begin", node = self._func_def ).apply(ast, 'ext')
 
       # Support subtree
       # support_subtree = self.buildSupport()
