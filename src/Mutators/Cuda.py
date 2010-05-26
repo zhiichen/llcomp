@@ -295,10 +295,10 @@ class CudaMutator(object):
       # TODO: Add shared vars to free
 
       wait_lines = "cudaThreadSynchronize();\n";
-
+      # TODO : Use common format
       template_code = """
       int fake() {
-/*      #define LLC_REDUCTION_FUNC(dest, fuente) dest = dest + fuente */
+      #define LLC_REDUCTION_FUNC(dest, fuente) dest = dest + fuente 
    % for var in reduction_vars:
       ${var} = kernelReduction_${type}(reduction_cu_${var}, numElems, ${var});
    % endfor
@@ -323,14 +323,13 @@ class CudaMutator(object):
 
       shared_vars = self.get_template_array(shared_list, ast, name_func = decls_to_param) 
 
-      # TODO: Clean
+      # TODO: Clean (Move this to external function)
       decls_dict = {}
       param_var_list = []
       for elem in shared_vars:
          try:
             identifier_type = IdentifierTypeFilter().apply(elem[2])
             if not identifier_type.names[0] in decls_dict:
-               print " ** Name : " + str(identifier_type.names)
                typedef_node = TypedefFilter(name = identifier_type.names[0]).apply(ast)
                # TODO: Avoid construction/destruction
                typedefIO = cStringIO.StringIO()
@@ -347,10 +346,10 @@ class CudaMutator(object):
 
       typedef_list = [ elem for elem in decls_dict.values() ]
 
-      print "Typedef :" + str(typedef_list)
-      print "Param_var_list :" + str(param_var_list)
-      print " Reduction_vars : " + str(reduction_vars)
-      print " Shared_vars : " + str(shared_vars)
+#      print "Typedef :" + str(typedef_list)
+#      print "Param_var_list :" + str(param_var_list)
+#      print " Reduction_vars : " + str(reduction_vars)
+#      print " Shared_vars : " + str(shared_vars)
 #
       template_code = """
 
@@ -373,16 +372,6 @@ class CudaMutator(object):
           }
           """
       tree = self.parse_snippet(template_code, {'kernelName' : self.kernel_name, 'reduction_vars' : reduction_vars, 'shared_vars' : shared_vars, 'typedefs' : typedef_list} , name = 'KernelBuild', show = False)
-
-      # Note: we need to mutate the declaration subtree into a param declaration (ArrayRef to Pointer and so on...)
-      # Check if we have reductions
-#      if reduction_list:
-#         reduction_vars = copy.deepcopy(reduction_list)
-#         for elem in reduction_vars:
-            # Replace the name of the declaration. The type_declaration doesn't change, so maybe we'll get problems later?
-#            IDNameMutator(old = c_ast.ID(elem.name), new = c_ast.ID('reduction_cu_' + elem.name)).apply_all(elem)
-#            PointerMutator().apply(elem)
-#         # Add the declarations to the parameters of the functions
 
       # OpenMP shared vars are parameters of the kernel function
       if shared_list:
