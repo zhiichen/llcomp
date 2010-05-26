@@ -201,7 +201,7 @@ class CudaMutator(object):
               % for var in shared_vars:
               ${var[1]}_cu = malloc(numElems * sizeof(${var[0]}));
               cudaMalloc((void **) (&${var[1]}_cu), numElems * sizeof(${var[0]}));
-              cudaMemcpy(${var[1]}_cu, ${var[1]}, numElems * sizeof(${var[0]}), cudaMemcpyToHostDevice); 
+              cudaMemcpy(${var[1]}_cu, ${var[1]}, numElems * sizeof(${var[0]}), cudaMemcpyHostToDevice); 
               % endfor
          }
 
@@ -359,19 +359,20 @@ class CudaMutator(object):
             ${line}
          %endfor
 
+/*            # Type string | var name | pointer to type | pointer to var | declaration string */
           __global__ void ${kernelName} (
-              ${', '.join( str(var[0]) + " reduction_cu_" + str(var[1]) for var in reduction_vars)}
+              ${', '.join( var[0] + "* reduction_cu_" + var[1] for var in reduction_vars)}
               %if len(reduction_vars) > 0 and len(shared_vars) > 0:
                   ,
               %endif 
-              ${', '.join( str(var[4]) for var in shared_vars)}
+              ${', '.join( var[0] + var[1] for var in shared_vars)}
          )
           {
           int idx = blockIdx.x * blockDim.x + threadIdx.x;
           ;
           }
           """
-      tree = self.parse_snippet(template_code, {'kernelName' : self.kernel_name, 'reduction_vars' : reduction_vars, 'shared_vars' : shared_vars, 'typedefs' : typedef_list} , name = 'KernelBuild', show = True)
+      tree = self.parse_snippet(template_code, {'kernelName' : self.kernel_name, 'reduction_vars' : reduction_vars, 'shared_vars' : shared_vars, 'typedefs' : typedef_list} , name = 'KernelBuild', show = False)
 
       # Note: we need to mutate the declaration subtree into a param declaration (ArrayRef to Pointer and so on...)
       # Check if we have reductions
@@ -392,15 +393,6 @@ class CudaMutator(object):
                mut.apply_all(loop.stmt)
 
       DeclsToParamsMutator().apply(tree.ext[-1].function.decl.type.args)
-      # Rename params
-      # TODO: Write a mutator instead of this
-      for param in tree.ext[-1].function.decl.type.args.params:
-         param.name = param.name + '_cu'
-
-
-      # Remove the template declaration
-#      RemoveTool(tree.ext[-1].function.decl.type.args.params[0]).apply(tree.ext[-1].function.decl.type.args, 'params')
-
       # OpenMP Private vars need to be declared inside kernel
       #    - we build a tmp Compound to group all declarations, and insert them once
       tmp = c_ast.Compound(decls= private_list, stmts=[])

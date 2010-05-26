@@ -83,13 +83,13 @@ class CM_OmpParallel(CudaMutator):
               % endfor
               % for var in shared_vars:
               cudaMalloc((void **) (&${var[1]}_cu), ${var[2].dim.value or 1} * sizeof(${var[0]}));
-              cudaMemcpy(${var[1]}_cu, ${var[1]}, ${var[2].dim.value or 1} * sizeof(${var[0]}), cudaMemcpyToHostDevice); 
+              cudaMemcpy(${var[1]}_cu, ${var[1]}, ${var[2].dim.value or 1} * sizeof(${var[0]}), cudaMemcpyHostToDevice); 
               % endfor
          }
 
          """
       print "New kernel build with name : " + self.kernel_name
-      parallel_init = self.parse_snippet(template_code, {'shared_vars' : shared_vars}, name = 'Initialization of Parallel Region ' + self.kernel_name, show = True).ext[-1].body
+      parallel_init = self.parse_snippet(template_code, {'shared_vars' : shared_vars}, name = 'Initialization of Parallel Region ' + self.kernel_name, show = False).ext[-1].body
 #~    from Tools.Debug import DotDebugTool
 #~    DotDebugTool().apply(kernel_init)
       return parallel_init
