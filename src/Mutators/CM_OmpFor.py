@@ -27,10 +27,6 @@ class CM_OmpFor(CudaMutator):
       self._parallel = f.get_parallel()
       return node
 
-#   def filter_iterator(self, ast):
-#      """ Iterative filter, looking for OmpFor """
-#      return OmpForFilter().iterate(ast)
-
    def apply_all(self, parent_parallel_node, ast):
       """ Apply mutation to all matches """
       start_node = None

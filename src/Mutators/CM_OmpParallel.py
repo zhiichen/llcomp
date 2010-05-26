@@ -1,7 +1,7 @@
 
 from pycparser import c_parser, c_ast
 from Visitors.generic_visitors import IDFilter, FuncCallFilter, FuncDeclOfNameFilter, OmpForFilter, OmpParallelFilter, OmpThreadPrivateFilter
-from Tools.tree import InsertTool, NodeNotFound, ReplaceTool, RemoveTool
+from Tools.tree import InsertTool, NodeNotFound, ReplaceTool, RemoveTool, link_all_parents
 from Tools.search import type_of_id, decl_of_id
 from Tools.Dump import Dump
 from Tools.Debug import DotDebugTool
@@ -24,15 +24,34 @@ class CM_OmpParallel(CudaMutator):
       self._parallel = node
       return node
 
-#   def buildDeclarations(self, shared_node_list, ast):
-#      """ Builds the declaration section 
-#          @return Declarations subtree
-#      """ 
-#      # Position in the template for dimA declaration, just in case we change it
-#      declarations =  c_ast.FileAST(ext = [])
-#      declarations.ext.extend(self._build_shared_memory_decls_cu(shared_node_list, declarations, ast))
-#      return declarations 
-#
+   def apply_all(self, ast):
+      """ Apply mutation to all matches """
+      start_node = None
+      self.ast = ast
+      f = OmpParallelFilter()
+      num = 0;
+      self.kernel_name = self.kernel_prefix
+
+      try:
+         for elem in f.iterate(ast):
+            # Save previous state
+            old_parallel = self._parallel
+            self.kernel_name = self.kernel_name + str(num)
+            self._clauses = {}
+            # Current scope variables
+            self._func_def = f.get_func_def()
+            self._parallel = elem
+            start_node = self.mutatorFunction(ast, elem)
+            # Restore previous state
+            link_all_parents(ast)  # Note: This could break the iterator? 
+            self._parallel = old_parallel
+            num += 1;
+      except NodeNotFound as nf:
+         print str(nf)
+      except StopIteration:
+         return self._parallel
+      return ast
+
 
 
    def buildParallelDeclarations(self, shared_node_list, ast):
@@ -59,35 +78,12 @@ class CM_OmpParallel(CudaMutator):
          }
 
          """
+      print "Kernel name : " + self.kernel_name
       parallel_init = self.parse_snippet(template_code, {'shared_vars' : shared_vars}, name = 'Initialization of Parallel Region ' + self.kernel_name).ext[-1].body
 #~    from Tools.Debug import DotDebugTool
 #~    DotDebugTool().apply(kernel_init)
       return parallel_init
 
-
-
-#   def buildInitialization(self, shared_vars, ast):
-#      """ Initialization """
-#      reduction_dict = {} 
-# 
-#      shared_dict = {} 
-#      for elem in shared_vars:
-#         # Only malloc / send if it is a complex type
-#         if isinstance(elem.type, c_ast.ArrayDecl): 
-#            shared_dict[elem.name] = "sizeof(" + " ".join(self.get_names(elem, ast)) +  ") * " +  elem.type.dim.value
-#         elif isinstance(elem.type, c_ast.Struct):
-#            shared_dict[elem.name] = "sizeof(" + " ".join(self.get_names(elem, ast)) +  ")"
-#
-#      shared_malloc_lines = "\n".join(["cudaMalloc((void **) &" + str(key) + "_cu," + str(value) + ");" for key,value in shared_dict.items()])
-#      shared_malloc_lines += "\n".join(["cudaMemcpy(" + str(key) + "_cu," + str(key) + ", " + str(value) + ", cudaMemcpyHostToDevice);" for key,value in shared_dict.items()])
-#      # Template source
-#      template_code = """
-#      #include "llcomp_cuda.h"
-#      int fake() {
-#      """ + shared_malloc_lines + "\n}"
-#   
-#      return self.parse_snippet(template_code, None, name = 'SendData').ext[-1].body
-#
 
    def mutatorFunction(self, ast, ompParallel_node):
       """ CUDA mutator, writes memory transfer operations for a parallel region
@@ -109,8 +105,6 @@ class CM_OmpParallel(CudaMutator):
       private_params.extend(threadprivate)
 
       # Loops inside parallel region (wired for now)
- #     CM_OmpFor(clause_dict, kernel_name = 'initKernel').apply(ast)
-  #    CM_OmpFor(clause_dict, kernel_name = 'loopKernel').apply(ast)
       CM_OmpFor(clause_dict, kernel_name = self.kernel_prefix + "_loopKernel").apply_all(ompParallel_node, ast)
 
       ##################### Statement for cuda
