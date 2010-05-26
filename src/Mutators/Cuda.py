@@ -13,6 +13,9 @@ from mako.template import Template
 
 import subprocess
 from cStringIO import StringIO
+from Visitors.clone_visitor import CWriter
+import cStringIO
+
 
 # Copy substructures
 import copy
@@ -38,6 +41,7 @@ class CudaMutator(object):
       self._func_def = None
       self._parallel = None
       self._clauses = clauses
+      self.device = "cuda"
 
    # TODO: Clean this function, it has an strange behaviour
    # TODO: Change function name
@@ -69,12 +73,13 @@ class CudaMutator(object):
       else:
           return node.left
 
-   def parse_snippet(self, template_code, subs_dir, name):
+   def parse_snippet(self, template_code, subs_dir, name, show = False):
       subtree = None
  #     template_code = Template(template_code).substitute(subs_dir)
       if subs_dir:
          template_code = Template(template_code).render(**subs_dir)
-#         print " Template " + str(template_code)
+         if show:
+            print " Template " + str(template_code)
       try:
          subtree = parse_template(template_code, name)
       except c_parser.ParseError, e:
@@ -121,9 +126,36 @@ class CudaMutator(object):
    def get_template_array(self, var_list, ast, func = lambda elem : True, name_func = lambda elem : elem.name, type_func = lambda elem : elem.type):
       """ Prepare template array for vars """
       names = []
+      def fast_write(elem):
+         writeIO = cStringIO.StringIO()
+         cw = CWriter(stream = writeIO)
+         cw.visit(elem)
+         return writeIO.getvalue()
+
+      def decl_write(elem):
+         tmp = " ".join(['%s'%stor for stor in elem.storage]) 
+         if isinstance(elem.type, c_ast.ArrayDecl):
+            tmp += " "
+            # ** TODO: Do not perform this search, change recursion order... ** 
+            tmp_node = elem.type
+            while not (isinstance(tmp_node, c_ast.TypeDecl) or isinstance(tmp_node, c_ast.PtrDecl)) and tmp_node:
+               tmp_node = tmp_node.type
+
+            tmp += fast_write(tmp_node)
+ #           tmp += fast_write(elem.type)
+ #           self.visit_ArrayDecl(node = node.type, node_name = decl_name, offset = new_offset)
+         else:
+            tmp += " ".join(['%s'%qual for qual in elem.quals])
+            tmp += " "
+            tmp += fast_write(elem.type)
+         return tmp
+
       for elem in var_list:
          if func(elem):
-            names.append([' '.join(self.get_names(elem, ast)), name_func(elem), type_func(elem)])
+#            names.append([' '.join(self.get_names(elem, ast)), name_func(elem), type_func(elem), elem, fast_write(elem).replace(';','').replace('\n','') ])
+            typestr = decl_write(elem)#' '.join(self.get_names(elem, ast))
+            # Type string | var name | pointer to type | pointer to var | declaration string
+            names.append([typestr, name_func(elem), type_func(elem), elem, fast_write(elem).replace(';','').replace('\n','') ])
       return names
  
 
@@ -157,7 +189,7 @@ class CudaMutator(object):
               % endfor
 
               % for var in shared_vars:
-                  ${var[0]} * ${var[1]}_cu;
+                  ${var[0]} * ${var[1]}_cu; 
               % endfor
               /* Initialization */
               % for var in reduction_names:
@@ -285,38 +317,40 @@ class CudaMutator(object):
       # Retrieve list of shared vars and build the array to template parsing
       # TODO: Move this to some kind of template function
       def decls_to_param(elem):
-         if isinstance(elem.type, c_ast.ArrayDecl) or isinstance(elem, c_ast.Struct):
+         if isinstance(elem.type, c_ast.ArrayDecl):
             return "*" + elem.name + "_cu"
          return elem.name
 
       shared_vars = self.get_template_array(shared_list, ast, name_func = decls_to_param) 
 
       # TODO: Clean
-
-      from Visitors.clone_visitor import CWriter
-      import cStringIO
-
-      typedef_dict = {}
+      decls_dict = {}
+      param_var_list = []
       for elem in shared_vars:
          try:
             identifier_type = IdentifierTypeFilter().apply(elem[2])
-            if not identifier_type.names[0] in typedef_dict:
+            if not identifier_type.names[0] in decls_dict:
+               print " ** Name : " + str(identifier_type.names)
                typedef_node = TypedefFilter(name = identifier_type.names[0]).apply(ast)
                # TODO: Avoid construction/destruction
                typedefIO = cStringIO.StringIO()
                cw = CWriter(stream = typedefIO)
                cw.visit(typedef_node)
-               typedef_dict[identifier_type.names[0]] = str(typedefIO.getvalue())
+               decls_dict[identifier_type.names[0]] = str(typedefIO.getvalue())
          except NodeNotFound as nnf:
             # It is not a complex type
-            # print " Not a complex type "
-            pass
+            print " Not a userdefined-type " + elem[1]
+#            structIO = cStringIO.StringIO()
+#            cw = CWriter(stream = structIO)
+#            cw.visit(elem[3])
+#            param_var_list.append(str(structIO.getvalue()).replace(';','') )
 
-      typedef_list = [ elem for elem in typedef_dict.values() ]
+      typedef_list = [ elem for elem in decls_dict.values() ]
 
-#      print "Typedef :" + str(typedef_list)
-#      print " Reduction_vars : " + str(reduction_vars)
-#      print " Shared_vars : " + str(shared_vars)
+      print "Typedef :" + str(typedef_list)
+      print "Param_var_list :" + str(param_var_list)
+      print " Reduction_vars : " + str(reduction_vars)
+      print " Shared_vars : " + str(shared_vars)
 #
       template_code = """
 
@@ -330,42 +364,39 @@ class CudaMutator(object):
               %if len(reduction_vars) > 0 and len(shared_vars) > 0:
                   ,
               %endif 
-              ${', '.join( str(var[0]) + " " + str(var[1]) for var in shared_vars)}
+              ${', '.join( str(var[4]) for var in shared_vars)}
          )
           {
           int idx = blockIdx.x * blockDim.x + threadIdx.x;
           ;
           }
           """
-      tree = self.parse_snippet(template_code, {'kernelName' : self.kernel_name, 'reduction_vars' : reduction_vars, 'shared_vars' : shared_vars, 'typedefs' : typedef_list} , name = 'KernelBuild')
+      tree = self.parse_snippet(template_code, {'kernelName' : self.kernel_name, 'reduction_vars' : reduction_vars, 'shared_vars' : shared_vars, 'typedefs' : typedef_list} , name = 'KernelBuild', show = True)
 
       # Note: we need to mutate the declaration subtree into a param declaration (ArrayRef to Pointer and so on...)
       # Check if we have reductions
-      if reduction_list:
-         reduction_vars = copy.deepcopy(reduction_list)
-         for elem in reduction_vars:
+#      if reduction_list:
+#         reduction_vars = copy.deepcopy(reduction_list)
+#         for elem in reduction_vars:
             # Replace the name of the declaration. The type_declaration doesn't change, so maybe we'll get problems later?
-            IDNameMutator(old = c_ast.ID(elem.name), new = c_ast.ID('reduction_cu_' + elem.name)).apply_all(elem)
-            PointerMutator().apply(elem)
+#            IDNameMutator(old = c_ast.ID(elem.name), new = c_ast.ID('reduction_cu_' + elem.name)).apply_all(elem)
+#            PointerMutator().apply(elem)
 #         # Add the declarations to the parameters of the functions
-#         DeclsToParamsMutator(decls = reduction_vars).apply(tree.ext[-1].function.decl.type.args)
-      
+
       # OpenMP shared vars are parameters of the kernel function
       if shared_list:
-        shared_vars = copy.deepcopy(shared_list)
-#         shared_vars = shared_list
-        # TODO: Move this to DeclsToParamsMutator
-        for elem in shared_vars:
-            # Replace the name of the declaration. 
+        for elem in shared_list:
+            # Replace the name of the declaration in the kernel code. 
             if isinstance(elem.type, c_ast.ArrayDecl) or isinstance(elem.type, c_ast.Struct):
                mut = IDNameMutator(old = c_ast.ID(elem.name), new = c_ast.ID(elem.name + '_cu'))
- #              mut.apply_all(elem)
                mut.apply_all(loop.stmt)
-               # Pointer instead of array 
-               elem.type = elem.type.type
-               PointerMutator().apply(elem)
-         # Add the declarations to the parameters of the functions
-#         DeclsToParamsMutator(decls = shared_vars).apply(tree.ext[-1].function.decl.type.args)
+
+      DeclsToParamsMutator().apply(tree.ext[-1].function.decl.type.args)
+      # Rename params
+      # TODO: Write a mutator instead of this
+      for param in tree.ext[-1].function.decl.type.args.params:
+         param.name = param.name + '_cu'
+
 
       # Remove the template declaration
 #      RemoveTool(tree.ext[-1].function.decl.type.args.params[0]).apply(tree.ext[-1].function.decl.type.args, 'params')

@@ -37,25 +37,31 @@ class RemoveAttributeMutator(AbstractMutator):
 
 class DeclsToParamsMutator(AbstractMutator):
    """ DeclsToParams """ 
-   def __init__(self, decls):
+   def __init__(self):
       " Save the params "
-      self.params = self.convert(decls);
+      # self.params = self.convert(decls);
 
-   def convert(self, decls):
+   def convert(self, node):
       """ Transform a type declaration to a parameter declaration """
       # TODO: Implement this !
-      # If ArrayDecl, change to PointerDecl
+      # If ArrayDecl, change to PointerDecl DONE
       # If StructDecl, change to PointerDecl
       # Else, do not touch
-      # Remove initialization
+      # Remove initialization DONE
       params_tmp = []
+      decls = node.params
       for decl in decls:
-         params_tmp += [RemoveAttributeMutator('init').apply(decl)]
-      return c_ast.ParamList(params = params_tmp, coord = 0)
+         new_decl = RemoveAttributeMutator('init').apply(decl);
+         if isinstance(new_decl.type, c_ast.ArrayDecl) or isinstance(new_decl.type, c_ast.Struct):
+            PointerMutator().apply(new_decl)
+         params_tmp.append(new_decl) 
+
+      return c_ast.ParamList(params = params_tmp, coord = 0, parent = node.parent)
 
    def filter(self, ast):
       """ Filter definition
-         Returns the first node matching with the filter"""
+         Returns the first node matching with the filter
+      """
       # Build a visitor , matching the ParamList node of the AST
       f = FilterVisitor(match_node_type = c_ast.ParamList)
       node = f.apply(ast)
@@ -63,9 +69,9 @@ class DeclsToParamsMutator(AbstractMutator):
 
    def mutatorFunction(self, ast):
       """ Mutator code """
-#      self.params.show()
-      InsertTool(subtree = self.params, position = "end").apply(ast, 'params')
-      
+#      InsertTool(subtree = self.params, position = "end").apply(ast, 'params')
+      # ReplaceTool(new_node = self.params, old_node = self.params).apply(ast, 'params')
+      ast.params = self.convert(ast).params
 
 
 class IDNameMutator(AbstractMutator):
@@ -186,8 +192,16 @@ class PointerMutator(AbstractMutator):
      return ast
 
    def mutatorFunction(self, ast):
-     pointer_node = c_ast.PtrDecl(type = ast.type, quals = [], parent = ast)
-     ast.type.parent = pointer_node
-     ast.type = pointer_node
+     if not isinstance(ast.type, c_ast.ArrayDecl):
+        pointer_node = c_ast.PtrDecl(type = ast.type, quals = [], parent = ast)
+        ast.type.parent = pointer_node
+        ast.type = pointer_node
+     else:
+        pointer_node = c_ast.PtrDecl(type = ast.type.type, quals = [], parent = ast)
+        ast.type.parent = pointer_node
+        ast.type = pointer_node
+
      return ast
+
+
 

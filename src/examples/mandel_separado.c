@@ -171,7 +171,7 @@ void rinit (int seed) {
    printf ("** CUDA Loop **\n");
 	CLOCK_Start(chrono);
 /* #pragma omp parallel for reduction(+:numoutside) private(i,j,ztemp,z) shared(nt,c) */
-  #pragma omp parallel private(z, ztemp, j) shared(nt, c)
+  #pragma omp parallel private(z, ztemp, j) shared(nt, c) target device(cuda)
   {
 	 numoutside = 0;
     #pragma omp for reduction (+:numoutside)

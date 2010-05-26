@@ -173,7 +173,7 @@ class StrFilter(GenericFilterVisitor):
 
 
 class DeclFilter(GenericFilterVisitor):
-   """ Returns the first node with a TypeDecl
+   """ Returns the first node with a Decl
    """
 
    def __init__(self, attribute, value, prev_brother = None):
@@ -184,6 +184,13 @@ class TypedefFilter(GenericFilterVisitor):
 
    def __init__(self, name, prev_brother = None):
        super(TypedefFilter, self).__init__(condition_func = lambda node : type(node) == c_ast.Typedef and (getattr(node, 'name') == name), prev_brother = prev_brother)
+
+class StructFilter(GenericFilterVisitor):
+   """ Returns the first TypeDef node with the given name   """
+
+   def __init__(self, name, prev_brother = None):
+       super(StructFilter, self).__init__(condition_func = lambda node : type(node) == c_ast.Struct and (getattr(node, 'name') == name), prev_brother = prev_brother)
+
 
 class IdentifierTypeFilter(GenericFilterVisitor):
    """ Returns an IdentifierType  """

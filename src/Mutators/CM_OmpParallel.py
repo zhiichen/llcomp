@@ -18,7 +18,7 @@ class CM_OmpParallel(CudaMutator):
       """ Filter definition
          Returns the first node matching with the filter"""
       # Build a visitor , matching the OmpFor node of the AST
-      f = OmpParallelFilter()
+      f = OmpParallelFilter(device = self.device)
       node = f.apply(ast)
       self._func_def = f.get_func_def()
       self._parallel = node
@@ -67,22 +67,29 @@ class CM_OmpParallel(CudaMutator):
           @return Parallel Declarations subtree
       """ 
       # Position in the template for dimA declaration, just in case we change it
-      shared_vars = [ [' '.join(self.get_names(elem, ast)), elem.name, elem.type.dim.value or 1] for elem in shared_node_list if isinstance(elem.type, c_ast.ArrayDecl) or isinstance(elem.type, c_ast.Struct)]
+#      shared_vars = [ [' '.join(self.get_names(elem, ast)), elem.name, elem.type.dim.value or 1] for elem in shared_node_list if isinstance(elem.type, c_ast.ArrayDecl) or isinstance(elem.type, c_ast.Struct)]
+      tmp = []
+      for elem in shared_node_list: 
+         if isinstance(elem.type, c_ast.ArrayDecl) or isinstance(elem.type,c_ast.Struct):
+            tmp.append(elem)
 
+      shared_vars = self.get_template_array(tmp, ast) 
+
+      # Type string | var name | pointer to type | pointer to var | declaration string
       template_code = """
          int main() {
              % for var in shared_vars:
                   ${var[0]} * ${var[1]}_cu;
               % endfor
               % for var in shared_vars:
-              cudaMalloc((void **) (&${var[1]}_cu), ${var[2]} * sizeof(${var[0]}));
-              cudaMemcpy(${var[1]}_cu, ${var[1]}, ${var[2]} * sizeof(${var[0]}), cudaMemcpyToHostDevice); 
+              cudaMalloc((void **) (&${var[1]}_cu), ${var[2].dim.value or 1} * sizeof(${var[0]}));
+              cudaMemcpy(${var[1]}_cu, ${var[1]}, ${var[2].dim.value or 1} * sizeof(${var[0]}), cudaMemcpyToHostDevice); 
               % endfor
          }
 
          """
       print "New kernel build with name : " + self.kernel_name
-      parallel_init = self.parse_snippet(template_code, {'shared_vars' : shared_vars}, name = 'Initialization of Parallel Region ' + self.kernel_name).ext[-1].body
+      parallel_init = self.parse_snippet(template_code, {'shared_vars' : shared_vars}, name = 'Initialization of Parallel Region ' + self.kernel_name, show = True).ext[-1].body
 #~    from Tools.Debug import DotDebugTool
 #~    DotDebugTool().apply(kernel_init)
       return parallel_init
