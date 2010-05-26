@@ -129,9 +129,11 @@ class CM_OmpParallel(CudaMutator):
 
 
       ##################### Support subtree
-      support_subtree = self.buildSupport()
-      InsertTool(subtree = c_ast.Compound(stmts = support_subtree.stmts, decls = None), position = "end").apply(ast, 'ext')
-      InsertTool(subtree = c_ast.Compound(decls = support_subtree.decls, stmts = None), position = "begin").apply(ast, 'ext')
+      ### Support has been moved to an external include file
+      # support_subtree = self.buildSupport()
+      # InsertTool(subtree = c_ast.Compound(stmts = support_subtree.stmts, decls = None), position = "end").apply(ast, 'ext')
+      # InsertTool(subtree = c_ast.Compound(decls = support_subtree.decls, stmts = None), position = "begin").apply(ast, 'ext')
+      print " *** You must include reduction_snippets.h after translation *** "
 
 
       ##################### Loop substitution 
