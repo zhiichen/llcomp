@@ -338,11 +338,12 @@ class CudaMutator(object):
                decls_dict[identifier_type.names[0]] = str(typedefIO.getvalue())
          except NodeNotFound as nnf:
             # It is not a complex type
-            print " Not a userdefined-type " + elem[1]
+#            print " Not a userdefined-type " + elem[1]
 #            structIO = cStringIO.StringIO()
 #            cw = CWriter(stream = structIO)
 #            cw.visit(elem[3])
 #            param_var_list.append(str(structIO.getvalue()).replace(';','') )
+            pass
 
       typedef_list = [ elem for elem in decls_dict.values() ]
 

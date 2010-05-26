@@ -28,7 +28,7 @@ class CM_OmpParallel(CudaMutator):
       """ Apply mutation to all matches """
       start_node = None
       self.ast = ast
-      f = OmpParallelFilter()
+      f = OmpParallelFilter(device = self.device)
       num = 0;
       self.kernel_name = self.kernel_prefix
       old_prefix = self.kernel_prefix
