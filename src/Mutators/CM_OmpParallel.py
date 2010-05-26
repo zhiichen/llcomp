@@ -31,12 +31,13 @@ class CM_OmpParallel(CudaMutator):
       f = OmpParallelFilter()
       num = 0;
       self.kernel_name = self.kernel_prefix
-
+      old_prefix = self.kernel_prefix
+      old_parallel = self._parallel
       try:
          for elem in f.iterate(ast):
             # Save previous state
-            old_parallel = self._parallel
             self.kernel_name = self.kernel_name + str(num)
+            self.kernel_prefix = self.kernel_prefix + str(num)
             self._clauses = {}
             # Current scope variables
             self._func_def = f.get_func_def()
@@ -45,6 +46,8 @@ class CM_OmpParallel(CudaMutator):
             # Restore previous state
             link_all_parents(ast)  # Note: This could break the iterator? 
             self._parallel = old_parallel
+            self.kernel_prefix = old_prefix
+            self.kernel_name = old_prefix
             num += 1;
       except NodeNotFound as nf:
          print str(nf)
@@ -78,7 +81,7 @@ class CM_OmpParallel(CudaMutator):
          }
 
          """
-      print "Kernel name : " + self.kernel_name
+      print "New kernel build with name : " + self.kernel_name
       parallel_init = self.parse_snippet(template_code, {'shared_vars' : shared_vars}, name = 'Initialization of Parallel Region ' + self.kernel_name).ext[-1].body
 #~    from Tools.Debug import DotDebugTool
 #~    DotDebugTool().apply(kernel_init)

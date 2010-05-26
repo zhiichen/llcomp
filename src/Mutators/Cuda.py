@@ -74,7 +74,7 @@ class CudaMutator(object):
  #     template_code = Template(template_code).substitute(subs_dir)
       if subs_dir:
          template_code = Template(template_code).render(**subs_dir)
-         print " Template " + str(template_code)
+#         print " Template " + str(template_code)
       try:
          subtree = parse_template(template_code, name)
       except c_parser.ParseError, e:
@@ -309,15 +309,15 @@ class CudaMutator(object):
                typedef_dict[identifier_type.names[0]] = str(typedefIO.getvalue())
          except NodeNotFound as nnf:
             # It is not a complex type
-            print " Not a complex type "
+            # print " Not a complex type "
             pass
 
       typedef_list = [ elem for elem in typedef_dict.values() ]
 
-      print "Typedef :" + str(typedef_list)
-      print " Reduction_vars : " + str(reduction_vars)
-      print " Shared_vars : " + str(shared_vars)
-
+#      print "Typedef :" + str(typedef_list)
+#      print " Reduction_vars : " + str(reduction_vars)
+#      print " Shared_vars : " + str(shared_vars)
+#
       template_code = """
 
          #include "llcomp_cuda.h" 

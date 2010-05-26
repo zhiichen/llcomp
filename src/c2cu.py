@@ -88,7 +88,7 @@ new_ast = None
 
 try:
    # t = CudaMutator()
-   t = CM_OmpParallel(kernel_prefix='compute')
+   t = CM_OmpParallel(kernel_prefix='llc')
    new_ast = t.apply_all(ast)
 #   link_all_parents(new_ast)
 #   t2 = CM_OmpParallel(kernel_prefix='update')
