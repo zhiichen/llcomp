@@ -71,7 +71,7 @@ void jacobi(int n, int m, double *_dx, double *_dy, double alpha, double omega,
         while ((k < maxit) && (error > tol)) {
 
                 error = 0.0;
-#pragma omp parallel shared(omega,error,tol,n,m,ax,ay,b,alpha,uold,u,f)  private(i,j,resid)
+#pragma omp parallel shared(omega,error,tol,n,m,ax,ay,b,alpha,uold,u,f)  private(i,j,resid) target device(cuda)
 
                 {
 

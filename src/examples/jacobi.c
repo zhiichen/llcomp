@@ -36,8 +36,8 @@
 #include <stdlib.h>
 #include <math.h>
 /* Constants */
-#define N 500
-#define M 500
+#define N 1024
+#define M 1024
 #define ALPHA 0.00000005L
 #define RELAX 0.01L
 #define TOL 0.00001L
@@ -125,7 +125,7 @@ void jacobi(int n, int m, double *_dx, double *_dy, double alpha, double omega,
 /* $omp paralleldo schedule(static)  */
 /* $omp& shared(n,m,uold,u) */
 /* $omp&private(i,j) */
-#pragma omp parallel shared(omega,error,tol,n,m,ax,ay,b,alpha,uold,u,f) private(i, j, resid)
+#pragma omp parallel shared(omega,error,tol,n,m,ax,ay,b,alpha,uold,u,f) private(i, j, resid) target device(cuda)
 {
    #pragma omp for
 	for (i = 0; i < m; i++)
