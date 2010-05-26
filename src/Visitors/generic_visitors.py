@@ -179,6 +179,19 @@ class DeclFilter(GenericFilterVisitor):
    def __init__(self, attribute, value, prev_brother = None):
        super(DeclFilter, self).__init__(condition_func = lambda node : type(node) == c_ast.Decl and (getattr(node, attribute) == value), prev_brother = prev_brother)
 
+class TypedefFilter(GenericFilterVisitor):
+   """ Returns the first TypeDef node with the given name   """
+
+   def __init__(self, name, prev_brother = None):
+       super(TypedefFilter, self).__init__(condition_func = lambda node : type(node) == c_ast.Typedef and (getattr(node, 'name') == name), prev_brother = prev_brother)
+
+class IdentifierTypeFilter(GenericFilterVisitor):
+   """ Returns an IdentifierType  """
+
+   def __init__(self, prev_brother = None):
+       super(IdentifierTypeFilter, self).__init__(condition_func = lambda node : type(node) == c_ast.IdentifierType, prev_brother = prev_brother)
+
+
 
 
 class FuncCallFilter(GenericFilterVisitor):

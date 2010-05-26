@@ -73,7 +73,7 @@ class CM_OmpParallel(CudaMutator):
               % endfor
               % for var in shared_vars:
               cudaMalloc((void **) (&${var[1]}_cu), ${var[2]} * sizeof(${var[0]}));
-              cudaMemcpy(${var[1]}_cu, (int) ${var[1]}, ${var[2]} * sizeof(${var[0]})); 
+              cudaMemcpy(${var[1]}_cu, ${var[1]}, ${var[2]} * sizeof(${var[0]}), cudaMemcpyToHostDevice); 
               % endfor
          }
 

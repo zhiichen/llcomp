@@ -1,5 +1,5 @@
 from pycparser import c_parser, c_ast
-from Visitors.generic_visitors import IDFilter, FuncCallFilter, FuncDeclOfNameFilter, OmpForFilter, OmpParallelFilter, FilterError
+from Visitors.generic_visitors import IDFilter, FuncCallFilter, FuncDeclOfNameFilter, OmpForFilter, OmpParallelFilter, FilterError, TypedefFilter, IdentifierTypeFilter
 from Tools.tree import InsertTool, NodeNotFound, ReplaceTool, RemoveTool
 from Tools.search import type_of_id, decl_of_id
 from Tools.Dump import Dump
@@ -74,7 +74,7 @@ class CudaMutator(object):
  #     template_code = Template(template_code).substitute(subs_dir)
       if subs_dir:
          template_code = Template(template_code).render(**subs_dir)
-#         print " Template " + str(template_code)
+         print " Template " + str(template_code)
       try:
          subtree = parse_template(template_code, name)
       except c_parser.ParseError, e:
@@ -118,65 +118,15 @@ class CudaMutator(object):
       self._clauses = clause_dict
       return  clause_dict
 
-#   def _build_shared_memory_decls_cu(self, shared_node_list, parent, ast = None):
-#   # Build shared memory declarations on host
-#      tmp = copy.deepcopy(shared_node_list)
-#      shared_cu_pointer_decls = []
-#      for elem in tmp:
-#         if isinstance(elem.type, c_ast.ArrayDecl):
-#            ptr = c_ast.Decl(elem.name + '_cu', elem.quals, [], elem.type.type, None, None, None, parent)
-#            PointerMutator().apply(ptr)
-#            shared_cu_pointer_decls.append(ptr)
-#         elif isinstance(elem.type, c_ast.Struct):
-#            IDNameMutator(old = c_ast.ID(elem.name), new = c_ast.ID(elem.name +'_cu')).apply_all(elem)
-#            PointerMutator().apply(elem)
-#      return shared_cu_pointer_decls
-#
-#
-#   def _build_shared_memory_init_cu(self, shared_node_list, ast):
-#      shared_dict = {} 
-#      for elem in shared_node_list:
-#         # Only malloc / send if it is a complex type
-#         if isinstance(elem.type, c_ast.ArrayDecl): 
-#            shared_dict[elem.name] = "sizeof(" + " ".join(self.get_names(elem, ast)) +  ") * " +  elem.type.dim.value
-#         elif isinstance(elem.type, c_ast.Struct):
-#            shared_dict[elem.name] = "sizeof(" + " ".join(self.get_names(elem, ast)) +  ")"
-#
-#      shared_malloc_lines = "\n".join(["cudaMalloc((void **) &" + str(key) + "_cu," + str(value) + ");" for key,value in shared_dict.items()])
-#      shared_malloc_lines += "\n".join(["cudaMemcpy(" + str(key) + "_cu," + str(key) + ", " + str(value) + ", cudaMemcpyHostToDevice);" for key,value in shared_dict.items()])
-#
-#      return shared_malloc_lines
-#
-#
-#   def _build_reduction_decls(self, reduction_pointer_decls):
-#      reduction_cu_pointer_decls = copy.deepcopy(reduction_pointer_decls)
-#      # Build local reduction vars
-#      for elem in reduction_pointer_decls:
-#         IDNameMutator(old = c_ast.ID(elem.name), new = c_ast.ID('reduction_loc_' + elem.name)).apply_all(elem)
-#         PointerMutator().apply(elem)
-#      # Build cuda reduction arrays
-#      for elem in reduction_cu_pointer_decls:
-#         IDNameMutator(old = c_ast.ID(elem.name), new = c_ast.ID('reduction_cu_' + elem.name)).apply_all(elem)
-#         PointerMutator().apply(elem)
-#      return reduction_cu_pointer_decls
-#
-#
-#   def _build_reduction_malloc_lines(self, ast, reduction_vars):
-#      reduction_dict = {} 
-#      # Host memory allocation (malloc lines)
-#      for elem in reduction_vars:
-#          reduction_dict[str(elem.name)] = self.get_names(elem, ast)[0]
-#      reduction_malloc_lines = "\n".join(["reduction_loc_" + str(key) + " = (" + str(value) +"*) malloc(numElems * sizeof(" + str(value) + "));" for key,value in reduction_dict.items()])
-#      reduction_dict = {} 
-#
-#
-#      # Device memory allocation (cudaMalloc lines)
-#      for elem in reduction_vars:
-#         reduction_dict[str(elem.name)] = "sizeof(" + "reduction_cu_".join(self.get_names(elem, ast)) +")"
-#      reduction_malloc_lines += "\n".join(["cudaMalloc((void **) &" + "reduction_cu_" + str(key) + ", numElems * " + str(value) + ");" for key,value in reduction_dict.items()])
-#      # TODO: Initial value for * reduction must be 1 instead of 0
-#      reduction_malloc_lines += "\n".join(["cudaMemset(reduction_cu_" + str(key) + ", (int)" + str(key) + ", numElems * " + str(value) + ");" for key,value in reduction_dict.items()])
-#      return reduction_malloc_lines
+   def get_template_array(self, var_list, ast, func = lambda elem : True, name_func = lambda elem : elem.name, type_func = lambda elem : elem.type):
+      """ Prepare template array for vars """
+      names = []
+      for elem in var_list:
+         if func(elem):
+            names.append([' '.join(self.get_names(elem, ast)), name_func(elem), type_func(elem)])
+      return names
+ 
+
 
    def buildDeclarations(self, numThreads, reduction_node_list, shared_node_list, ast):
       """ Builds the declaration section 
@@ -187,9 +137,10 @@ class CudaMutator(object):
       DIMA_POS = 0
       MEMSIZE_POS = 4
       # TODO : Move this array creation to a tempalte filter (something like |type)
-      reduction_vars = [ [' '.join(self.get_names(elem, ast)), elem.name, elem.type] for elem in reduction_node_list ]
-
-      shared_vars = [ [' '.join(self.get_names(elem, ast)), elem.name, elem.type] for elem in shared_node_list if isinstance(elem, c_ast.ArrayDecl) or isinstance(elem, c_ast.Struct)]
+      reduction_vars = self.get_template_array(reduction_node_list, ast)
+      def check_array(elem):
+         return isinstance(elem.type, c_ast.ArrayDecl) or isinstance(elem, c_ast.Struct)
+      shared_vars = self.get_template_array(shared_node_list, ast, func = check_array) 
 
       template_code = """
               /* Kernel configuration */
@@ -218,7 +169,7 @@ class CudaMutator(object):
               % for var in shared_vars:
               ${var[1]}_cu = malloc(numElems * sizeof(${var[0]}));
               cudaMalloc((void **) (&${var[1]}_cu), numElems * sizeof(${var[0]}));
-              cudaMemcpy(${var[1]}_cu, (int) ${var[1]}, numElems * sizeof(${var[0]})); 
+              cudaMemcpy(${var[1]}_cu, ${var[1]}, numElems * sizeof(${var[0]}), cudaMemcpyToHostDevice); 
               % endfor
          }
 
@@ -327,50 +278,66 @@ class CudaMutator(object):
       """
       return self.parse_snippet(template_code, {'reduction_vars' : [elem.name for elem in reduction_vars], 'type' : self.get_names(elem, ast)[0], 'free_lines' : free_lines, 'wait' : wait_lines}, name = 'HostReduction').ext[0].body
 
-   def buildSupport(self):
-      """ CUDA Support subroutines """
-      if not Dump.exists('SupportRoutines'):
-         template_code = """
-        #include "llcomp_cuda.h"  
-
-void checkCUDAError (const char *msg)
-{
-	cudaError_t err = cudaGetLastError ();
-	if (cudaSuccess != err)
-	{
-		fprintf (stderr, "Cuda error: %s: %s.\\n", msg,
-				cudaGetErrorString (err));
-		exit (EXIT_FAILURE);
-	}
-}
-
-
-"""
-         print " Parsing template of Support Routines "
-         tree = self.parse_snippet(template_code, None, name = 'SupportRoutines')
-         Dump.save('SupportRoutines', tree)
-      else:
-         print " Loading frozen template of SupportRoutines "
-         tree = Dump.load('SupportRoutines')
-
-      return c_ast.Compound(stmts = [tree.ext[-1]], decls = [tree.ext[-1].decl])
-
    def buildKernel(self, shared_list, private_list, reduction_list, loop, ast):
-      if not Dump.exists(self.kernel_name):
-          template_code = """
+      """ Build CUDA Kernel code """
+
+      reduction_vars = self.get_template_array(reduction_list, ast)
+      # Retrieve list of shared vars and build the array to template parsing
+      # TODO: Move this to some kind of template function
+      def decls_to_param(elem):
+         if isinstance(elem.type, c_ast.ArrayDecl) or isinstance(elem, c_ast.Struct):
+            return "*" + elem.name + "_cu"
+         return elem.name
+
+      shared_vars = self.get_template_array(shared_list, ast, name_func = decls_to_param) 
+
+      # TODO: Clean
+
+      from Visitors.clone_visitor import CWriter
+      import cStringIO
+
+      typedef_dict = {}
+      for elem in shared_vars:
+         try:
+            identifier_type = IdentifierTypeFilter().apply(elem[2])
+            if not identifier_type.names[0] in typedef_dict:
+               typedef_node = TypedefFilter(name = identifier_type.names[0]).apply(ast)
+               # TODO: Avoid construction/destruction
+               typedefIO = cStringIO.StringIO()
+               cw = CWriter(stream = typedefIO)
+               cw.visit(typedef_node)
+               typedef_dict[identifier_type.names[0]] = str(typedefIO.getvalue())
+         except NodeNotFound as nnf:
+            # It is not a complex type
+            print " Not a complex type "
+            pass
+
+      typedef_list = [ elem for elem in typedef_dict.values() ]
+
+      print "Typedef :" + str(typedef_list)
+      print " Reduction_vars : " + str(reduction_vars)
+      print " Shared_vars : " + str(shared_vars)
+
+      template_code = """
+
          #include "llcomp_cuda.h" 
-          __global__ void ${kernelName} (double * reduction_cu)
+         %for line in typedefs:
+            ${line}
+         %endfor
+
+          __global__ void ${kernelName} (
+              ${', '.join( str(var[0]) + " reduction_cu_" + str(var[1]) for var in reduction_vars)}
+              %if len(reduction_vars) > 0 and len(shared_vars) > 0:
+                  ,
+              %endif 
+              ${', '.join( str(var[0]) + " " + str(var[1]) for var in shared_vars)}
+         )
           {
           int idx = blockIdx.x * blockDim.x + threadIdx.x;
           ;
           }
           """
-          print " Parsing template of KernelBuild "
-          tree = self.parse_snippet(template_code, {'kernelName' : self.kernel_name}, name = 'KernelBuild')
-          Dump.save(self.kernel_name, tree)
-      else:
-          print " Loading frozen template of KernelBuild "
-          tree = Dump.load(self.kernel_name)
+      tree = self.parse_snippet(template_code, {'kernelName' : self.kernel_name, 'reduction_vars' : reduction_vars, 'shared_vars' : shared_vars, 'typedefs' : typedef_list} , name = 'KernelBuild')
 
       # Note: we need to mutate the declaration subtree into a param declaration (ArrayRef to Pointer and so on...)
       # Check if we have reductions
@@ -380,27 +347,28 @@ void checkCUDAError (const char *msg)
             # Replace the name of the declaration. The type_declaration doesn't change, so maybe we'll get problems later?
             IDNameMutator(old = c_ast.ID(elem.name), new = c_ast.ID('reduction_cu_' + elem.name)).apply_all(elem)
             PointerMutator().apply(elem)
-         # Add the declarations to the parameters of the functions
-         DeclsToParamsMutator(decls = reduction_vars).apply(tree.ext[-1].function.decl.type.args)
+#         # Add the declarations to the parameters of the functions
+#         DeclsToParamsMutator(decls = reduction_vars).apply(tree.ext[-1].function.decl.type.args)
       
       # OpenMP shared vars are parameters of the kernel function
       if shared_list:
-         shared_vars = copy.deepcopy(shared_list)
-         # TODO: Move this to DeclsToParamsMutator
-         for elem in shared_vars:
+        shared_vars = copy.deepcopy(shared_list)
+#         shared_vars = shared_list
+        # TODO: Move this to DeclsToParamsMutator
+        for elem in shared_vars:
             # Replace the name of the declaration. 
             if isinstance(elem.type, c_ast.ArrayDecl) or isinstance(elem.type, c_ast.Struct):
                mut = IDNameMutator(old = c_ast.ID(elem.name), new = c_ast.ID(elem.name + '_cu'))
-               mut.apply_all(elem)
+ #              mut.apply_all(elem)
                mut.apply_all(loop.stmt)
                # Pointer instead of array 
                elem.type = elem.type.type
                PointerMutator().apply(elem)
          # Add the declarations to the parameters of the functions
-         DeclsToParamsMutator(decls = shared_vars).apply(tree.ext[-1].function.decl.type.args)
+#         DeclsToParamsMutator(decls = shared_vars).apply(tree.ext[-1].function.decl.type.args)
 
       # Remove the template declaration
-      RemoveTool(tree.ext[-1].function.decl.type.args.params[0]).apply(tree.ext[-1].function.decl.type.args, 'params')
+#      RemoveTool(tree.ext[-1].function.decl.type.args.params[0]).apply(tree.ext[-1].function.decl.type.args, 'params')
 
       # OpenMP Private vars need to be declared inside kernel
       #    - we build a tmp Compound to group all declarations, and insert them once
@@ -450,6 +418,14 @@ void checkCUDAError (const char *msg)
       # container_func = self._func_def
       # Maximum number of parallel threads
 #      from Tools.Debug import DotDebugTool
+
+
+      # TODO:  Implement parallel for 
+      #             The code after this raise is currently broken, due to changes on template build system
+      #              It is an easy fix, but we have no time now.
+      raise NotImplemented
+
+      
 
       maxThreadNumber_node = self.getThreadNum(ompFor_node.stmt.cond)
 
