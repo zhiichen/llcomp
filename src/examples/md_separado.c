@@ -180,7 +180,7 @@ void update(int np, int nd, vnd_t pos[nparts], vnd_t vel[nparts], vnd_t f[nparts
   
   /* The time integration is fully parallel */
 /* #pragma omp parallel for default(shared) private(i,j) firstprivate(rmass, dt) */
- #pragma omp parallel  private(i,j, rmass, dt) shared(pos, vel, a, f)
+ #pragma omp parallel  private(i,j, rmass, dt) shared(pos, vel, a, f) firstprivate(rmass,dt)
  {
    #pragma omp for 
    for (i = 0; i < np; i++) {
@@ -188,7 +188,6 @@ void update(int np, int nd, vnd_t pos[nparts], vnd_t vel[nparts], vnd_t f[nparts
       pos[i][j] = pos[i][j] + vel[i][j]*dt + 0.5*dt*dt*a[i][j];
       vel[i][j] = vel[i][j] + 0.5*dt*(f[i][j]*rmass + a[i][j]);
       a[i][j] = f[i][j]*rmass;
-      tutu = tutu + 1;
     }
   }
  }

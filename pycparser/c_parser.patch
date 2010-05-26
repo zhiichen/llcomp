@@ -22,7 +22,7 @@ Index: pycparser/c_parser.py
          typename = spec['type']
          declaration = self._fix_decl_name_type(declaration, typename)
          return c_ast.FuncDef(
-@@ -362,12 +363,165 @@
+@@ -362,12 +363,167 @@
          """
          p[0] = p[1]
  
@@ -121,7 +121,8 @@ Index: pycparser/c_parser.py
 +       """ directive : THREADPRIVATE LPAREN identifier_list RPAREN """
 +       p[0] = c_ast.OmpThreadPrivate(name = 'threadprivate', identifiers = p[3], coord = self._coord(p.lineno(1)))
 +
-+    def p_directive_6(self, p):
++
++    def p_directive_7(self, p):
 +       """ directive : CRITICAL
 +                  | MASTER
 +                  | ATOMIC
@@ -141,6 +142,7 @@ Index: pycparser/c_parser.py
 +                  | PRIVATE LPAREN identifier_list RPAREN 
 +                  | COPYIN LPAREN identifier_list RPAREN 
 +                  | FLUSH LPAREN identifier_list RPAREN
++                  | FIRSTPRIVATE LPAREN identifier_list RPAREN
 +       """
 +       p[0] = [c_ast.OmpClause(type = 'memory', name = str(p[1]).upper(), identifiers = p[3], coord = self._coord(p.lineno(1)))]
 +
@@ -190,7 +192,7 @@ Index: pycparser/c_parser.py
      # In function definitions, the declarator can be followed by
      # a declaration list, for old "K&R style" function definitios.
      #
-@@ -404,6 +558,13 @@
+@@ -404,6 +560,13 @@
          """
          p[0] = p[1]
  
@@ -204,7 +206,7 @@ Index: pycparser/c_parser.py
      # In C, declarations can come several in a line:
      #   int x, *px, romulo = 5;
      #
-@@ -1176,6 +1337,15 @@
+@@ -1176,6 +1339,15 @@
          """
          p[0] = c_ast.UnaryOp('p' + p[2], p[1], p[1].coord)
  

@@ -25,7 +25,7 @@ Index: pycparser/c_lexer.py
 +
 +   # Clauses
 +   'SHARED', 'PRIVATE', 'REDUCTION', 'NOWAIT', 'THREADPRIVATE', 'COPYIN', 'SCHEDULE', 'OMP_SCHEDULE_KIND',
-+   'MASTER', 'CRITICAL', 'ATOMIC', 'BARRIER', 'FLUSH', 'SINGLE',
++   'MASTER', 'CRITICAL', 'ATOMIC', 'BARRIER', 'FLUSH', 'SINGLE', 'FIRSTPRIVATE',
 +
 +   ####################
 +   # New clauses
@@ -65,7 +65,7 @@ Index: pycparser/c_lexer.py
      )
      
      def t_PPHASH(self, t):
-@@ -216,14 +265,148 @@
+@@ -216,14 +265,155 @@
          m = self.line_pattern.match(
              t.lexer.lexdata, pos=t.lexer.lexpos)
          
@@ -114,6 +114,13 @@ Index: pycparser/c_lexer.py
 +        r'private'
 +        t.type = 'PRIVATE'
 +        return t
++
++    def t_directive_FIRSTPRIVATE(self, t):
++        r'firstprivate'
++        t.type = 'FIRSTPRIVATE'
++        return t
++
++
 +    def t_directive_REDUCTION(self, t):
 +        r'reduction'
 +        t.type = 'REDUCTION'
@@ -216,7 +223,7 @@ Index: pycparser/c_lexer.py
      ##
      ## Rules for the ppline state
      ##
-@@ -267,6 +450,18 @@
+@@ -267,6 +457,18 @@
          msg = 'invalid #line directive'
          self._error(msg, t)
  
@@ -235,7 +242,7 @@ Index: pycparser/c_lexer.py
      ##
      ## Rules for the normal state
      ##
-@@ -298,7 +493,12 @@
+@@ -298,7 +500,12 @@
      t_GE                = r'>='
      t_EQ                = r'=='
      t_NE                = r'!='
@@ -248,7 +255,7 @@ Index: pycparser/c_lexer.py
      # Assignment operators
      t_EQUALS            = r'='
      t_TIMESEQUAL        = r'\*='
-@@ -337,7 +537,7 @@
+@@ -337,7 +544,7 @@
  
      t_STRING_LITERAL    = string_literal
      
@@ -257,7 +264,7 @@ Index: pycparser/c_lexer.py
      # functions to impose a strict order (otherwise, decimal
      # is placed before the others because its regex is longer,
      # and this is bad)
-@@ -410,7 +610,8 @@
+@@ -410,7 +617,8 @@
  
  
  if __name__ == "__main__":

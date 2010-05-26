@@ -7,7 +7,7 @@ int x;
 int main() {
    int cuda = 3;
 
-	#pragma omp parallel target device(cuda)
+	#pragma omp parallel firstprivate(a,b,c)
 	{
 	   x = 1;
       #pragma omp single
