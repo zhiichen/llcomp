@@ -122,7 +122,7 @@ Index: pycparser/c_parser.py
 +       p[0] = c_ast.OmpThreadPrivate(name = 'threadprivate', identifiers = p[3], coord = self._coord(p.lineno(1)))
 +
 +
-+    def p_directive_7(self, p):
++    def p_directive_6(self, p):
 +       """ directive : CRITICAL
 +                  | MASTER
 +                  | ATOMIC
