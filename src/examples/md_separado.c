@@ -136,14 +136,16 @@ void compute(int np, int nd,
  
   /* The computation of forces and energies is fully parallel. */
 #pragma omp target device(cuda) copy_in(f, vel, pos, box) copy_out(f)
- #pragma omp parallel  shared(f, vel, pos, np, nd, box, pot) private(k, rij, d, j)   
+ #pragma omp parallel  shared(f, vel, pos, np, nd, box, pot, i) private(k, rij, d, j)   
   {
- #pragma omp for reduction(+ : pot, kin) 
+/* #pragma omp for reduction(+ : pot, kin) */
   for (i = 0; i < np; i++) {
     /* compute potential energy and forces */
+    #pragma omp for 
     for (j = 0; j < nd; j++) 
       f[i][j] = 0.0;
-     
+
+    #pragma omp for reduction(+ : pot)    
     for (j = 0; j < np; j++) { 
       if (i != j) {
    	d = dist(nd,box,pos[i],pos[j],rij);
@@ -155,7 +157,7 @@ void compute(int np, int nd,
       }
      } 
     /* compute kinetic energy */
-    kin = kin + dotr8(nd,vel[i],vel[j]);
+    kin = kin + dotr8(nd,vel[i],vel[i]);
   }
   }
 
