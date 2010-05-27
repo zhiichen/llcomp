@@ -81,7 +81,7 @@ void jacobi(int n, int m, double *_dx, double *_dy, double alpha, double omega,
 
                 error = 0.0;
                 {
-#pragma omp target device (cuda) copy_out(u_old) 
+#pragma omp target device (cuda) copy_out(uold) 
 #pragma omp parallel shared(omega,error,tol,n,m,ax,ay,b,alpha,uold,u,f)  private(i,j,resid) 
 {
  #pragma omp for
