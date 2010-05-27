@@ -279,6 +279,7 @@ class OmpParallelFilter(GenericFilterVisitor):
    def __init__(self, prev_brother = None, device = None):
       self._parallel = None
       self._funcdef = None
+      self.device = device
       self._target_device_node = None
       def condition(node):
          """ OmpParallel filter """ 
@@ -307,7 +308,10 @@ class OmpParallelFilter(GenericFilterVisitor):
 
    def visit_OmpTargetDevice(self, node, prev, offset = 1, ignore = []):
       """ Save target device node """
-      self._target_device_node = node
+      if self.device and self.device == node.device:
+         self._target_device_node = node
+      else:
+         self._target_device_node = None
       return self.generic_visit(node, offset, ignore)
 
    def visit_FuncDef(self, node, prev, offset = 1, ignore = []):

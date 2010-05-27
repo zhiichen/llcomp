@@ -4,7 +4,7 @@ source_code = """
 int main() {
    int i = 0;
    char a[10];
-   
+   {
    #pragma omp target device (cuda) copy_out(a)
    #pragma omp parallel shared(a)
    {
@@ -13,6 +13,7 @@ int main() {
            a[i] = 'c';
       }
    }
+}
 }
 """
 

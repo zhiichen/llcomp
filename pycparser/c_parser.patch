@@ -182,11 +182,11 @@ Index: pycparser/c_parser.py
 +
 +    def p_device_list(self, p):
 +       """ device_list  : CUDA
-+                               | FPGA
-+                               | CELL 
-+                               | MPI
-+                               | SMP
-+                               | HYBRID """
++                        | FPGA
++                        | CELL 
++                        | MPI
++                        | SMP
++                        | HYBRID """
 +       p[0] = p[1]
 +
 +
