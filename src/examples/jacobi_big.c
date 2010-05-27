@@ -81,7 +81,7 @@ void jacobi(int n, int m, double *_dx, double *_dy, double alpha, double omega,
 
                 error = 0.0;
                 {
-#pragma omp target device (cuda) copy_out(uold) 
+#pragma omp target device (cuda) copy_in(u, uold) copy_out(uold) 
 #pragma omp parallel shared(omega,error,tol,n,m,ax,ay,b,alpha,uold,u,f)  private(i,j,resid) 
 {
  #pragma omp for
@@ -90,7 +90,7 @@ void jacobi(int n, int m, double *_dx, double *_dy, double alpha, double omega,
                                         uold[(j * N) + i] = u[(j * N) + i];
 }
 
-#pragma omp target device (cuda) copy_out(u)
+#pragma omp target device (cuda) copy_in(uold, f, u) copy_out(u)
 #pragma omp parallel shared(omega,error,tol,n,m,ax,ay,b,alpha,uold,u,f)  private(i,j,resid) 
 {
 #pragma omp for reduction(+:error )
@@ -98,17 +98,8 @@ void jacobi(int n, int m, double *_dx, double *_dy, double alpha, double omega,
 
                                 for (j = 0; j < (n - 2); j++) {
 
-                                        resid =
-                                                ((((ax *
-                                                    (uold[((j + 1) * N) + ((i + 1) - 1)] +
-                                                     uold[((j + 1) * N) + ((i + 1) + 1)])) +
-                                                   (ay *
-                                                    (uold[(((j + 1) - 1) * N) + (i + 1)] +
-                                                     uold[(((j + 1) + 1) * N) + (i + 1)]))) +
-                                                  (b * uold[((j + 1) * N) + (i + 1)])) -
-                                                 f[((j + 1) * N) + (i + 1)]) / b;
-                                        u[((j + 1) * N) + (i + 1)] =
-                                                uold[((j + 1) * N) + (i + 1)] - (omega * resid);
+                                        resid = ((((ax * (uold[((j + 1) * N) + ((i + 1) - 1)] + uold[((j + 1) * N) + ((i + 1) + 1)])) + (ay * (uold[(((j + 1) - 1) * N) + (i + 1)] + uold[(((j + 1) + 1) * N) + (i + 1)]))) + (b * uold[((j + 1) * N) + (i + 1)])) - f[((j + 1) * N) + (i + 1)]) / b; 
+                                       u[((j + 1) * N) + (i + 1)] = uold[((j + 1) * N) + (i + 1)] - (omega * resid);
                                         error += resid * resid;
                                 }
 

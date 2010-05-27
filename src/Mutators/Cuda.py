@@ -103,10 +103,6 @@ class CudaMutator(object):
          clause_dict = self._clauses
       # Note: Each identifiers is a ParamList
       for elem in clauses:
-#         if elem.name == 'COPY_OUT':
-#            print "*** Copy out ***\n"
-#            print elem.identifiers.params
-#            print [decl_of_id(id,ast) for id in elem.identifiers.params]
 
          if not clause_dict.has_key(elem.name):
                clause_dict[elem.name] = []
@@ -116,7 +112,6 @@ class CudaMutator(object):
                decl = decl_of_id(id, ast)
                if not decl:
                   raise CudaMutatorError(" Declaration of " + id.name + " in " + elem.name + " clause could not be found ")
-
                clause_dict[elem.name].append(decl)
          elif elem.name == 'NOWAIT':
             clause_dict[elem.name] = True
@@ -124,9 +119,6 @@ class CudaMutator(object):
       for name in clause_names:
          if not clause_dict.has_key(name):
             clause_dict[name] = []
-
-#      print "*** Clause dict ***"
-#      print clause_dict['COPY_OUT']
 
       if not init:
          self._clauses = clause_dict
@@ -223,8 +215,10 @@ class CudaMutator(object):
 
 
 
-   def buildRetrieve(self, reduction_vars, modified_shared_vars, ast = None):
+   def buildRetrieve(self, reduction_vars, modified_shared_vars, ast = None, shared_vars = None):
       memcpy_lines = []
+      # TODO: ******************* IMPORTANT
+      #           This code does not follow the correct template use
       # If a shared var is modified inside kernel, we retrieve it from device
       for elem in modified_shared_vars:
          # Only malloc / send if it is a complex type
@@ -247,6 +241,10 @@ class CudaMutator(object):
       % endfor
 
       checkCUDAError("memcpy");
+
+      % for elem in shared_names:
+        cudaFree(${elem[0]}_cu);
+      % endfor
       }
       """ 
       return self.parse_snippet(template_code, {'reduction_names' : reduction_vars, 'shared_names' : memcpy_lines}, name = 'Retrieve').ext[0].body
