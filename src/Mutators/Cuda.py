@@ -97,24 +97,18 @@ class CudaMutator(object):
            Example: [OmpClause('REDUCTION', ...), OmpClause('PRIVATE', ...)]
              will return:  {'REDUCTION' : [....] , 'PRIVATE' : [...]}
       """
-      clause_names = ['SHARED', 'PRIVATE', 'NOWAIT', 'REDUCTION']
+      clause_names = ['SHARED', 'PRIVATE', 'NOWAIT', 'REDUCTION', 'COPY_IN', 'COPY_OUT']
       clause_dict = self._clauses
       # Note: Each identifiers is a ParamList
       for elem in clauses:
          if not clause_dict.has_key(elem.name):
                clause_dict[elem.name] = []
          
-         if elem.name == 'SHARED':
-            for id in elem.identifiers.params:
-               clause_dict[elem.name].append(decl_of_id(id, ast))
-         elif elem.name == 'PRIVATE':
+         if elem.name in ['SHARED', 'PRIVATE', 'REDUCTION', 'COPY_IN', 'COPY_OUT']:
             for id in elem.identifiers.params:
                clause_dict[elem.name].append(decl_of_id(id, ast))
          elif elem.name == 'NOWAIT':
             clause_dict[elem.name] = True
-         elif elem.name == 'REDUCTION':
-            for id in elem.identifiers.params:
-               clause_dict[elem.name].append(decl_of_id(id, ast))
 
       for name in clause_names:
          if not clause_dict.has_key(name):
@@ -178,7 +172,7 @@ class CudaMutator(object):
               /* Kernel configuration */
        void kernel_func() {
               int dimA = 1;
-              int numThreadsPerBlock = 512;
+              int numThreadsPerBlock = CUDA_NUM_THREADS;
               int numBlocks = dimA / numThreadsPerBlock + (dimA % numThreadsPerBlock?1:0);
               int numElems = numBlocks * numThreadsPerBlock;
               int memSize = numElems * sizeof(double);

@@ -31,7 +31,7 @@ Index: pycparser/c_lexer.py
 +   # New clauses
 +   # From  "A proposal to extend the OpenMP Tasking Model for Heterogeneous Architectures" (2009)
 +
-+   'DEVICE', 'TARGET',
++   'DEVICE', 'TARGET', 'COPY_IN', 'COPY_OUT',
 +
 +   ####################
 +   # CUDA syntax
@@ -65,7 +65,7 @@ Index: pycparser/c_lexer.py
      )
      
      def t_PPHASH(self, t):
-@@ -216,14 +265,155 @@
+@@ -216,14 +265,166 @@
          m = self.line_pattern.match(
              t.lexer.lexdata, pos=t.lexer.lexpos)
          
@@ -136,6 +136,17 @@ Index: pycparser/c_lexer.py
 +        t.type = 'COPYIN'
 +        return t
 + 
++    def t_directive_COPY_IN(self, t):
++        r'copy_in'
++        t.type = 'COPY_IN'
++        return t
++
++    def t_directive_COPY_OUT(self, t):
++        r'copy_out'
++        t.type = 'COPY_OUT'
++        return t
++
++
 +    def t_directive_SCHEDULE(self, t):
 +        r'schedule'
 +        t.type = 'SCHEDULE'
@@ -223,7 +234,7 @@ Index: pycparser/c_lexer.py
      ##
      ## Rules for the ppline state
      ##
-@@ -267,6 +457,18 @@
+@@ -267,6 +468,18 @@
          msg = 'invalid #line directive'
          self._error(msg, t)
  
@@ -242,7 +253,7 @@ Index: pycparser/c_lexer.py
      ##
      ## Rules for the normal state
      ##
-@@ -298,7 +500,12 @@
+@@ -298,7 +511,12 @@
      t_GE                = r'>='
      t_EQ                = r'=='
      t_NE                = r'!='
@@ -255,7 +266,7 @@ Index: pycparser/c_lexer.py
      # Assignment operators
      t_EQUALS            = r'='
      t_TIMESEQUAL        = r'\*='
-@@ -337,7 +544,7 @@
+@@ -337,7 +555,7 @@
  
      t_STRING_LITERAL    = string_literal
      
@@ -264,7 +275,7 @@ Index: pycparser/c_lexer.py
      # functions to impose a strict order (otherwise, decimal
      # is placed before the others because its regex is longer,
      # and this is bad)
-@@ -410,7 +617,8 @@
+@@ -410,7 +628,8 @@
  
  
  if __name__ == "__main__":

@@ -18,6 +18,15 @@ void * mimalloc(unsigned int size) {
 }
 
 
+double t(void) {
+    struct timeval tv;
+    assert (gettimeofday(&tv, 0) == 0);
+    return (double)tv.tv_sec + (double)tv.tv_usec/1000000.0;
+}
+double time_start, time_end;
+
+
+
 void initialize(int n, int m, double alpha, double *_dx, double *_dy,double * u, double * f)
 {
 
@@ -71,15 +80,19 @@ void jacobi(int n, int m, double *_dx, double *_dy, double alpha, double omega,
         while ((k < maxit) && (error > tol)) {
 
                 error = 0.0;
-#pragma omp parallel shared(omega,error,tol,n,m,ax,ay,b,alpha,uold,u,f)  private(i,j,resid) target device(cuda)
-
                 {
-
+#pragma omp target device (cuda) copy_out(u) 
+#pragma omp parallel shared(omega,error,tol,n,m,ax,ay,b,alpha,uold,u,f)  private(i,j,resid) 
+{
  #pragma omp for
                         for (i = 0; i < m; i++)
                                 for (j = 0; j < n; j++)
                                         uold[(j * N) + i] = u[(j * N) + i];
+}
 
+#pragma omp target device (cuda)
+#pragma omp parallel shared(omega,error,tol,n,m,ax,ay,b,alpha,uold,u,f)  private(i,j,resid) 
+{
 #pragma omp for reduction(+:error )
                         for (i = 0; i < (m - 2); i++) {
 
@@ -100,6 +113,7 @@ void jacobi(int n, int m, double *_dx, double *_dy, double alpha, double omega,
                                 }
 
                         }
+}
 
                 }
 
@@ -140,19 +154,30 @@ void error_check(int n, int m, double alpha, double *_dx, double *_dy,
         *_dy = dy;
 }
 
+
+
 void driver()
 {
 
-        double dx;
-        double dy;
+   double dx;
+   double dy;
 
-        u = (double *) mimalloc(N*N*sizeof(double));
-        f = (double *) mimalloc(N*N*sizeof(double));
-        uold = (double *) mimalloc(N*N*sizeof(double));
+   u = (double *) mimalloc(N*N*sizeof(double));
+   f = (double *) mimalloc(N*N*sizeof(double));
+   uold = (double *) mimalloc(N*N*sizeof(double));
 
-        initialize(N, N, 0.00000005L, &dx, &dy, u, f);
-        jacobi(N, N, &dx, &dy, 0.00000005L, 0.01L, u, f, uold, 0.00001L, 100);
-        error_check(N, N, 0.00000005L, &dx, &dy, u, f);
+   initialize(N, N, 0.00000005L, &dx, &dy, u, f);
+
+   time_start = t();
+
+   jacobi(N, N, &dx, &dy, 0.00000005L, 0.01L, u, f, uold, 0.00001L, 100);
+
+   time_end = t();
+
+   error_check(N, N, 0.00000005L, &dx, &dy, u, f);
+
+
+   printf("** Jacobi time : %g \n", time_end - time_start);
 }
 
 

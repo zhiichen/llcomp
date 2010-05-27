@@ -1,20 +1,19 @@
 from pycparser import c_parser, c_ast
 
 source_code = """
-
-int x;
-
 int main() {
-   int cuda = 3;
-
-	#pragma omp parallel firstprivate(a,b,c)
-	{
-	   x = 1;
-      #pragma omp single
-      cuda = 4;
-	}
+   int i = 0;
+   char a[10];
+   
+   #pragma omp target device (cuda) copy_out(a)
+   #pragma omp parallel shared(a)
+   {
+      #pragma omp for
+      for (i = 0; i <= 10; i++) {
+           a[i] = 'c';
+      }
+   }
 }
-
 """
 
 import subprocess

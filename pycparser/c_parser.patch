@@ -22,7 +22,7 @@ Index: pycparser/c_parser.py
          typename = spec['type']
          declaration = self._fix_decl_name_type(declaration, typename)
          return c_ast.FuncDef(
-@@ -362,12 +363,167 @@
+@@ -362,12 +363,180 @@
          """
          p[0] = p[1]
  
@@ -131,6 +131,12 @@ Index: pycparser/c_parser.py
 +                  | SINGLE  """
 +       p[0] = c_ast.OmpSyncronization(name = p[0], identifiers = None, coord = self._coord(p.lineno(1)))
 +
++    def p_directive_7(self, p):
++       """ directive : TARGET DEVICE LPAREN device_list RPAREN omp_clause_list
++                     | TARGET DEVICE LPAREN device_list RPAREN 
++       """
++       p[0] = c_ast.OmpTargetDevice(name = "device", device = "cuda", clauses = p[6] if len(p) > 6 else [], coord = self._coord(p.lineno(1)))
++
 +
 +    def p_omp_clause_list(self, p):
 +       """ omp_clause_list : omp_clause_list clause
@@ -156,16 +162,23 @@ Index: pycparser/c_parser.py
 +       p[0] = [c_ast.OmpClause(type = str(p[1]) , name = str(p[1]).upper(), identifiers = None, coord = self._coord(p.lineno(1)))]
 +
 +
++
 +    def p_clause_4(self, p):
 +       """ clause : SCHEDULE LPAREN OMP_SCHEDULE_KIND RPAREN 
 +                  | SCHEDULE LPAREN OMP_SCHEDULE_KIND COMMA INT_CONST_DEC RPAREN 
 +       """
 +       p[0] = [c_ast.OmpSchedule(type = str(p[1]) , name = str(p[1]).upper(), chunk_size = p[5] if len(p) > 5 else 0, kind = p[3], coord = self._coord(p.lineno(1)))]
 +
++
++
 +    def p_clause_5(self, p):
-+       """ clause : TARGET DEVICE LPAREN device_list RPAREN
-+       """
-+       p[0] = [c_ast.OmpClause(type = 'device', name = "cuda", identifiers = None, coord = self._coord(p.lineno(1)))]
++       """ clause : COPY_IN LPAREN identifier_list RPAREN """
++       p[0] = [c_ast.OmpClause(type = str(p[1]) , name = str(p[1]).upper(), identifiers = p[3], coord = self._coord(p.lineno(1)))]
++
++    def p_clause_6(self, p):
++       """ clause : COPY_OUT LPAREN identifier_list RPAREN """
++       p[0] = [c_ast.OmpClause(type = str(p[1]) , name = str(p[1]).upper(), identifiers = p[3], coord = self._coord(p.lineno(1)))]
++
 +
 +    def p_device_list(self, p):
 +       """ device_list  : CUDA
@@ -192,7 +205,7 @@ Index: pycparser/c_parser.py
      # In function definitions, the declarator can be followed by
      # a declaration list, for old "K&R style" function definitios.
      #
-@@ -404,6 +560,13 @@
+@@ -404,6 +573,13 @@
          """
          p[0] = p[1]
  
@@ -206,7 +219,7 @@ Index: pycparser/c_parser.py
      # In C, declarations can come several in a line:
      #   int x, *px, romulo = 5;
      #
-@@ -1176,6 +1339,15 @@
+@@ -1176,6 +1352,15 @@
          """
          p[0] = c_ast.UnaryOp('p' + p[2], p[1], p[1].coord)
  

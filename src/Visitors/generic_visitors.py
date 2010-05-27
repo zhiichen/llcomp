@@ -279,16 +279,23 @@ class OmpParallelFilter(GenericFilterVisitor):
    def __init__(self, prev_brother = None, device = None):
       self._parallel = None
       self._funcdef = None
+      self._target_device_node = None
       def condition(node):
          """ OmpParallel filter """ 
+         # TODO : Move this to a separated filter!!!
          if isinstance(node, c_ast.OmpParallel):
-            if device:
-               # Check if a specific device clause is present
-               for clause in node.clauses:
-                  if clause.name == device:
-                     return True
-            else:
-               return True
+           # If we are looking for a specific device, and the pragma doesn't appear,
+           #    this is NOT the correct node
+           if device and not self._target_device_node:
+              return False
+           elif device and self._target_device_node:
+              if device == self._target_device_node.device:
+                 # This is the correct node
+                 return True
+              else:
+                 return False
+           # If we dont need a specific device, this node is valid
+           return True
          return False
       super(OmpParallelFilter, self).__init__(condition_func = condition, prev_brother = prev_brother)
 
@@ -297,6 +304,11 @@ class OmpParallelFilter(GenericFilterVisitor):
    # By defining specific visitor methods for FuncDef and OmpParallel, we can save the last node visited of this types.
    # Giving the fact that the visit is done in syntax order, the last visited node will be the previous (parent) node of the 
    # wanted node.
+
+   def visit_OmpTargetDevice(self, node, prev, offset = 1, ignore = []):
+      """ Save target device node """
+      self._target_device_node = node
+      return self.generic_visit(node, offset, ignore)
 
    def visit_FuncDef(self, node, prev, offset = 1, ignore = []):
       if not self.match:

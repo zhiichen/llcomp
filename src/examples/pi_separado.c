@@ -21,7 +21,8 @@ main (int argc, char *argv[])
   sum = 0.0;
  
  /* reduction(+: sum) */
-#pragma omp parallel shared(h) private(x) target device(cuda)
+#pragma omp target device(cuda)
+#pragma omp parallel shared(h) private(x) 
 {
   #pragma omp for reduction(+ : sum)
   for (i = 0; i <= n; i++)

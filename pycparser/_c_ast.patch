@@ -17,7 +17,7 @@ Index: pycparser/_c_ast.yaml
  # type <decl>(args)
  #
  FuncDecl: [args*, type*]
-@@ -161,4 +169,53 @@
+@@ -161,4 +169,56 @@
  While: [cond*, stmt*]
  
  
@@ -66,6 +66,9 @@ Index: pycparser/_c_ast.yaml
 +OmpFlush : [name, identifiers**]
 +
 +OmpOrdered: [name, stmt*]
++
++# Heterogeneous systems 
++OmpTargetDevice : [name, device, clauses**]
 +
 +# CUDA
 +CUDAKernel: [name, type, function*]
