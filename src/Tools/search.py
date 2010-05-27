@@ -11,8 +11,8 @@ def decl_of_id(id, ast):
         # TODO: Clean this code...
         act = id.parent
         decl = None
-#        import pdb
-#        pdb.set_trace()
+        #   import pdb
+        #   pdb.set_trace()
         while act != None:
                 if isinstance(act, c_ast.FuncDef):
                   # Check for a decl of the var as parameter

@@ -91,30 +91,45 @@ class CudaMutator(object):
 	 return None
       return subtree;
 
-   def _get_dict_from_clauses(self, clauses, ast):
+   def _get_dict_from_clauses(self, clauses, ast, init = None):
       """ Return a dict of clauses from a list of OmpClause objects
          
            Example: [OmpClause('REDUCTION', ...), OmpClause('PRIVATE', ...)]
              will return:  {'REDUCTION' : [....] , 'PRIVATE' : [...]}
       """
       clause_names = ['SHARED', 'PRIVATE', 'NOWAIT', 'REDUCTION', 'COPY_IN', 'COPY_OUT']
-      clause_dict = self._clauses
+      clause_dict = {}
+      if not init:
+         clause_dict = self._clauses
       # Note: Each identifiers is a ParamList
       for elem in clauses:
+#         if elem.name == 'COPY_OUT':
+#            print "*** Copy out ***\n"
+#            print elem.identifiers.params
+#            print [decl_of_id(id,ast) for id in elem.identifiers.params]
+
          if not clause_dict.has_key(elem.name):
                clause_dict[elem.name] = []
          
          if elem.name in ['SHARED', 'PRIVATE', 'REDUCTION', 'COPY_IN', 'COPY_OUT']:
             for id in elem.identifiers.params:
-               clause_dict[elem.name].append(decl_of_id(id, ast))
+               decl = decl_of_id(id, ast)
+               if not decl:
+                  raise CudaMutatorError(" Declaration of " + id.name + " in " + elem.name + " clause could not be found ")
+
+               clause_dict[elem.name].append(decl)
          elif elem.name == 'NOWAIT':
             clause_dict[elem.name] = True
-
+ 
       for name in clause_names:
          if not clause_dict.has_key(name):
             clause_dict[name] = []
 
-      self._clauses = clause_dict
+#      print "*** Clause dict ***"
+#      print clause_dict['COPY_OUT']
+
+      if not init:
+         self._clauses = clause_dict
       return  clause_dict
 
    def get_template_array(self, var_list, ast, func = lambda elem : True, name_func = lambda elem : elem.name, type_func = lambda elem : elem.type):
@@ -493,7 +508,6 @@ class CudaMutator(object):
       kernelLaunch_subtree = self.buildKernelLaunch(reduction_vars = reduction_params, shared_vars = shared_params, ast = ompFor_node)
       InsertTool(subtree = kernelLaunch_subtree, position = "end").apply(cuda_stmts, 'stmts')
       # Retrieve data
-      # TODO : Detect modified vars
       retrieve_subtree = self.buildRetrieve(reduction_vars = reduction_params, modified_shared_vars = shared_params)
       InsertTool(subtree = retrieve_subtree, position = "end").apply(cuda_stmts, 'stmts')
       # Host reduction

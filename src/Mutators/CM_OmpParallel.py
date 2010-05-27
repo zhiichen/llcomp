@@ -42,6 +42,7 @@ class CM_OmpParallel(CudaMutator):
             # Current scope variables
             self._func_def = f.get_func_def()
             self._target_device_node = f._target_device_node
+            self._clauses = self._get_dict_from_clauses(f._target_device_node.clauses, ast)
             self._parallel = elem
             start_node = self.mutatorFunction(ast, elem)
             # Restore previous state
@@ -107,8 +108,11 @@ class CM_OmpParallel(CudaMutator):
       # print " Threadprivate : " + str(threadprivate)
 
       clause_dict = self._get_dict_from_clauses(ompParallel_node.clauses, ast)
+
       shared_params = clause_dict['SHARED']
       modified_shared_vars = clause_dict['COPY_OUT']
+      print " ** Copy out ** "
+      print modified_shared_vars
       private_params = clause_dict['PRIVATE'] 
       nowait = clause_dict.has_key('NOWAIT')
       # If the parallel statement have declarations, they are private to the thread, so, we need to put them as params
