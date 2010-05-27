@@ -135,17 +135,15 @@ void compute(int np, int nd,
 
  
   /* The computation of forces and energies is fully parallel. */
-#pragma omp target device(cuda) copy_in(f, vel, pos, box) copy_out(f)
- #pragma omp parallel  shared(f, vel, pos, np, nd, box, pot, i) private(k, rij, d, j)   
+/* #pragma omp target device(smp) copy_in(f, vel, pos, box) copy_out(f) */
+/* #pragma omp parallel  shared(f, vel, pos, np, nd, box, pot, i) private(k, rij, d, j)   */
   {
 /* #pragma omp for reduction(+ : pot, kin) */
   for (i = 0; i < np; i++) {
     /* compute potential energy and forces */
-    #pragma omp for 
     for (j = 0; j < nd; j++) 
       f[i][j] = 0.0;
 
-    #pragma omp for reduction(+ : pot)    
     for (j = 0; j < np; j++) { 
       if (i != j) {
    	d = dist(nd,box,pos[i],pos[j],rij);
@@ -182,10 +180,11 @@ void update(int np, int nd, vnd_t pos[nparts], vnd_t vel[nparts], vnd_t f[nparts
   /* The time integration is fully parallel */
 /* #pragma omp parallel for default(shared) private(i,j) firstprivate(rmass, dt) */
 
-#pragma omp target device(cuda) copy_in(f, vel, pos, box, a) copy_out(pos, vel, a)
- #pragma omp parallel  private(i,j, rmass, dt) shared(pos, vel, a, f, np, nd) firstprivate(rmass,dt)
+#pragma omp target device (cuda) copy_in(f, vel, pos, box, a) copy_out(pos, vel, a)
+#pragma omp parallel  private(i,j, rmass, dt) shared(pos, vel, a, f, np, nd) // firstprivate(rmass,dt)
  {
-   #pragma omp for 
+#pragma omp for 
+
    for (i = 0; i < np; i++) {
     for (j = 0; j < nd; j++) {
       pos[i][j] = pos[i][j] + vel[i][j]*dt + 0.5*dt*dt*a[i][j];
