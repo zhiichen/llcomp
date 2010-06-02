@@ -12,10 +12,10 @@ from string import Template
 import copy
 
 
-from Mutators.Cuda import CudaMutator
+from Mutators.Cuda import AbstractCudaMutator, CM_OmpParallelFor
 
 
-class CM_OmpFor(CudaMutator):
+class CM_OmpFor(CM_OmpParallelFor):
 
    def filter(self, ast):
       """ Filter definition

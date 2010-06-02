@@ -170,9 +170,9 @@ void rinit (int seed) {
 
    printf ("** CUDA Loop **\n");
 	CLOCK_Start(chrono);
-/* #pragma omp parallel for reduction(+:numoutside) private(i,j,ztemp,z) shared(nt,c) */
+
   #pragma omp target device(cuda) copy_in(c)
-  #pragma omp parallel private(z, ztemp, j) shared(nt, c) 
+  #pragma omp parallel private(z, ztemp, j) shared(nt, c)
   {
 	 numoutside = 0;
     #pragma omp for reduction (+:numoutside)
@@ -202,24 +202,27 @@ void rinit (int seed) {
 
 
 	CLOCK_Start(chrono);
-
-  #pragma omp target device(smp)
-  #pragma omp parallel private(z, ztemp, j) shared(nt, c)
+#pragma omp target device(smp)
+#pragma omp parallel private(z, ztemp, j) shared(nt, c)
   {
 	 numoutside = 0;
+
     #pragma omp for reduction (+:numoutside)
     for(i = 0; i<npoints; i++) {
       z.creal = c[i].creal;
       z.cimag = c[i].cimag;
-      for (j = 0; j < MAXITER; j++) {
-        ztemp = (z.creal * z.creal) - (z.cimag * z.cimag) + c[i].creal;
-        z.cimag = z.creal * z.cimag * 2 + c[i].cimag;
-        z.creal = ztemp;
-        if (z.creal * z.creal + z.cimag * z.cimag > THRESOLD) {
-          numoutside++;
-          break;
-        } 
-      } /* for j */
+
+      {
+         for (j = 0; j < MAXITER; j++) {
+            ztemp = (z.creal * z.creal) - (z.cimag * z.cimag) + c[i].creal;
+            z.cimag = z.creal * z.cimag * 2 + c[i].cimag;
+            z.creal = ztemp;
+            if (z.creal * z.creal + z.cimag * z.cimag > THRESOLD) {
+               numoutside++;
+               break;
+            } 
+         } /* for j */
+      }
     } /* for i */
   }
 	numinside = npoints - numoutside;

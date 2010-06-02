@@ -2,7 +2,7 @@ from pycparser import parse_file
 
 from Visitors.clone_visitor import CUDAWriter
 
-from Mutators.Cuda import CudaMutator, CudaMutatorError
+from Mutators.Cuda import CudaMutatorError
 from Mutators.CM_OmpFor import CM_OmpFor
 from Mutators.CM_OmpParallel import CM_OmpParallel
 

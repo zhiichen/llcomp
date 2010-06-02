@@ -6,7 +6,7 @@ from Tools.Dump import Dump
 from Tools.Debug import DotDebugTool
 from Tools.Parse import parse_template
 from Mutators.AstSupport import DeclsToParamsMutator, IDNameMutator, FuncToDeviceMutator, PointerMutator
-from Mutators.AbstractMutator import IgnoreMutationException
+from Mutators.AbstractMutator import IgnoreMutationException, AbstractMutator
 
 #from string import Template
 from mako.template import Template
@@ -28,12 +28,9 @@ class CudaMutatorError(Exception):
       return "CudaMutatorError :: " + self.description
 
 
-class CudaMutator(object):
-   """ This  mutator locates a omp parallel for reduction, and then
-      translate the original source to an equivalent cuda implementation 
-   """
+
+class AbstractCudaMutator(AbstractMutator):
    def __init__(self, clauses = {}, kernel_name = 'loopKernel', kernel_prefix = ''):
-      """ Constructor """
       # BUG: Don't work with optimize
       # self.template_parser = c_parser.CParser(lex_optimize = False, yacc_optimize = False)
       self.kernel_name = kernel_name
@@ -56,16 +53,6 @@ class CudaMutator(object):
       else:
          return [type.name]
 
-   def filter(self, ast):
-      """ Filter definition
-         Returns the first node matching with the filter"""
-      # Build a visitor , matching the OmpFor node of the AST
-      f = OmpForFilter()
-      node = f.apply(ast)
-      self._func_def = f.get_func_def()
-      self._parallel = f.get_parallel()
-      return node
-
    def getThreadNum(self, node):
       """ Gets the maximum number of threads needed """
       if node.op == '<' or node.op == '<=':
@@ -75,7 +62,6 @@ class CudaMutator(object):
 
    def parse_snippet(self, template_code, subs_dir, name, show = False):
       subtree = None
- #     template_code = Template(template_code).substitute(subs_dir)
       if subs_dir:
          template_code = Template(template_code).render(**subs_dir)
          if show:
@@ -153,14 +139,11 @@ class CudaMutator(object):
 
       for elem in var_list:
          if func(elem):
-#            names.append([' '.join(self.get_names(elem, ast)), name_func(elem), type_func(elem), elem, fast_write(elem).replace(';','').replace('\n','') ])
-            typestr = decl_write(elem)#' '.join(self.get_names(elem, ast))
+            typestr = decl_write(elem)
             # Type string | var name | pointer to type | pointer to var | declaration string
             names.append([typestr, name_func(elem), type_func(elem), elem, fast_write(elem).replace(';','').replace('\n','') ])
       return names
  
-
-
    def buildDeclarations(self, numThreads, reduction_node_list, shared_node_list, ast):
       """ Builds the declaration section 
           @param numThreads number of threads
@@ -252,16 +235,14 @@ class CudaMutator(object):
    def buildKernelLaunch(self, reduction_vars, shared_vars, ast):
        # FIXME : reduction_vars is now an array of declarations
        reduction_var_list = ",".join("reduction_cu_" + elem.name for elem in reduction_vars)
-       # shared_var_list = ",".join(elem.name + "_cu" for elem in shared_vars)
        shared_var_list = [];
+      # TODO: ******************* IMPORTANT
+      #           This code does not follow the correct template use
+
        for elem in shared_vars:
          # Only malloc / send if it is a complex type
          elem_type = type_of_id(elem, ast)
          ptr =""
-         # Check if it is a pointer
-         # if isinstance(type, c_ast.PtrDecl):
-         #   elem_type = elem_type.type
-         #   ptr = "* "
          if isinstance(elem_type, c_ast.ArrayDecl) or isinstance(elem_type, c_ast.Struct): 
             shared_var_list += [ptr + str(elem.name) + "_cu"]
          else:
@@ -404,9 +385,7 @@ class CudaMutator(object):
       # Identify function calls inside kernel and replace the definitions to __device__ 
       try:
          for func_call in FuncCallFilter().iterate(loop.stmt):
-           # func_call.show()
-           # DotDebugTool(highlight = [func_call]).apply(loop.stmt)
-           # print " Writing " + func_call.name.name + " to device "
+           print " Writing " + func_call.name.name + " to device "
            try:
               fcm = FuncToDeviceMutator(func_call = func_call).apply(ast)
            except IgnoreMutationException as ime:
@@ -426,6 +405,29 @@ class CudaMutator(object):
       check_boundary_node = c_ast.Compound(decls = None, stmts = [c_ast.If(cond = loop.cond, iftrue = loop.stmt, iffalse = None)], parent = tree.ext[-1].function.body)
       InsertTool(subtree = check_boundary_node, position = "begin").apply(tree.ext[-1].function.body, 'stmts')
       return c_ast.FileAST(ext = [tree.ext[-1]])
+
+
+class CM_OmpParallelFor(AbstractCudaMutator):
+   """ This  mutator locates a omp parallel for reduction, and then
+      translate the original source to an equivalent cuda implementation 
+   """
+   def __init__(self, clauses = {}, kernel_name = 'loopKernel', kernel_prefix = ''):
+      """ Constructor """
+      super(CM_OmpParallelFor, self).__init__(clauses, kernel_name, kernel_prefix)
+
+
+   def filter(self, ast):
+      """ Filter definition
+         Returns the first node matching with the filter"""
+      # Build a visitor , matching the OmpFor node of the AST
+      f = OmpForFilter()
+      node = f.apply(ast)
+      self._func_def = f.get_func_def()
+      self._parallel = f.get_parallel()
+      return node
+
+
+
 
    def mutatorFunction(self, ast, ompFor_node):
       """ CUDA mutator, writes the for as a kernel

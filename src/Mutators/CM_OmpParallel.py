@@ -11,9 +11,9 @@ from string import Template
 
 
 
-from Mutators.Cuda import CudaMutator
+from Mutators.Cuda import CM_OmpParallelFor, AbstractCudaMutator
 
-class CM_OmpParallel(CudaMutator):
+class CM_OmpParallel(CM_OmpParallelFor):
    def filter(self, ast):
       """ Filter definition
          Returns the first node matching with the filter"""
