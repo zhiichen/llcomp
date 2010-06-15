@@ -10,6 +10,7 @@ class DotWriter(object):
       self.act_id = 0
       self.highlight = highlight
       self.node_dir = { }
+      self.show_types = True
       self.filename = filename or sys.stdout
       try:
          self.file = open(self.filename, 'w+') 
@@ -64,16 +65,25 @@ class DotWriter(object):
       """ Get the name of a node """
       if node in self.node_dir:
          return self.node_dir[node]
-      if 'name' in dir(node) and getattr(node, 'name'):
+
+
+      if type(node) == type(""):
+         dot_name = node
+         self.node_dir[node] = node
+
+      elif 'name' in dir(node) and getattr(node, 'name'):
          if type(node.name) != type(""):
             dot_name = self.get_name(node.name) 
             self.write_label(dot_name, dot_name.split('__DOT__')[0])
-         else:
+         elif not node.name in self.node_dir:
             dot_name = node.name + "_" + str(self.act_id)
             self.write_label(dot_name, node.name)
       elif 'names' in dir(node) and getattr(node, 'names'):
-            dot_name = "_".join(node.names) + "_" + str(self.act_id)
-            self.write_label(dot_name, " ".join(node.names))
+            if len(node.names) == 1 and node.names[0] in self.node_dir:
+               dot_name = node.names[0]
+            else:
+               dot_name = "_".join(node.names) + "_" + str(self.act_id)
+               self.write_label(dot_name, " ".join(node.names))
       else:
          dot_name = node.__class__.__name__ + "__DOT__" + str(self.act_id)
          self.write_label(dot_name, node.__class__.__name__)
@@ -100,11 +110,18 @@ class DotWriter(object):
       dot_name = self.get_name(node)
       for attr in dir(node):
          if isinstance(getattr(node, attr), c_ast.Node) and attr != "parent":
-            self.write_line(dot_name, attr, self.get_name(getattr(node, attr)))
-            self.visit(getattr(node, attr))
+            if isinstance(getattr(node, attr), c_ast.TypeDecl) and attr != "parent":
+               if self.show_types:
+                 self.write_line(dot_name, attr, self.get_name(getattr(node, attr)))
+                 self.visit(getattr(node, attr))
+            else:
+               self.write_line(dot_name, attr, self.get_name(getattr(node, attr)))
+               self.visit(getattr(node, attr))
          if type(getattr(node, attr)) == type([]):
             for elem in getattr(node, attr):
-               self.write_line(dot_name, attr, self.get_name(elem))
+               # Avoid cycles
+               if dot_name != self.get_name(elem):
+                  self.write_line(dot_name, attr, self.get_name(elem))
                self.visit(elem, offset)
          
 

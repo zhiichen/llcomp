@@ -1,24 +1,24 @@
 
-/* #include <stdio.h> */
+/*#include <stdio.h>*/
 
 #define N_ELEM 5120000
 
 
 
 int
-main (int argc, char *argv[])
+main ()
 {
-  int done = 0, i;
+  int i;
   int n = N_ELEM;
-  double PI25DT = 3.141592653589793238462643;
   double pi, sum, x;
   double mysum = 0.0;
-  double pi_time = 0.0;
   double h;
+  int size_t;
 
 
   h = 1.0 / (double) n;
   sum = 0.0;
+  size_t = 3;
  
  /* reduction(+: sum) */
 #pragma omp parallel for shared(h) private(x) reduction(+ : sum)
@@ -31,7 +31,7 @@ main (int argc, char *argv[])
   pi = h * sum;
 
 
-  printf ("Pi %f , time: %f\n", pi, pi_time);
+  /* printf ("Pi %f , time: %f\n", pi, pi_time); */
 
 
 }

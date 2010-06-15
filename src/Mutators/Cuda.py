@@ -420,11 +420,43 @@ class CM_OmpParallelFor(AbstractCudaMutator):
       """ Filter definition
          Returns the first node matching with the filter"""
       # Build a visitor , matching the OmpFor node of the AST
-      f = OmpForFilter()
+      f = OmpParallelForFilter()
       node = f.apply(ast)
       self._func_def = f.get_func_def()
       self._parallel = f.get_parallel()
       return node
+
+   def apply_all(self, ast):
+      """ Apply mutation to all matches """
+      start_node = None
+      self.ast = ast
+      f = OmpParallelForFilter()
+      num = 0;
+ #        start_node = self.filter(ast)
+ #        self.mutatorFunction(ast, start_node)
+
+      try:
+         for elem in f.iterate(ast):
+            # Save previous state
+            old_name = self.kernel_name
+            old_clauses = self._clauses
+            self.kernel_name = self.kernel_name + str(num)
+            # Current scope variables
+            self._func_def = f.get_func_def()
+            self._parallel = f.get_parallel()
+            # If current node is not child of first parallel node, stop
+            if self._parallel != parent_parallel_node:
+               raise StopIteration
+            start_node = self.mutatorFunction(ast, elem)
+            # Restore previous state
+            self.kernel_name = old_name
+            self._clauses = old_clauses
+            num += 1;
+      except NodeNotFound as nf:
+         print str(nf)
+      except StopIteration:
+         return self._parallel
+      return start_node
 
 
 

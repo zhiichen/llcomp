@@ -2,9 +2,6 @@ from pycparser import parse_file
 
 from Visitors.clone_visitor import CUDAWriter
 
-from Mutators.Cuda import CudaMutatorError
-from Mutators.CM_OmpFor import CM_OmpFor
-from Mutators.CM_OmpParallel import CM_OmpParallel
 
 from sys import argv, exit
 
@@ -86,9 +83,15 @@ ConstantCalc().fast_apply_all(ast)
 
 new_ast = None
 
+
+from Mutators.Cuda import CudaMutatorError, CM_OmpParallelFor
+from Mutators.CM_OmpFor import CM_OmpFor
+from Mutators.CM_OmpParallel import CM_OmpParallel
+
+
 try:
    # t = CudaMutator()
-   t = CM_OmpParallel(kernel_prefix='llc')
+   t = CM_OmpParallelFor(kernel_prefix='llc')
    new_ast = t.apply_all(ast)
 #   link_all_parents(new_ast)
 #   t2 = CM_OmpParallel(kernel_prefix='update')
