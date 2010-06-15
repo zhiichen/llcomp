@@ -4,7 +4,7 @@
 
 
 # Current work dir
-WORKDIR="/home/rreyes/llcomp/src/"
+WORKDIR="/home/ruyk/tmp/llcomp/src/"
 
 # Location of cuda files
 CUDA_INSTALL_DIR="/usr/local/cuda/"

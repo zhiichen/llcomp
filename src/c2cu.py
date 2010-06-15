@@ -47,16 +47,11 @@ def link_all_parents(ast):
 
 # Parse file
 	
-import subprocess
-from cStringIO import StringIO
-
-from pycparser import c_ast
-
-from Tools.Parse import parse_template
+from Tools.Parse import parse_source
 
 print "Translating " + filename + " .... ", 
 template_code = " ".join(open(filename, 'r').readlines())
-ast = parse_template(template_code, filename)
+ast = parse_source(template_code, filename)
 
 print " OK "
 

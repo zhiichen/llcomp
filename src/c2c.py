@@ -18,19 +18,13 @@ else:
 	exit()
 
 # Parse file
-	
 
-import subprocess
-from cStringIO import StringIO
-
-from pycparser import c_parser, c_ast
-
-
+from Tools.Parse import parse_template
 print "Translating " + filename + " .... ", 
 template_code = " ".join(open(filename, 'r').readlines())
-p = subprocess.Popen("cpp -ansi -pedantic -CC -U __USE_GNU  -P -I /home/rreyes/llcomp/src/include/fake_libc_include/", shell=True, bufsize=1, stdin=subprocess.PIPE, stdout=subprocess.PIPE, close_fds=True)
-stripped_code = p.communicate(template_code)[0]
-ast = c_parser.CParser(lex_optimize = False, yacc_optimize = False).parse(stripped_code, filename = filename)
+ast = parse_template(template_code, filename)
+
+
 
 print " OK "
 

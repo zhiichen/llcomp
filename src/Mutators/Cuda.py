@@ -1,15 +1,16 @@
 from pycparser import c_parser, c_ast
-from Visitors.generic_visitors import IDFilter, FuncCallFilter, FuncDeclOfNameFilter, OmpForFilter, OmpParallelFilter, FilterError, TypedefFilter, IdentifierTypeFilter
+from Visitors.generic_visitors import IDFilter, FuncCallFilter, FuncDeclOfNameFilter, OmpForFilter, OmpParallelFilter,  OmpParallelForFilter, FilterError, TypedefFilter, IdentifierTypeFilter
 from Tools.tree import InsertTool, NodeNotFound, ReplaceTool, RemoveTool
 from Tools.search import type_of_id, decl_of_id
 from Tools.Dump import Dump
 from Tools.Debug import DotDebugTool
-from Tools.Parse import parse_template
+from Tools.Parse import parse_source
 from Mutators.AstSupport import DeclsToParamsMutator, IDNameMutator, FuncToDeviceMutator, PointerMutator
 from Mutators.AbstractMutator import IgnoreMutationException, AbstractMutator
 
 #from string import Template
-from mako.template import Template
+#from mako.template import Template
+from TemplateEngine.TemplateParser import TemplateParser
 
 import subprocess
 from cStringIO import StringIO
@@ -63,11 +64,11 @@ class AbstractCudaMutator(AbstractMutator):
    def parse_snippet(self, template_code, subs_dir, name, show = False):
       subtree = None
       if subs_dir:
-         template_code = Template(template_code).render(**subs_dir)
+         template_code = TemplateParser(template_code).render(**subs_dir)
          if show:
             print " Template " + str(template_code)
       try:
-         subtree = parse_template(template_code, name)
+         subtree = parse_source(template_code, name)
       except c_parser.ParseError, e:
          print "Parse error:" + str(e)
 
@@ -123,7 +124,6 @@ class AbstractCudaMutator(AbstractMutator):
          tmp = " ".join(['%s'%stor for stor in elem.storage]) 
          if isinstance(elem.type, c_ast.ArrayDecl):
             tmp += " "
-            # ** TODO: Do not perform this search, change recursion order... ** 
             tmp_node = elem.type
             while not (isinstance(tmp_node, c_ast.TypeDecl) or isinstance(tmp_node, c_ast.PtrDecl)) and tmp_node:
                tmp_node = tmp_node.type
@@ -152,7 +152,7 @@ class AbstractCudaMutator(AbstractMutator):
       # Position in the template for dimA declaration, just in case we change it
       DIMA_POS = 0
       MEMSIZE_POS = 4
-      # TODO : Move this array creation to a tempalte filter (something like |type)
+      # TODO : Move this array creation to a template filter (something like |type)
       reduction_vars = self.get_template_array(reduction_node_list, ast)
       def check_array(elem):
          return isinstance(elem.type, c_ast.ArrayDecl) or isinstance(elem, c_ast.Struct)
@@ -230,7 +230,7 @@ class AbstractCudaMutator(AbstractMutator):
       % endfor
       }
       """ 
-      return self.parse_snippet(template_code, {'reduction_names' : reduction_vars, 'shared_names' : memcpy_lines}, name = 'Retrieve').ext[0].body
+      return self.parse_snippet(template_code, {'reduction_names' : reduction_vars, 'shared_names' : memcpy_lines}, name = 'Retrieve', show = True).ext[0].body
       
    def buildKernelLaunch(self, reduction_vars, shared_vars, ast):
        # FIXME : reduction_vars is now an array of declarations
@@ -413,6 +413,7 @@ class CM_OmpParallelFor(AbstractCudaMutator):
    """
    def __init__(self, clauses = {}, kernel_name = 'loopKernel', kernel_prefix = ''):
       """ Constructor """
+      self._ompFor = None
       super(CM_OmpParallelFor, self).__init__(clauses, kernel_name, kernel_prefix)
 
 
@@ -432,9 +433,6 @@ class CM_OmpParallelFor(AbstractCudaMutator):
       self.ast = ast
       f = OmpParallelForFilter()
       num = 0;
- #        start_node = self.filter(ast)
- #        self.mutatorFunction(ast, start_node)
-
       try:
          for elem in f.iterate(ast):
             # Save previous state
@@ -444,10 +442,10 @@ class CM_OmpParallelFor(AbstractCudaMutator):
             # Current scope variables
             self._func_def = f.get_func_def()
             self._parallel = f.get_parallel()
-            # If current node is not child of first parallel node, stop
-            if self._parallel != parent_parallel_node:
-               raise StopIteration
-            start_node = self.mutatorFunction(ast, elem)
+            self._ompFor = f.get_ompFor()
+            print str(elem)
+            print str(self._ompFor)
+            start_node = self.mutatorFunction(ast, self._ompFor)
             # Restore previous state
             self.kernel_name = old_name
             self._clauses = old_clauses
@@ -477,9 +475,6 @@ class CM_OmpParallelFor(AbstractCudaMutator):
       # TODO:  Implement parallel for 
       #             The code after this raise is currently broken, due to changes on template build system
       #              It is an easy fix, but we have no time now.
-      raise NotImplemented
-
-      
 
       maxThreadNumber_node = self.getThreadNum(ompFor_node.stmt.cond)
 
@@ -490,22 +485,17 @@ class CM_OmpParallelFor(AbstractCudaMutator):
 
       ##################### Cuda parameters on host
 
-      clause_dict = self._get_dict_from_clauses(ompFor_node.clauses,  ast)
+      clause_dict = self._get_dict_from_clauses(self._parallel.clauses + ompFor_node.clauses,  ast)
       shared_params = clause_dict['SHARED']
-      
       private_params = clause_dict['PRIVATE']
       reduction_params = clause_dict['REDUCTION']
       nowait = clause_dict.has_key('NOWAIT')
 
       ##################### Declarations
 
-      declarations_subtree = self.buildDeclarations(numThreads = maxThreadNumber_node, reduction_node_list = reduction_params, shared_node_list = shared_params)
-      InsertTool(subtree = declarations_subtree, position = "begin").apply(cuda_stmts, 'decls')
-      # Initialization
-      initialization_subtree = self.buildInitialization(reduction_vars = reduction_params, shared_vars = shared_params, ast = ast)
-
-      InsertTool(subtree = initialization_subtree, position = "begin").apply(cuda_stmts, 'stmts')
-      
+      kernel_init_subtree = self.buildDeclarations(numThreads = maxThreadNumber_node, reduction_node_list = reduction_params, shared_node_list = shared_params, ast = ast)
+      InsertTool(subtree = kernel_init_subtree, position = "begin").apply(cuda_stmts, 'decls')
+           
 
       ##################### Cuda Kernel 
 
@@ -517,20 +507,15 @@ class CM_OmpParallelFor(AbstractCudaMutator):
 
       # Function declaration
       # - Build a node without body
-      tmp = c_ast.CUDAKernel(function = copy.deepcopy(kernel_subtree.ext[0].function), type = 'global', name = kernel_subtree.ext[0].name)
-      tmp.function.body = c_ast.Compound(stmts = None, decls = None); # If both of stmts and decls are none, it won't be printed
-      kernel_decl = c_ast.Compound(stmts = [tmp], decls = None)
+#      tmp = c_ast.CUDAKernel(function = copy.deepcopy(kernel_subtree.ext[0].function), type = 'global', name = kernel_subtree.ext[0].name)
+#      tmp.function.body = c_ast.Compound(stmts = None, decls = None); # If both of stmts and decls are none, it won't be printed
+#      kernel_decl = c_ast.Compound(stmts = [tmp], decls = None)
       
 #      # Find container function
 
-      InsertTool(subtree = kernel_decl, position = "begin", node = self._func_def).apply(ast, 'ext')
+#      InsertTool(subtree = kernel_decl, position = "begin", node = self._func_def).apply(ast, 'ext')
       # Function definition
-      InsertTool(subtree = kernel_subtree, position = "end" ).apply(ast, 'ext')
-
-      # Support subtree
-      support_subtree = self.buildSupport()
-      InsertTool(subtree = c_ast.Compound(stmts = support_subtree.stmts, decls = None), position = "end").apply(ast, 'ext')
-      InsertTool(subtree = c_ast.Compound(decls = support_subtree.decls, stmts = None), position = "begin").apply(ast, 'ext')
+      InsertTool(subtree = kernel_subtree, position = "begin" ).apply(ast, 'ext')
 
 
       ##################### Loop substitution 
