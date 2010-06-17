@@ -15,10 +15,15 @@ else:
 	print ">>> File not found!"
 	exit()
 
-# Parse file
 
+
+###################### First Layer  : File parsing
+
+
+
+# Parse file
 from Tools.Parse import parse_source
-print "Translating " + filename + " .... ", 
+print "Parsing " + filename + " .... ", 
 template_code = " ".join(open(filename, 'r').readlines())
 ast = parse_source(template_code, filename)
 
@@ -27,10 +32,19 @@ ast = parse_source(template_code, filename)
 print " OK "
 
 
+
+print " Migrating to Internal Representation ....", 
+
+
 from Frontend.InternalRepr import AstToIR
 
 # Transform the C ast into the internal representation
 new_ast = AstToIR(writer = OmpWriter).transform(ast)
+
+
+print " OK "
+
+###################### Second Layer  : Transformation tools
 
 
 # Optimize code
