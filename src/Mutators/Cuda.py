@@ -8,14 +8,7 @@ from Tools.Parse import parse_source
 from Mutators.AstSupport import DeclsToParamsMutator, IDNameMutator, FuncToDeviceMutator, PointerMutator
 from Mutators.AbstractMutator import IgnoreMutationException, AbstractMutator
 
-#from string import Template
-#from mako.template import Template
-from TemplateEngine.TemplateParser import TemplateParser
-
-import subprocess
-from cStringIO import StringIO
-from Visitors.clone_visitor import CWriter
-import cStringIO
+from TemplateEngine.TemplateParser import TemplateParser, get_template_array
 
 
 # Copy substructures
@@ -111,38 +104,6 @@ class AbstractCudaMutator(AbstractMutator):
          self._clauses = clause_dict
       return  clause_dict
 
-   def get_template_array(self, var_list, ast, func = lambda elem : True, name_func = lambda elem : elem.name, type_func = lambda elem : elem.type):
-      """ Prepare template array for vars """
-      names = []
-      def fast_write(elem):
-         writeIO = cStringIO.StringIO()
-         cw = CWriter(stream = writeIO)
-         cw.visit(elem)
-         return writeIO.getvalue()
-
-      def decl_write(elem):
-         tmp = " ".join(['%s'%stor for stor in elem.storage]) 
-         if isinstance(elem.type, c_ast.ArrayDecl):
-            tmp += " "
-            tmp_node = elem.type
-            while not (isinstance(tmp_node, c_ast.TypeDecl) or isinstance(tmp_node, c_ast.PtrDecl)) and tmp_node:
-               tmp_node = tmp_node.type
-
-            tmp += fast_write(tmp_node)
- #           tmp += fast_write(elem.type)
- #           self.visit_ArrayDecl(node = node.type, node_name = decl_name, offset = new_offset)
-         else:
-            tmp += " ".join(['%s'%qual for qual in elem.quals])
-            tmp += " "
-            tmp += fast_write(elem.type)
-         return tmp
-
-      for elem in var_list:
-         if func(elem):
-            typestr = decl_write(elem)
-            # Type string | var name | pointer to type | pointer to var | declaration string
-            names.append([typestr, name_func(elem), type_func(elem), elem, fast_write(elem).replace(';','').replace('\n','') ])
-      return names
  
    def buildDeclarations(self, numThreads, reduction_node_list, shared_node_list, ast):
       """ Builds the declaration section 
@@ -153,12 +114,17 @@ class AbstractCudaMutator(AbstractMutator):
       DIMA_POS = 0
       MEMSIZE_POS = 4
       # TODO : Move this array creation to a template filter (something like |type)
-      reduction_vars = self.get_template_array(reduction_node_list, ast)
+      reduction_vars = get_template_array(reduction_node_list, ast)
       def check_array(elem):
          return isinstance(elem.type, c_ast.ArrayDecl) or isinstance(elem, c_ast.Struct)
-      shared_vars = self.get_template_array(shared_node_list, ast, func = check_array) 
+      shared_vars = get_template_array(shared_node_list, ast, func = check_array) 
 
       template_code = """
+      <%!
+
+
+      %>
+
               /* Kernel configuration */
        void kernel_func() {
               int dimA = 1;
@@ -169,28 +135,28 @@ class AbstractCudaMutator(AbstractMutator):
 
               /* Variable declaration */
               % for var in reduction_names:
-                  ${var[0]} * reduction_cu_${var[1]};
+                  ${var.type} * reduction_cu_${var.name};
               % endfor
 
               % for var in shared_vars:
-                  ${var[0]} * ${var[1]}_cu; 
+                  ${var.type} * ${var}_cu; 
               % endfor
               /* Initialization */
               % for var in reduction_names:
-              cudaMalloc((void **) (&reduction_cu_${var[1]}), numElems * sizeof(${var[0]}));
+              cudaMalloc((void **) (&reduction_cu_${var.name}), numElems * sizeof(${var.type}));
                /* This may be incorrect in case reduction don't start with 0 or 1 */
-              cudaMemset(reduction_cu_${var[1]}, (int) ${var[1]}, numElems * sizeof(${var[0]}));
+              cudaMemset(reduction_cu_${var.name}, (int) ${var.name}, numElems * sizeof(${var.type}));
               % endfor
 
               % for var in shared_vars:
-              ${var[1]}_cu = malloc(numElems * sizeof(${var[0]}));
-              cudaMalloc((void **) (&${var[1]}_cu), numElems * sizeof(${var[0]}));
-              cudaMemcpy(${var[1]}_cu, ${var[1]}, numElems * sizeof(${var[0]}), cudaMemcpyHostToDevice); 
+              ${var.name}_cu = malloc(numElems * sizeof(${var.type}));
+              cudaMalloc((void **) (&${var.name}_cu), numElems * sizeof(${var.type}));
+              cudaMemcpy(${var.name}_cu, ${var.name}, numElems * sizeof(${var.type}), cudaMemcpyHostToDevice); 
               % endfor
          }
 
          """
-      kernel_init = self.parse_snippet(template_code, {'reduction_names' : reduction_vars, 'shared_vars' : shared_vars}, name = 'Initialization of ' + self.kernel_name).ext[-1].body
+      kernel_init = self.parse_snippet(template_code, {'reduction_names' : reduction_vars, 'shared_vars' : shared_vars}, name = 'Initialization of ' + self.kernel_name, show = True).ext[-1].body
 #~    from Tools.Debug import DotDebugTool
 #~    DotDebugTool().apply(kernel_init)
       kernel_init.decls[DIMA_POS].init = numThreads
@@ -203,24 +169,27 @@ class AbstractCudaMutator(AbstractMutator):
       # TODO: ******************* IMPORTANT
       #           This code does not follow the correct template use
       # If a shared var is modified inside kernel, we retrieve it from device
-      for elem in modified_shared_vars:
-         # Only malloc / send if it is a complex type
-#         if isinstance(elem.type, c_ast.ArrayDecl) or isinstance(elem.type, c_ast.Struct):
-#            memcpy_lines += [elem.name]
-         if isinstance(elem.type, c_ast.ArrayDecl): 
-            memcpy_lines.append([ elem.name, "sizeof(" + " ".join(self.get_names(elem, ast)) +  ") * " +  elem.type.dim.value])
-         elif isinstance(elem.type, c_ast.Struct):
-            memcpy_lines.append([elem.name,  "sizeof(" + " ".join(self.get_names(elem, ast)) +  ")"])
+#      for elem in modified_shared_vars:
+#         # Only malloc / send if it is a complex type
+##         if isinstance(elem.type, c_ast.ArrayDecl) or isinstance(elem.type, c_ast.Struct):
+##            memcpy_lines += [elem.name]
+#         if isinstance(elem.type, c_ast.ArrayDecl): 
+#            memcpy_lines.append([ elem.name, "sizeof(" + " ".join(self.get_names(elem, ast)) +  ") * " +  elem.type.dim.value])
+#         elif isinstance(elem.type, c_ast.Struct):
+#            memcpy_lines.append([elem.name,  "sizeof(" + " ".join(self.get_names(elem, ast)) +  ")"])
+
+      reduction_vars = get_template_array(reduction_vars, ast)
+      shared_vars    = get_template_array(modified_shared_vars, ast)
 
       # Template source
       template_code = """
       int fake() {
-      % for name in reduction_names:
-        cudaMemcpy(reduction_loc_${name}, reduction_cu_${name}, memSize, cudaMemcpyDeviceToHost);
+      % for elem in reduction_names:
+        cudaMemcpy(reduction_loc_${elem[1]}, reduction_cu_${elem[1]}, memSize, cudaMemcpyDeviceToHost);
       % endfor
 
       % for elem in shared_names:
-        cudaMemcpy(${elem[0]}, ${elem[0]}_cu, ${elem[1]}, cudaMemcpyDeviceToHost);
+        cudaMemcpy(${elem[1]}, ${elem[1]}_cu, ${elem[1]}, cudaMemcpyDeviceToHost);
       % endfor
 
       checkCUDAError("memcpy");
@@ -230,7 +199,7 @@ class AbstractCudaMutator(AbstractMutator):
       % endfor
       }
       """ 
-      return self.parse_snippet(template_code, {'reduction_names' : reduction_vars, 'shared_names' : memcpy_lines}, name = 'Retrieve', show = True).ext[0].body
+      return self.parse_snippet(template_code, {'reduction_names' : reduction_vars, 'shared_names' : shared_vars}, name = 'Retrieve', show = True).ext[0].body
       
    def buildKernelLaunch(self, reduction_vars, shared_vars, ast):
        # FIXME : reduction_vars is now an array of declarations
@@ -301,7 +270,7 @@ class AbstractCudaMutator(AbstractMutator):
    def buildKernel(self, shared_list, private_list, reduction_list, loop, ast):
       """ Build CUDA Kernel code """
 
-      reduction_vars = self.get_template_array(reduction_list, ast)
+      reduction_vars = get_template_array(reduction_list, ast)
       # Retrieve list of shared vars and build the array to template parsing
       # TODO: Move this to some kind of template function
       def decls_to_param(elem):
@@ -309,7 +278,7 @@ class AbstractCudaMutator(AbstractMutator):
             return "*" + elem.name + "_cu"
          return elem.name
 
-      shared_vars = self.get_template_array(shared_list, ast, name_func = decls_to_param) 
+      shared_vars = get_template_array(shared_list, ast, name_func = decls_to_param) 
 
       # TODO: Clean (Move this to external function)
       decls_dict = {}
