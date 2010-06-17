@@ -412,8 +412,8 @@ class CM_OmpParallelFor(AbstractCudaMutator):
             self._func_def = f.get_func_def()
             self._parallel = f.get_parallel()
             self._ompFor = f.get_ompFor()
-            print str(elem)
-            print str(self._ompFor)
+#            print str(elem)
+#            print str(self._ompFor)
             start_node = self.mutatorFunction(ast, self._ompFor)
             # Restore previous state
             self.kernel_name = old_name

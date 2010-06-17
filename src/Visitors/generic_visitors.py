@@ -336,7 +336,7 @@ class OmpParallelForFilter(OmpParallelFilter):
          """ If node is a parallel, check if has only one stmt and is a for """
          if isinstance(node, c_ast.OmpParallel):
             if isinstance(node.clauses[0], c_ast.OmpFor):
-               print "Match :"  + str(node)
+               # print "Match :"  + str(node)
                self._parallel = node
                self._ompFor = node.clauses[0]
                return True
