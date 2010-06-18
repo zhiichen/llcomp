@@ -50,12 +50,9 @@ print "Mutating ...",
 from Mutators.Optimizer import MatrixDeclToPtr, ConstantCalc
 
 
-MatrixDeclToPtr(start_ast = ast).fast_apply_all(ast)
+MatrixDeclToPtr(start_ast = new_ast).fast_apply_all(new_ast)
 
-ConstantCalc().fast_apply_all(ast)
-
-new_ast = None
-
+ConstantCalc().fast_apply_all(new_ast)
 
 from Mutators.Cuda import CudaMutatorError, CM_OmpParallelFor
 from Mutators.CM_OmpFor import CM_OmpFor
@@ -64,25 +61,21 @@ from Mutators.CM_OmpParallel import CM_OmpParallel
 
 try:
    # t = CudaMutator()
-   t = CM_OmpParallelFor(kernel_prefix='llc')
-   new_ast = t.apply_all(ast)
-#   link_all_parents(new_ast)
-#   t2 = CM_OmpParallel(kernel_prefix='update')
-#   new_ast = t2.apply(new_ast)
+#   t = CM_OmpParallelFor(kernel_prefix='llc')
+#   end_ast = t.apply_all(new_ast)
+#   end_ast = AstToIR(writer = CUDAWriter).update(end_ast)
+   t2 = CM_OmpParallel(kernel_prefix='update')
+   end_ast = t2.apply_all(new_ast)
 except CudaMutatorError as cme:
    print " Error while mutating tree "
    print cme
 
-if new_ast:
+if end_ast:
 	print " OK "
 else:
 	print " Translation interrupted due to previous errors "
 	import sys
 	sys.exit(-1)
-
-print " Update backward link ....",
-
-link_all_parents(ast)
 
 
 print " OK "
@@ -92,7 +85,7 @@ print " OK "
 print " Writing result ...",
 
 v = CUDAWriter(filename = output_file)
-v.visit(new_ast)
+v.visit(end_ast)
 
 
 

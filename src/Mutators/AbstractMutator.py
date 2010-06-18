@@ -35,12 +35,15 @@ class AbstractMutator(object):
    def mutatorFunction(self, ast):
       return ast
 
-   def apply(self, ast):
+   def apply(self, ast, mutator_opt_arg = None):
       start_node = None
       self.ast = ast
       try:
         start_node = self.filter(self.ast)
-        self.mutatorFunction(start_node)
+        if mutator_opt_arg:
+           self.mutatorFunction(start_node, mutator_opt_arg)
+        else:
+           self.mutatorFunction(start_node)
       except NodeNotFound as nf:
          print str(nf)
       return start_node
@@ -48,13 +51,16 @@ class AbstractMutator(object):
    def filter_iterator(self, ast):
       raise NotImplemented
 
-   def apply_all(self, ast):
+   def apply_all(self, ast, mutator_opt_arg = None):
       """ Apply mutation to all matches """
       start_node = None
       self.ast = ast
       try:
          for elem in self.filter_iterator(ast):
-            start_node = self.mutatorFunction(elem)
+            if mutator_opt_arg:
+               start_node = self.mutatorFunction(start_node, mutator_opt_arg)
+            else:
+               start_node = self.mutatorFunction(start_node)
       except NodeNotFound as nf:
          print str(nf)
       return start_node

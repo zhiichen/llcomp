@@ -9,7 +9,7 @@ from Mutators.AstSupport import DeclsToParamsMutator, IDNameMutator, FuncToDevic
 
 from string import Template
 
-
+from TemplateEngine.TemplateParser import TemplateParser, get_template_array
 
 from Mutators.Cuda import CM_OmpParallelFor, AbstractCudaMutator
 
@@ -75,23 +75,23 @@ class CM_OmpParallel(CM_OmpParallelFor):
          if isinstance(elem.type, c_ast.ArrayDecl) or isinstance(elem.type,c_ast.Struct):
             tmp.append(elem)
 
-      shared_vars = self.get_template_array(tmp, ast) 
+      shared_vars = get_template_array(tmp, ast) 
 
       # Type string | var name | pointer to type | pointer to var | declaration string
       template_code = """
          int main() {
              % for var in shared_vars:
-                  ${var[0]} * ${var[1]}_cu;
+                  ${var.type} * ${var.name}_cu;
               % endfor
               % for var in shared_vars:
-              cudaMalloc((void **) (&${var[1]}_cu), ${var[2].dim.value or 1} * sizeof(${var[0]}));
-              cudaMemcpy(${var[1]}_cu, ${var[1]}, ${var[2].dim.value or 1} * sizeof(${var[0]}), cudaMemcpyHostToDevice); 
+              cudaMalloc((void **) (&${var.name}_cu), ${var.numelems} * sizeof(${var.type}));
+              cudaMemcpy(${var.name}_cu, ${var.name}, ${var.numelems} * sizeof(${var.type}), cudaMemcpyHostToDevice); 
               % endfor
          }
 
          """
       print "New kernel build with name : " + self.kernel_name
-      parallel_init = self.parse_snippet(template_code, {'shared_vars' : shared_vars}, name = 'Initialization of Parallel Region ' + self.kernel_name, show = False).ext[-1].body
+      parallel_init = self.parse_snippet(template_code, {'shared_vars' : shared_vars}, name = 'Initialization of Parallel Region ' + self.kernel_name, show = True).ext[-1].body
 #~    from Tools.Debug import DotDebugTool
 #~    DotDebugTool().apply(kernel_init)
       return parallel_init

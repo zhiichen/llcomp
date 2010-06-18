@@ -16,18 +16,8 @@ class TemplateParser(MakoTemplate):
       super(TemplateParser, self).__init__(*args, **kwargs)
 
 
-#   def write(elem):
-#      if isinstance(elem, c_ast.Node):
-#         writeIO = cStringIO.StringIO()
-#         cw = CWriter(stream = writeIO)
-#         cw.visit(elem)
-#         return writeIO.getvalue()
-#      else:
-#         return elem
 
-
-
-class WritableNode:
+class TemplateVarNode:
 
    def fast_write(self, elem):
       writeIO = cStringIO.StringIO()
@@ -71,14 +61,18 @@ class WritableNode:
 
    @property
    def declaration(self):
-      return self.fast_write(self._var).replace(';','').replace('\n','')
+      return self.decl_write(self._var).replace(';','').replace('\n','')
 
+   @property
+   def numelems(self):
+      numelems = "1"
+      if isinstance(self.ptr.type, c_ast.ArrayDecl): 
+         numelems = str(self.ptr.type.dim)
+      return numelems
 
-class WritableNodeFactory:
-   @staticmethod
-   def create_WritableNode(node):
-      return WritableNode(node)
-
+   @property
+   def ptr(self):
+      return self._var
 
 
 def get_template_array(var_list, ast, func = lambda elem : True, name_func = lambda elem : elem.name, type_func = lambda elem : elem.type):
@@ -88,6 +82,6 @@ def get_template_array(var_list, ast, func = lambda elem : True, name_func = lam
    for elem in var_list:
       if func(elem):
          # Type string | var name | pointer to type | pointer to var | declaration string
-         var = Var(var = elem, type_func = type_func, ast = ast)
+         var = TemplateVarNode(var = elem, type_func = type_func, ast = ast)
          names.append(var)
    return names

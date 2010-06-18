@@ -137,9 +137,7 @@ void compute(int np, int nd,
   kin = 0.0;
   
   /* The computation of forces and energies is fully parallel. */
-#pragma omp parallel  shared(f, vel, pos, np, nd, box) private(i, j, k, rij, d) 
-{ 
-  #pragma omp for reduction(+ : pot, kin)
+#pragma omp parallel for  shared(f, vel, pos, np, nd, box) private(i, j, k, rij, d)  reduction(+ : pot, kin)
   for (i = 0; i < np; i++) {
     /* compute potential energy and forces */
     for (j = 0; j < nd; j++)
@@ -158,7 +156,6 @@ void compute(int np, int nd,
     /* compute kinetic energy */
     kin = kin + dotr8(nd,vel[i],vel[i]);
   }
-}
   
   kin = kin*0.5*mass;
 

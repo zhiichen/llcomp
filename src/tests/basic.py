@@ -8,7 +8,7 @@ from pycparser import c_parser, c_ast
 
 from Tools.Dump import Dump
 
-from Tools.Parse import parse_template
+from Tools.Parse import parse_source
 
 
 def build_test_trees():
@@ -17,7 +17,7 @@ def build_test_trees():
                printf(" Hello World!");
             }
         """
-    ast = parse_template(template_code, 'helloWorld_test')
+    ast = parse_source(template_code, 'helloWorld_test')
     Dump.save('tests/helloWorld_tree', ast)
     template_code = """ 
 int main()
@@ -36,7 +36,7 @@ int main()
 
 }
         """
-    ast = parse_template(template_code, 'pragma_test')
+    ast = parse_source(template_code, 'pragma_test')
     Dump.save('tests/pragma_tree', ast)
 
 
@@ -52,7 +52,7 @@ class TestParserFunctions(unittest.TestCase):
                printf(" Hello World!");
             }
         """
-	ast = parse_template(template_code, 'helloWorld_test')
+	ast = parse_source(template_code, 'helloWorld_test')
 
         self.good_tree = Dump.load('tests/helloWorld_tree')
 	ast_str = StringIO();
@@ -79,7 +79,7 @@ int main()
 
 }
 """
-	ast = parse_template(template_code, 'pragma_test')
+	ast = parse_source(template_code, 'pragma_test')
 
         self.good_tree = Dump.load('tests/pragma_tree')
 	ast_str = StringIO();

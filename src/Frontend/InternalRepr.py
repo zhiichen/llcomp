@@ -45,5 +45,10 @@ class AstToIR:
       self.link_all_parents(node)  
       return node
 
+   def update(self, node):
+      self.link_all_parents(node)  
+      return node
+
+
    def symbolTable(self,node):
       raise NotImplemented

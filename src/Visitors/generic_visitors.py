@@ -295,12 +295,30 @@ class OmpParallelFilter(GenericFilterVisitor):
       return False
 
   
-   def __init__(self, condition_func = parallel_condition, prev_brother = None, device = None):
+   def __init__(self, condition_func = None, prev_brother = None, device = None):
+      def parallel_condition(node):
+         """ OmpParallel filter """ 
+         # TODO : Move this to a separated filter!!!
+         if isinstance(node, c_ast.OmpParallel):
+           # If we are looking for a specific device, and the pragma doesn't appear,
+           #    this is NOT the correct node
+           if device and not self._target_device_node:
+             return False
+           elif device and self._target_device_node:
+              if device == self._target_device_node.device:
+                 # This is the correct node
+                 return True
+              else:
+                return False
+           # If we dont need a specific device, this node is valid
+           return True
+         return False
+
       self._parallel = None
       self._funcdef = None
       self.device = device
       self._target_device_node = None
-      super(OmpParallelFilter, self).__init__(condition_func = condition_func, prev_brother = prev_brother)
+      super(OmpParallelFilter, self).__init__(condition_func = condition_func or parallel_condition, prev_brother = prev_brother)
 
    #############################################
    # This could be a little bit tricky. 

@@ -10,9 +10,9 @@ from Mutators.AbstractMutator import IgnoreMutationException, AbstractMutator
 
 from TemplateEngine.TemplateParser import TemplateParser, get_template_array
 
+import cStringIO
 
-# Copy substructures
-import copy
+from Visitors.clone_visitor import CWriter
 
 class CudaMutatorError(Exception):
    def __init__(self, description):
@@ -120,12 +120,7 @@ class AbstractCudaMutator(AbstractMutator):
       shared_vars = get_template_array(shared_node_list, ast, func = check_array) 
 
       template_code = """
-      <%!
-
-
-      %>
-
-              /* Kernel configuration */
+       /* Kernel configuration */
        void kernel_func() {
               int dimA = 1;
               int numThreadsPerBlock = CUDA_NUM_THREADS;
@@ -184,48 +179,48 @@ class AbstractCudaMutator(AbstractMutator):
       # Template source
       template_code = """
       int fake() {
-      % for elem in reduction_names:
-        cudaMemcpy(reduction_loc_${elem[1]}, reduction_cu_${elem[1]}, memSize, cudaMemcpyDeviceToHost);
+      % for var in reduction_vars:
+        cudaMemcpy(reduction_loc_${var.name}, reduction_cu_${var.name}, memSize, cudaMemcpyDeviceToHost);
       % endfor
 
-      % for elem in shared_names:
-        cudaMemcpy(${elem[1]}, ${elem[1]}_cu, ${elem[1]}, cudaMemcpyDeviceToHost);
+      % for var in shared_vars:
+        cudaMemcpy(${var.name}, ${var.name}_cu, sizeof(${var.type}) * ${var.numelems}, cudaMemcpyDeviceToHost);
       % endfor
 
       checkCUDAError("memcpy");
 
-      % for elem in shared_names:
-        cudaFree(${elem[0]}_cu);
+      % for var in shared_vars:
+      /*  cudaFree(${var.name}_cu);*/
       % endfor
       }
       """ 
-      return self.parse_snippet(template_code, {'reduction_names' : reduction_vars, 'shared_names' : shared_vars}, name = 'Retrieve', show = True).ext[0].body
+      return self.parse_snippet(template_code, {'reduction_vars' : reduction_vars, 'shared_vars' : shared_vars}, name = 'Retrieve', show = True).ext[0].body
       
    def buildKernelLaunch(self, reduction_vars, shared_vars, ast):
-       # FIXME : reduction_vars is now an array of declarations
-       reduction_var_list = ",".join("reduction_cu_" + elem.name for elem in reduction_vars)
-       shared_var_list = [];
-      # TODO: ******************* IMPORTANT
-      #           This code does not follow the correct template use
-
-       for elem in shared_vars:
-         # Only malloc / send if it is a complex type
-         elem_type = type_of_id(elem, ast)
-         ptr =""
-         if isinstance(elem_type, c_ast.ArrayDecl) or isinstance(elem_type, c_ast.Struct): 
-            shared_var_list += [ptr + str(elem.name) + "_cu"]
-         else:
-            shared_var_list += [ptr + str(elem.name)]
-
-
-       kernel_parameters = " "
-       if len(reduction_var_list) > 0:
-         kernel_parameters += reduction_var_list
-       if len(reduction_var_list) > 0 and len(shared_var_list) > 0:
-         kernel_parameters += ","
-       if len(shared_var_list) > 0:
-         kernel_parameters += ",".join(shared_var_list)
-
+#       # FIXME : reduction_vars is now an array of declarations
+#       reduction_var_list = ",".join("reduction_cu_" + elem.name for elem in reduction_vars)
+#       shared_var_list = [];
+#      # TODO: ******************* IMPORTANT
+#      #           This code does not follow the correct template use
+#
+#       for elem in shared_vars:
+#         # Only malloc / send if it is a complex type
+#         elem_type = type_of_id(elem, ast)
+#         ptr =""
+#         if isinstance(elem_type, c_ast.ArrayDecl) or isinstance(elem_type, c_ast.Struct): 
+#            shared_var_list += [ptr + str(elem.name) + "_cu"]
+#         else:
+#            shared_var_list += [ptr + str(elem.name)]
+#
+#
+#       kernel_parameters = " "
+#       if len(reduction_var_list) > 0:
+#         kernel_parameters += reduction_var_list
+#       if len(reduction_var_list) > 0 and len(shared_var_list) > 0:
+#         kernel_parameters += ","
+#       if len(shared_var_list) > 0:
+#         kernel_parameters += ",".join(shared_var_list)
+#
        template_code = """
   	#include "llcomp_cuda.h" 
 
@@ -233,11 +228,15 @@ class AbstractCudaMutator(AbstractMutator):
               dim3 dimGrid (numBlocks);
      	        dim3 dimBlock (numThreadsPerBlock);
 
-          ${kernelName} <<< dimGrid, dimBlock >>> (${kernelParameters});
+          ${kernelName} <<< dimGrid, dimBlock >>> (${', '.join("reduction_cu_" + var.name for var in reduction_vars)}
+              %if len(reduction_vars) > 0 and len(shared_vars) > 0:
+                  ,
+              %endif 
+              ${', '.join( var.name for var in shared_vars)});
        }
        """
        # The last element is the object function
-       tree = [ elem for elem in self.parse_snippet(template_code, {'kernelParameters' : kernel_parameters,  'kernelName' : self.kernel_name}, name = 'KernelLaunch').ext  if type(elem) == c_ast.FuncDef  ][-1].body
+       tree = [ elem for elem in self.parse_snippet(template_code, {'reduction_vars' : reduction_vars, 'shared_vars' : shared_vars,  'kernelName' : self.kernel_name}, name = 'KernelLaunch', show = True).ext  if type(elem) == c_ast.FuncDef  ][-1].body
        return tree
 
 
@@ -285,7 +284,7 @@ class AbstractCudaMutator(AbstractMutator):
       param_var_list = []
       for elem in shared_vars:
          try:
-            identifier_type = IdentifierTypeFilter().apply(elem[2])
+            identifier_type = IdentifierTypeFilter().apply(elem.type)
             if not identifier_type.names[0] in decls_dict:
                typedef_node = TypedefFilter(name = identifier_type.names[0]).apply(ast)
                # TODO: Avoid construction/destruction
@@ -304,10 +303,10 @@ class AbstractCudaMutator(AbstractMutator):
 
       typedef_list = [ elem for elem in decls_dict.values() ]
 
-#      print "Typedef :" + str(typedef_list)
-#      print "Param_var_list :" + str(param_var_list)
-#      print " Reduction_vars : " + str(reduction_vars)
-#      print " Shared_vars : " + str(shared_vars)
+      print "Typedef :" + str(typedef_list)
+      print "Param_var_list :" + str(param_var_list)
+      print " Reduction_vars : " + str(reduction_vars)
+      print " Shared_vars : " + str(shared_vars)
 #
       template_code = """
 
@@ -316,20 +315,19 @@ class AbstractCudaMutator(AbstractMutator):
             ${line}
          %endfor
 
-/*            # Type string | var name | pointer to type | pointer to var | declaration string */
           __global__ void ${kernelName} (
-              ${', '.join( var[0] + "* reduction_cu_" + var[1] for var in reduction_vars)}
+              ${', '.join( str(var.type) + " * reduction_cu_" + str(var.name) for var in reduction_vars)}
               %if len(reduction_vars) > 0 and len(shared_vars) > 0:
                   ,
               %endif 
-              ${', '.join( var[0] + var[1] for var in shared_vars)}
+              ${', '.join( str(var.type) + " " + str(var.name) for var in shared_vars)}
          )
           {
           int idx = blockIdx.x * blockDim.x + threadIdx.x;
           ;
           }
           """
-      tree = self.parse_snippet(template_code, {'kernelName' : self.kernel_name, 'reduction_vars' : reduction_vars, 'shared_vars' : shared_vars, 'typedefs' : typedef_list} , name = 'KernelBuild', show = False)
+      tree = self.parse_snippet(template_code, {'kernelName' : self.kernel_name, 'reduction_vars' : reduction_vars, 'shared_vars' : shared_vars, 'typedefs' : typedef_list} , name = 'KernelBuild', show = True)
 
       # OpenMP shared vars are parameters of the kernel function
       if shared_list:
@@ -364,6 +362,7 @@ class AbstractCudaMutator(AbstractMutator):
          # There are not function calls on the loop.stmt
          pass
       except FilterError as fe:
+         print " Filter error "
          raise CudaMutatorError(fe.get_description())
       # Identify function calls inside kernel and replace the definitions to __device__ 
       # TODO: This is incorrect, we should write a subtree instead of a bare string...
@@ -508,18 +507,8 @@ class CM_OmpParallelFor(AbstractCudaMutator):
       # Remove the pragma from the destination code
 #      RemoveTool(target_node = self._parallel).apply(container_func, 'stmts')
 
-
-
-   def apply(self, ast):
-      """ Apply the mutation """
-      start_node = None
-      try: 
-         start_node = self.filter(ast)
-         self.mutatorFunction(ast, start_node)
-         # Remove pragma from code
-      except NodeNotFound as nf:
-         print nf
       return ast
+
 
 
 
