@@ -151,7 +151,7 @@ class AbstractCudaMutator(AbstractMutator):
          }
 
          """
-      kernel_init = self.parse_snippet(template_code, {'reduction_names' : reduction_vars, 'shared_vars' : shared_vars}, name = 'Initialization of ' + self.kernel_name, show = True).ext[-1].body
+      kernel_init = self.parse_snippet(template_code, {'reduction_names' : reduction_vars, 'shared_vars' : shared_vars}, name = 'Initialization of ' + self.kernel_name, show = False).ext[-1].body
 #~    from Tools.Debug import DotDebugTool
 #~    DotDebugTool().apply(kernel_init)
       kernel_init.decls[DIMA_POS].init = numThreads
@@ -194,7 +194,7 @@ class AbstractCudaMutator(AbstractMutator):
       % endfor
       }
       """ 
-      return self.parse_snippet(template_code, {'reduction_vars' : reduction_vars, 'shared_vars' : shared_vars}, name = 'Retrieve', show = True).ext[0].body
+      return self.parse_snippet(template_code, {'reduction_vars' : reduction_vars, 'shared_vars' : shared_vars}, name = 'Retrieve', show = False).ext[0].body
       
    def buildKernelLaunch(self, reduction_vars, shared_vars, ast):
 #       # FIXME : reduction_vars is now an array of declarations
@@ -236,7 +236,7 @@ class AbstractCudaMutator(AbstractMutator):
        }
        """
        # The last element is the object function
-       tree = [ elem for elem in self.parse_snippet(template_code, {'reduction_vars' : reduction_vars, 'shared_vars' : shared_vars,  'kernelName' : self.kernel_name}, name = 'KernelLaunch', show = True).ext  if type(elem) == c_ast.FuncDef  ][-1].body
+       tree = [ elem for elem in self.parse_snippet(template_code, {'reduction_vars' : reduction_vars, 'shared_vars' : shared_vars,  'kernelName' : self.kernel_name}, name = 'KernelLaunch', show = False).ext  if type(elem) == c_ast.FuncDef  ][-1].body
        return tree
 
 
@@ -327,7 +327,7 @@ class AbstractCudaMutator(AbstractMutator):
           ;
           }
           """
-      tree = self.parse_snippet(template_code, {'kernelName' : self.kernel_name, 'reduction_vars' : reduction_vars, 'shared_vars' : shared_vars, 'typedefs' : typedef_list} , name = 'KernelBuild', show = True)
+      tree = self.parse_snippet(template_code, {'kernelName' : self.kernel_name, 'reduction_vars' : reduction_vars, 'shared_vars' : shared_vars, 'typedefs' : typedef_list} , name = 'KernelBuild', show = False)
 
       # OpenMP shared vars are parameters of the kernel function
       if shared_list:

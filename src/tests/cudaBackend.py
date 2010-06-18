@@ -23,16 +23,18 @@ def build_test_trees():
     # Pi
     template_code = open('examples/pi.c', 'r').read()
     ast = parse_source(template_code, 'pi_test')
+    new_ast = AstToIR(writer = CUDAWriter).transform(ast)
     Dump.save('tests/pi_tree', ast)
     # CUDA version
-    new_ast = CM_OmpParallelFor().apply(ast)
+    new_ast = CM_OmpParallelFor().apply_all(new_ast)
     Dump.save('tests/picu_tree', new_ast)
     # Mandel
     template_code = open('examples/mandel.c', 'r').read()
     ast = parse_source(template_code, 'mandel_test')
-    Dump.save('tests/mandel_tree', ast)
+    new_ast = AstToIR(writer = CUDAWriter).transform(ast)
+    Dump.save('tests/mandel_tree', new_ast)
     # CUDA version
-    new_ast = CM_OmpParallelFor().apply(ast)
+    new_ast = CM_OmpParallelFor().apply_all(ast)
     Dump.save('tests/mandelcu_tree', new_ast)
 
    
@@ -59,13 +61,18 @@ class TestCudaBackendFunctions(unittest.TestCase):
         ast = parse_source(template_code, 'pi_test')
         new_ast = AstToIR(writer = CUDAWriter).transform(ast)
 #        link_all_parents(ast)
-        new_ast = CM_OmpParallelFor().apply_all(ast)
+        new_ast = CM_OmpParallelFor().apply_all(new_ast)
 
         self.good_tree = Dump.load('tests/picu_tree')
         new_ast_str = StringIO();
         good_str = StringIO();
         new_ast.show(new_ast_str)
         self.good_tree.show(good_str)
+        print "*** New "
+        new_ast.show()
+        print "*** Original"
+        self.good_tree.show()
+        print "*** Finish"
         self.assertEqual(new_ast_str.getvalue(), good_str.getvalue())
 
     def test_mandel(self):

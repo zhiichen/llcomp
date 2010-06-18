@@ -5,7 +5,7 @@ from  tests import basic, cudaBackend
 
 # Uncomment to create new tests
 # basic.build_test_trees()
-# cudaBackend.build_test_trees()
+cudaBackend.build_test_trees()
 
 
 print " Running basic parser tests "
