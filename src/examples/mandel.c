@@ -1,6 +1,6 @@
-#include <stdio.h>
+/* #include <stdio.h>*/
 /* #include <stdlib.h> */
-#include <math.h>
+/* #include <math.h> */
 
 
 /* ***********************************************************************
@@ -22,7 +22,7 @@ History:
 #ifndef MYTIME_H
 #define MYTIME_H
 
- #include <time.h> 
+/* #include <time.h> */
 
 #define MICROSEC_PER_SEC 1.0e6
 

@@ -54,18 +54,13 @@ MatrixDeclToPtr(start_ast = new_ast).fast_apply_all(new_ast)
 
 ConstantCalc().fast_apply_all(new_ast)
 
-from Mutators.Cuda import CudaMutatorError, CM_OmpParallelFor
-from Mutators.CM_OmpFor import CM_OmpFor
-from Mutators.CM_OmpParallel import CM_OmpParallel
+from Mutators.Cuda import CudaMutatorError, CudaTransformer #, CM_OmpParallelFor
+# from Mutators.CM_OmpFor import CM_OmpFor
+# from Mutators.CM_OmpParallel import CM_OmpParallel
 
 
 try:
-   # t = CudaMutator()
-#   t = CM_OmpParallelFor(kernel_prefix='llc')
-#   end_ast = t.apply_all(new_ast)
-#   end_ast = AstToIR(writer = CUDAWriter).update(end_ast)
-   t2 = CM_OmpParallel(kernel_prefix='update')
-   end_ast = t2.apply_all(new_ast)
+   end_ast = CudaTransformer.apply(new_ast)
 except CudaMutatorError as cme:
    print " Error while mutating tree "
    print cme

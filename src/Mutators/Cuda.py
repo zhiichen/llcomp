@@ -92,7 +92,12 @@ class AbstractCudaMutator(AbstractMutator):
                decl = decl_of_id(id, ast)
                if not decl:
                   raise CudaMutatorError(" Declaration of " + id.name + " in " + elem.name + " clause could not be found ")
-               clause_dict[elem.name].append(decl)
+               # If a declaration with the same name is already stored, pass. Otherwise, append it to the list
+               for stored_decl in clause_dict[elem.name]:
+                  if decl.name == stored_decl.name:
+                     break
+               else:
+                  clause_dict[elem.name].append(decl)
          elif elem.name == 'NOWAIT':
             clause_dict[elem.name] = True
  
@@ -152,8 +157,6 @@ class AbstractCudaMutator(AbstractMutator):
 
          """
       kernel_init = self.parse_snippet(template_code, {'reduction_names' : reduction_vars, 'shared_vars' : shared_vars}, name = 'Initialization of ' + self.kernel_name, show = False).ext[-1].body
-#~    from Tools.Debug import DotDebugTool
-#~    DotDebugTool().apply(kernel_init)
       kernel_init.decls[DIMA_POS].init = numThreads
       return kernel_init
 
@@ -161,18 +164,6 @@ class AbstractCudaMutator(AbstractMutator):
 
    def buildRetrieve(self, reduction_vars, modified_shared_vars, ast = None, shared_vars = None):
       memcpy_lines = []
-      # TODO: ******************* IMPORTANT
-      #           This code does not follow the correct template use
-      # If a shared var is modified inside kernel, we retrieve it from device
-#      for elem in modified_shared_vars:
-#         # Only malloc / send if it is a complex type
-##         if isinstance(elem.type, c_ast.ArrayDecl) or isinstance(elem.type, c_ast.Struct):
-##            memcpy_lines += [elem.name]
-#         if isinstance(elem.type, c_ast.ArrayDecl): 
-#            memcpy_lines.append([ elem.name, "sizeof(" + " ".join(self.get_names(elem, ast)) +  ") * " +  elem.type.dim.value])
-#         elif isinstance(elem.type, c_ast.Struct):
-#            memcpy_lines.append([elem.name,  "sizeof(" + " ".join(self.get_names(elem, ast)) +  ")"])
-
       reduction_vars = get_template_array(reduction_vars, ast)
       shared_vars    = get_template_array(modified_shared_vars, ast)
 
@@ -197,30 +188,7 @@ class AbstractCudaMutator(AbstractMutator):
       return self.parse_snippet(template_code, {'reduction_vars' : reduction_vars, 'shared_vars' : shared_vars}, name = 'Retrieve', show = False).ext[0].body
       
    def buildKernelLaunch(self, reduction_vars, shared_vars, ast):
-#       # FIXME : reduction_vars is now an array of declarations
-#       reduction_var_list = ",".join("reduction_cu_" + elem.name for elem in reduction_vars)
-#       shared_var_list = [];
-#      # TODO: ******************* IMPORTANT
-#      #           This code does not follow the correct template use
-#
-#       for elem in shared_vars:
-#         # Only malloc / send if it is a complex type
-#         elem_type = type_of_id(elem, ast)
-#         ptr =""
-#         if isinstance(elem_type, c_ast.ArrayDecl) or isinstance(elem_type, c_ast.Struct): 
-#            shared_var_list += [ptr + str(elem.name) + "_cu"]
-#         else:
-#            shared_var_list += [ptr + str(elem.name)]
-#
-#
-#       kernel_parameters = " "
-#       if len(reduction_var_list) > 0:
-#         kernel_parameters += reduction_var_list
-#       if len(reduction_var_list) > 0 and len(shared_var_list) > 0:
-#         kernel_parameters += ","
-#       if len(shared_var_list) > 0:
-#         kernel_parameters += ",".join(shared_var_list)
-#
+
        template_code = """
   	#include "llcomp_cuda.h" 
 
@@ -255,9 +223,9 @@ class AbstractCudaMutator(AbstractMutator):
       template_code = """
       int fake() {
       #define LLC_REDUCTION_FUNC(dest, fuente) dest = dest + fuente 
-   % for var in reduction_vars:
-      ${var} = kernelReduction_${type}(reduction_cu_${var}, numElems, ${var});
-   % endfor
+      % for var in reduction_vars:
+         ${var} = kernelReduction_${type}(reduction_cu_${var}, numElems, ${var});
+      % endfor
 
       /* By default, omp for has a wait at the end */
       ${wait}
@@ -303,10 +271,10 @@ class AbstractCudaMutator(AbstractMutator):
 
       typedef_list = [ elem for elem in decls_dict.values() ]
 
-      print "Typedef :" + str(typedef_list)
-      print "Param_var_list :" + str(param_var_list)
-      print " Reduction_vars : " + str(reduction_vars)
-      print " Shared_vars : " + str(shared_vars)
+#      print "Typedef :" + str(typedef_list)
+#      print "Param_var_list :" + str(param_var_list)
+#      print " Reduction_vars : " + str(reduction_vars)
+#      print " Shared_vars : " + str(shared_vars)
 #
       template_code = """
 
@@ -382,6 +350,7 @@ class CM_OmpParallelFor(AbstractCudaMutator):
    def __init__(self, clauses = {}, kernel_name = 'loopKernel', kernel_prefix = ''):
       """ Constructor """
       self._ompFor = None
+      self._clauses = {}
       super(CM_OmpParallelFor, self).__init__(clauses, kernel_name, kernel_prefix)
 
 
@@ -422,31 +391,20 @@ class CM_OmpParallelFor(AbstractCudaMutator):
          print str(nf)
       except StopIteration:
          return self._parallel
+
       return start_node
 
 
 
 
    def mutatorFunction(self, ast, ompFor_node):
-      """ CUDA mutator, writes the for as a kernel
+      """ Main mutator for OpenMP Parallel For construct
+
+         Writes the optimized code of an OpenMP Parallel For construct, building a kernel
+            overwriting the for loop.
       """
-      # Look up a For node which previous brother is the start_node
-#      filter = FilterVisitor(match_node_type = c_astFor, prev_brother = ompFor_node)
-      # parallelFor = ompFor_node.stmt
-      # Parent of the node
-      # parent_stmt = self._parallel
-      # container_func = self._func_def
-      # Maximum number of parallel threads
-#      from Tools.Debug import DotDebugTool
-
-
-      # TODO:  Implement parallel for 
-      #             The code after this raise is currently broken, due to changes on template build system
-      #              It is an easy fix, but we have no time now.
-
+      ##################### Get thread number node
       maxThreadNumber_node = self.getThreadNum(ompFor_node.stmt.cond)
-
-#      DotDebugTool(select_node = maxThreadNumber_node).apply(parallelFor.cond)
 
       ##################### Statement for cuda
       cuda_stmts = c_ast.Compound(stmts = [], decls = []);
@@ -473,22 +431,10 @@ class CM_OmpParallelFor(AbstractCudaMutator):
                         reduction_list = reduction_params,
                         loop = ompFor_node.stmt, ast = ast)
 
-      # Function declaration
-      # - Build a node without body
-#      tmp = c_ast.CUDAKernel(function = copy.deepcopy(kernel_subtree.ext[0].function), type = 'global', name = kernel_subtree.ext[0].name)
-#      tmp.function.body = c_ast.Compound(stmts = None, decls = None); # If both of stmts and decls are none, it won't be printed
-#      kernel_decl = c_ast.Compound(stmts = [tmp], decls = None)
-      
-#      # Find container function
-
-#      InsertTool(subtree = kernel_decl, position = "begin", node = self._func_def).apply(ast, 'ext')
       # Function definition
       InsertTool(subtree = kernel_subtree, position = "begin" ).apply(ast, 'ext')
 
-
       ##################### Loop substitution 
-   
-
       # Kernel Launch
       kernelLaunch_subtree = self.buildKernelLaunch(reduction_vars = reduction_params, shared_vars = shared_params, ast = ompFor_node)
       InsertTool(subtree = kernelLaunch_subtree, position = "end").apply(cuda_stmts, 'stmts')
@@ -501,15 +447,18 @@ class CM_OmpParallelFor(AbstractCudaMutator):
       # Replace the entire pragma by a CompoundStatement with all the new statements
       ReplaceTool(new_node = cuda_stmts, old_node = self._parallel.parent).apply(self._parallel.parent.parent, 'stmts')
 
-
       ##################### Final tree operations
-
-      # Remove the pragma from the destination code
-#      RemoveTool(target_node = self._parallel).apply(container_func, 'stmts')
-
       return ast
 
 
 
+
+class CudaTransformer:
+   @staticmethod
+   def apply(ast):
+      cuda_ast = CM_OmpParallelFor().apply_all(ast)
+      # TODO Need to link parents after this?
+      # cuda_ast = CM_OmpParallel().apply_all(cuda_ast)
+      return cuda_ast
 
 

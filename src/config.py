@@ -4,7 +4,7 @@
 
 
 # Current work dir
-WORKDIR="/home/rreyes/llcomp/src/"
+WORKDIR="/home/ruyk/tmp/llcomp/src/"
 
 # Location of cuda files
 CUDA_INSTALL_DIR="/usr/local/cuda/"
@@ -19,4 +19,4 @@ INCLUDE_DIR = WORKDIR + 'include/'
 FAKE_LIBC = WORKDIR + 'include/fake_libc_include'
 
 # Location of pycparser
-PYCPARSER_DIR="/home/rreyes/pycparser-read-only/"
+PYCPARSER_DIR="/home/rreyes/workspace/pycparser-read-only/"
