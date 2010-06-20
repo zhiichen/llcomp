@@ -24,9 +24,9 @@ class CudaMutatorError(Exception):
 
 
 class AbstractCudaMutator(AbstractMutator):
-   def __init__(self, clauses = {}, kernel_name = 'loopKernel', kernel_prefix = ''):
-      # BUG: Don't work with optimize
-      # self.template_parser = c_parser.CParser(lex_optimize = False, yacc_optimize = False)
+   def __init__(self, clauses = None, kernel_name = 'loopKernel', kernel_prefix = ''):
+      if clauses == None:
+         clauses = {}
       self.kernel_name = kernel_name
       self.kernel_prefix = kernel_prefix
       self._func_def = None
@@ -347,7 +347,7 @@ class CM_OmpParallelFor(AbstractCudaMutator):
    """ This  mutator locates a omp parallel for reduction, and then
       translate the original source to an equivalent cuda implementation 
    """
-   def __init__(self, clauses = {}, kernel_name = 'loopKernel', kernel_prefix = ''):
+   def __init__(self, clauses = None, kernel_name = 'loopKernel', kernel_prefix = ''):
       """ Constructor """
       self._ompFor = None
       self._clauses = {}
@@ -380,8 +380,7 @@ class CM_OmpParallelFor(AbstractCudaMutator):
             self._func_def = f.get_func_def()
             self._parallel = f.get_parallel()
             self._ompFor = f.get_ompFor()
-#            print str(elem)
-#            print str(self._ompFor)
+            # Apply mutation
             start_node = self.mutatorFunction(ast, self._ompFor)
             # Restore previous state
             self.kernel_name = old_name

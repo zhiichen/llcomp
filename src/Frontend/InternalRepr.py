@@ -1,15 +1,15 @@
 from pycparser import parse_file, c_ast
-from Visitors.clone_visitor import CWriter, OmpWriter
+from Visitors.clone_visitor import CWriter, OmpWriter, CUDAWriter
 import cStringIO
 
 
 class AstToIR:
    """ Transform a C ast to the internal representation """
 
-   def __init__(self, writer):
+   def __init__(self, Writer):
       def fast_write(node):
          writeIO = cStringIO.StringIO()
-         cw = writer(stream = writeIO)
+         cw = Writer(stream = writeIO)
          cw.visit(node)
          return writeIO.getvalue()
 
