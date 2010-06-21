@@ -20,3 +20,5 @@ FAKE_LIBC = WORKDIR + 'include/fake_libc_include'
 
 # Location of pycparser
 PYCPARSER_DIR="/home/rreyes/workspace/pycparser-read-only/"
+
+from config_local import *

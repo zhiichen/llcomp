@@ -2,7 +2,7 @@
 from pycparser import c_ast
 from Tools.Debug import DotDebugTool
 
-from Tools.tree import NodeNotFound
+from Tools.Tree import NodeNotFound
 
 from Visitors.generic_visitors import DeclFilter
 
@@ -18,10 +18,9 @@ def decl_of_id(id, ast):
 
             :return: Decl node of the identifier
         """
-        # TODO: Clean this code...
         act = id.parent
         decl = None
-
+        
         while act != None:
                 # Check for a decl of the var as parameter
                 if isinstance(act, c_ast.FuncDef):
@@ -53,8 +52,8 @@ def decl_of_id(id, ast):
                 # Keep going up
                 act = act.parent
 
-        # Raise identifier not declared
-        raise IdentifierNotDeclared
+        # TODO: Raise identifier not declared
+        return None
 
 
 
