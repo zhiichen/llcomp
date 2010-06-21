@@ -1,5 +1,7 @@
 from pycparser import c_parser, c_ast
-from Visitors.generic_visitors import IDFilter, FuncCallFilter, FuncDeclOfNameFilter, OmpForFilter, OmpParallelFilter,  OmpParallelForFilter, FilterError, TypedefFilter, IdentifierTypeFilter
+from Visitors.generic_visitors import IDFilter, FuncCallFilter, FuncDeclOfNameFilter,  FilterError, TypedefFilter, IdentifierTypeFilter
+
+
 from Tools.Tree import InsertTool, NodeNotFound, ReplaceTool, RemoveTool
 from Tools.Declarations import type_of_id
 
@@ -9,6 +11,7 @@ from Mutators.AstSupport import DeclsToParamsMutator, IDNameMutator, FuncToDevic
 from Mutators.AbstractMutator import IgnoreMutationException, AbstractMutator
 
 from TemplateEngine.TemplateParser import TemplateParser, get_template_array
+
 
 import cStringIO
 
@@ -308,13 +311,12 @@ class AbstractCudaMutator(AbstractMutator):
 
 
 
-from Mutators.Cuda.CM_OmpParallelFor import *
-from Mutators.Cuda.CM_OmpParallel import *
-
-
 class CudaTransformer:
    @staticmethod
    def apply(ast):
+      from Mutators.Cuda.CM_OmpParallelFor import CM_OmpParallelFor
+      from Mutators.Cuda.CM_OmpParallel import CM_OmpParallelFor
+
       cuda_ast = CM_OmpParallelFor().apply_all(ast)
       # TODO Need to link parents after this?
       # cuda_ast = CM_OmpParallel().apply_all(cuda_ast)

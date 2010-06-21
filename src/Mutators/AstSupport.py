@@ -40,6 +40,7 @@ class DeclsToParamsMutator(AbstractMutator):
    def __init__(self):
       " Save the params "
       # self.params = self.convert(decls);
+      pass
 
    def convert(self, node):
       """ Transform a type declaration to a parameter declaration """
