@@ -66,6 +66,7 @@ class CM_OmpParallelFor(AbstractCudaMutator):
             self._clauses = old_clauses
             num += 1;
       except NodeNotFound as nf:
+         print " This is the one "
          print str(nf)
       except StopIteration:
          return self._parallel
@@ -90,6 +91,7 @@ class CM_OmpParallelFor(AbstractCudaMutator):
       ##################### Cuda parameters on host
 
       clause_dict = self._get_dict_from_clauses(self._parallel.clauses + ompFor_node.clauses,  ast)
+
       shared_params = clause_dict['SHARED']
       private_params = clause_dict['PRIVATE']
       reduction_params = clause_dict['REDUCTION']
@@ -99,7 +101,6 @@ class CM_OmpParallelFor(AbstractCudaMutator):
 
       kernel_init_subtree = self.buildDeclarations(numThreads = maxThreadNumber_node, reduction_node_list = reduction_params, shared_node_list = shared_params, ast = ast)
       InsertTool(subtree = kernel_init_subtree, position = "begin").apply(cuda_stmts, 'decls')
-           
 
       ##################### Cuda Kernel 
 
