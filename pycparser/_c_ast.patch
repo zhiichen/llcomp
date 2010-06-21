@@ -1,0 +1,76 @@
+Index: pycparser/_c_ast.yaml
+===================================================================
+--- pycparser/_c_ast.yaml	(revisión: 95)
++++ pycparser/_c_ast.yaml	(copia de trabajo)
+@@ -92,6 +92,14 @@
+ #
+ FuncCall: [name*, args*]
+ 
++
++# name: CUDA Kernel Lunch
++# args: <<< grid, block >>> ExprList
++#
++# Ruyk
++CUDAKernelCall: [name*, grid*, block*, args*]
++
++
+ # type <decl>(args)
+ #
+ FuncDecl: [args*, type*]
+@@ -161,4 +169,56 @@
+ While: [cond*, stmt*]
+ 
+ 
++####################
++# Ruyk
++Pragma: [name, stmt*]
+ 
++# Construct
++
++OmpParallel : [name, clauses**, stmt*]
++
++OmpFor : [name, clauses**, stmt*]
++
++OmpSections : [name, clauses**, stmt*]
++
++OmpSection: [name, stmt*]
++
++OmpSingle: [name, clauses**, stmt*]
++
++OmpClause : [name, type, identifiers*]
++
++OmpThreadPrivate : [name, identifiers*]
++
++OmpSyncronization : [name, identifiers*]
++
++OmpSchedule : [name, type, kind, chunk_size]
++
++# Task  model
++
++OmpTask : [name, clauses**]
++
++# Master and syncronization
++#
++
++OmpMaster : [name, stmt*]
++
++OmpCritical : [name]
++
++OmpBarrier : [name]
++
++
++OmpTaskWait : [name]
++
++OmpAtomic : [name, expr*]
++
++OmpFlush : [name, identifiers**]
++
++OmpOrdered: [name, stmt*]
++
++# Heterogeneous systems 
++OmpTargetDevice : [name, device, clauses**]
++
++# CUDA
++CUDAKernel: [name, type, function*]
++
++

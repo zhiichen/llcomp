@@ -1,0 +1,293 @@
+Index: pycparser/c_lexer.py
+===================================================================
+--- pycparser/c_lexer.py	(revisión: 95)
++++ pycparser/c_lexer.py	(copia de trabajo)
+@@ -157,6 +157,54 @@
+         
+         # pre-processor 
+         'PPHASH',      # '#'
++
++	'PRAGMA', # pragma
++
++	####################
++	# Ruyk 
++   ####################
++
++
++   ####################
++   # OpenMP 3.0 syntax
++
++	'OMP', # openmp
++
++   # Constructs
++	'PARALLEL', 
++   'SECTIONS', 
++
++   # Clauses
++   'SHARED', 'PRIVATE', 'REDUCTION', 'NOWAIT', 'THREADPRIVATE', 'COPYIN', 'SCHEDULE', 'OMP_SCHEDULE_KIND',
++   'MASTER', 'CRITICAL', 'ATOMIC', 'BARRIER', 'FLUSH', 'SINGLE', 'FIRSTPRIVATE',
++
++   ####################
++   # New clauses
++   # From  "A proposal to extend the OpenMP Tasking Model for Heterogeneous Architectures" (2009)
++
++   'DEVICE', 'TARGET', 'COPY_IN', 'COPY_OUT',
++
++   ####################
++   # CUDA syntax
++
++        'LKLAUNCH', 'RKLAUNCH', # CUDA kernel launch
++        'GLOBAL',
++        'CUDA', # CUDA keyword for device
++
++   ####################
++   # CELL syntax
++        'CELL',
++
++
++   ####################
++   # FPGA syntax
++        'FPGA',
++
++   ####################
++   # MPI syntax
++        'MPI', 'HYBRID', 'SMP',
++
++
+     )
+ 
+     ##
+@@ -209,6 +257,7 @@
+         # ppline: preprocessor line directives
+         # 
+         ('ppline', 'exclusive'),
++        ('directive', 'inclusive'),
+     )
+     
+     def t_PPHASH(self, t):
+@@ -216,14 +265,172 @@
+         m = self.line_pattern.match(
+             t.lexer.lexdata, pos=t.lexer.lexpos)
+         
++        t.type = 'PPHASH'
+         if m:
+             t.lexer.begin('ppline')
+             self.pp_line = self.pp_filename = None
+-            #~ print "ppline starts on line %s" % t.lexer.lineno
++            # print "ppline starts on line %s" % t.lexer.lineno
+         else:
++            t.lexer.begin('directive')
+             t.type = 'PPHASH'
+             return t
+-    
++
++    ####################
++    # Ruyk
++    # TODO: CLEAN THIS Make a common method for all tokens
++    def t_directive_PRAGMA(self, t):
++        r'pragma'
++        t.type = 'PRAGMA'
++        return t
++
++    def t_directive_OMP(self, t):
++        r'omp'
++        t.type = 'OMP'
++        return t
++
++    def t_directive_PARALLEL(self, t):
++        r'parallel'
++        t.type = 'PARALLEL'
++        return t
++
++    def t_directive_SECTIONS(self, t):
++        r'sections'
++        t.type = 'SECTIONS'
++        return t
++
++
++    def t_directive_SHARED(self, t):
++        r'shared'
++        t.type = 'SHARED'
++        return t
++
++    def t_directive_PRIVATE(self, t):
++        r'private'
++        t.type = 'PRIVATE'
++        return t
++
++    def t_directive_FIRSTPRIVATE(self, t):
++        r'firstprivate'
++        t.type = 'FIRSTPRIVATE'
++        return t
++
++
++    def t_directive_REDUCTION(self, t):
++        r'reduction'
++        t.type = 'REDUCTION'
++        return t
++ 
++    def t_directive_THREADPRIVATE(self, t):
++        r'threadprivate'
++        t.type = 'THREADPRIVATE'
++        return t
++
++    def t_directive_COPYIN(self, t):
++        r'copyin'
++        t.type = 'COPYIN'
++        return t
++ 
++    def t_directive_COPY_IN(self, t):
++        r'copy_in'
++        t.type = 'COPY_IN'
++        return t
++
++    def t_directive_COPY_OUT(self, t):
++        r'copy_out'
++        t.type = 'COPY_OUT'
++        return t
++
++
++    def t_directive_SCHEDULE(self, t):
++        r'schedule'
++        t.type = 'SCHEDULE'
++        return t
++
++    def t_directive_MASTER(self, t):
++        r'master'
++        t.type = 'MASTER'
++        return t
++
++    def t_directive_CRITICAL(self, t):
++        r'critical'
++        t.type = 'CRITICAL'
++        return t
++
++    def t_directive_BARRIER(self, t):
++        r'barrier'
++        t.type = 'BARRIER'
++        return t
++
++    def t_directive_ATOMIC(self, t):
++        r'atomic'
++        t.type = 'ATOMIC'
++        return t
++
++    def t_directive_FLUSH(self, t):
++        r'flush'
++        t.type = 'FLUSH'
++        return t
++
++    def t_directive_DEVICE(self, t):
++        r'device'
++        t.type = 'DEVICE'
++        return t
++
++    def t_directive_TARGET(self, t):
++        r'target'
++        t.type = 'TARGET'
++        return t
++
++
++    def t_directive_CUDA(self, t):
++        r'cuda'
++        t.type = 'CUDA'
++        return t
++
++    def t_directive_SMP(self, t):
++        r'smp'
++        t.type = 'SMP'
++        return t
++
++
++    def t_directive_SINGLE(self, t):
++        r'single'
++        t.type = 'SINGLE'
++        return t
++
++
++    def t_directive_OMP_SCHEDULE_KIND(self, t):
++        r'static|dynamic'
++        t.type = 'OMP_SCHEDULE_KIND'
++        return t
++
++    def t_directive_NOWAIT(self, t):
++        r'nowait'
++        t.type = 'NOWAIT'
++        return t
++
++
++    def t_directive_NEWLINE(self, t):
++        r'\n'
++                       
++        t.lexer.begin('INITIAL')
++
++
++
++    t_directive_ignore = ' \t'
++
++    def t_directive_error(self, t):
++        msg = 'invalid openmp directive'
++        self._error(msg, t)
++
++
++    # CUDA kernel class
++    def t_GLOBAL(self, t):
++        r'__global__'
++        t.type = 'GLOBAL'
++        return t
++
++
+     ##
+     ## Rules for the ppline state
+     ##
+@@ -267,6 +474,18 @@
+         msg = 'invalid #line directive'
+         self._error(msg, t)
+ 
++   ##################
++   # Comments
++
++    def t_COMMENT_SINGLELINE(self, t):
++        r'//.*'
++        pass
++
++    def t_COMMENT_MULTILINE(self, t):
++        r'/\*(.|[\r\n])*?\*/'
++        t.lexer.lineno += t.value.count("\n")
++        pass
++
+     ##
+     ## Rules for the normal state
+     ##
+@@ -298,7 +517,12 @@
+     t_GE                = r'>='
+     t_EQ                = r'=='
+     t_NE                = r'!='
++    # *** Ruyk
++    # CUDA kernel launch
++    t_LKLAUNCH            = r'<<<'
++    t_RKLAUNCH            = r'>>>'
+ 
++
+     # Assignment operators
+     t_EQUALS            = r'='
+     t_TIMESEQUAL        = r'\*='
+@@ -337,7 +561,7 @@
+ 
+     t_STRING_LITERAL    = string_literal
+     
+-    # The following floating and integer constants are defined as 
++#    # The following floating and integer constants are defined as 
+     # functions to impose a strict order (otherwise, decimal
+     # is placed before the others because its regex is longer,
+     # and this is bad)
+@@ -410,7 +634,8 @@
+ 
+ 
+ if __name__ == "__main__":
+-    filename = '../zp.c'
++#    filename = '../z_test.c'
++    filename = '../examples/c_files/funky.c'
+     text = open(filename).read()
+     
+     #~ text = '"'+r"""ka \p ka"""+'"'
