@@ -3,7 +3,7 @@ import unittest
 
 from Tools.Dump import Dump
 
-from Mutators.Cuda import CM_OmpParallelFor
+from Mutators.Cuda.CM_OmpParallelFor import CM_OmpParallelFor
 
 from Tools.Parse import parse_source
 

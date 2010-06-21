@@ -11,7 +11,8 @@ from string import Template
 
 from TemplateEngine.TemplateParser import TemplateParser, get_template_array
 
-from Mutators.Cuda import CM_OmpParallelFor, AbstractCudaMutator
+from Mutators.Cuda.CM_OmpParallelFor import CM_OmpParallelFor
+from Mutators.Cuda.Common import AbstractCudaMutator
 
 class CM_OmpParallel(CM_OmpParallelFor):
    def filter(self, ast):

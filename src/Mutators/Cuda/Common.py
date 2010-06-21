@@ -71,43 +71,6 @@ class AbstractCudaMutator(AbstractMutator):
 	 return None
       return subtree;
 
-   def _get_dict_from_clauses(self, clauses, ast, init = None):
-      """ Return a dict of clauses from a list of OmpClause objects
-         
-           Example: [OmpClause('REDUCTION', ...), OmpClause('PRIVATE', ...)]
-             will return:  {'REDUCTION' : [....] , 'PRIVATE' : [...]}
-      """
-      clause_names = ['SHARED', 'PRIVATE', 'NOWAIT', 'REDUCTION', 'COPY_IN', 'COPY_OUT']
-      clause_dict = {}
-      if not init:
-         clause_dict = self._clauses
-      # Note: Each identifiers is a ParamList
-      for elem in clauses:
-
-         if not clause_dict.has_key(elem.name):
-               clause_dict[elem.name] = []
-         
-         if elem.name in ['SHARED', 'PRIVATE', 'REDUCTION', 'COPY_IN', 'COPY_OUT']:
-            for id in elem.identifiers.params:
-               decl = decl_of_id(id, ast)
-               if not decl:
-                  raise CudaMutatorError(" Declaration of " + id.name + " in " + elem.name + " clause could not be found ")
-               # If a declaration with the same name is already stored, pass. Otherwise, append it to the list
-               for stored_decl in clause_dict[elem.name]:
-                  if decl.name == stored_decl.name:
-                     break
-               else:
-                  clause_dict[elem.name].append(decl)
-         elif elem.name == 'NOWAIT':
-            clause_dict[elem.name] = True
- 
-      for name in clause_names:
-         if not clause_dict.has_key(name):
-            clause_dict[name] = []
-
-      if not init:
-         self._clauses = clause_dict
-      return  clause_dict
 
  
    def buildDeclarations(self, numThreads, reduction_node_list, shared_node_list, ast):
@@ -344,6 +307,9 @@ class AbstractCudaMutator(AbstractMutator):
       return c_ast.FileAST(ext = [tree.ext[-1]])
 
 
+
+from Mutators.Cuda.CM_OmpParallelFor import *
+from Mutators.Cuda.CM_OmpParallel import *
 
 
 class CudaTransformer:

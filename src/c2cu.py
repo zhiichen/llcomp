@@ -53,10 +53,7 @@ MatrixDeclToPtr(start_ast = new_ast).fast_apply_all(new_ast)
 
 ConstantCalc().fast_apply_all(new_ast)
 
-from Mutators.Cuda.Cuda import CudaMutatorError, CudaTransformer #, CM_OmpParallelFor
-# from Mutators.CM_OmpFor import CM_OmpFor
-# from Mutators.CM_OmpParallel import CM_OmpParallel
-
+from Mutators.Cuda.Common import CudaMutatorError, CudaTransformer 
 
 try:
    end_ast = CudaTransformer.apply(new_ast)

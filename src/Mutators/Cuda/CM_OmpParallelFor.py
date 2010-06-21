@@ -13,11 +13,12 @@ from TemplateEngine.TemplateParser import TemplateParser, get_template_array
 from Visitors.clone_visitor import CWriter
 
 
-from Mutators.Cuda.Cuda import AbstractCudaMutator
+from Mutators.Cuda.Common import AbstractCudaMutator
 
 class CM_OmpParallelFor(AbstractCudaMutator):
    """ This  mutator locates a omp parallel for reduction, and then
       translate the original source to an equivalent cuda implementation 
+
    """
    def __init__(self, clauses = None, kernel_name = 'loopKernel', kernel_prefix = ''):
       """ Constructor """
@@ -28,7 +29,9 @@ class CM_OmpParallelFor(AbstractCudaMutator):
 
    def filter(self, ast):
       """ Filter definition
-         Returns the first node matching with the filter"""
+         
+      @return first node matching with the filter
+      """
       # Build a visitor , matching the OmpFor node of the AST
       f = OmpParallelForFilter()
       node = f.apply(ast)
@@ -37,7 +40,10 @@ class CM_OmpParallelFor(AbstractCudaMutator):
       return node
 
    def apply_all(self, ast):
-      """ Apply mutation to all matches """
+      """ Apply mutation to all matches 
+         
+         @return last node changed
+      """
       start_node = None
       self.ast = ast
       f = OmpParallelForFilter()
