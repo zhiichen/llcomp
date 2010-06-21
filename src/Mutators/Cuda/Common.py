@@ -4,7 +4,7 @@ from Tools.tree import InsertTool, NodeNotFound, ReplaceTool, RemoveTool
 from Tools.search import type_of_id, decl_of_id
 from Tools.Dump import Dump
 from Tools.Debug import DotDebugTool
-from Tools.Parse import parse_source
+from Frontend.Parse import parse_source
 from Mutators.AstSupport import DeclsToParamsMutator, IDNameMutator, FuncToDeviceMutator, PointerMutator
 from Mutators.AbstractMutator import IgnoreMutationException, AbstractMutator
 

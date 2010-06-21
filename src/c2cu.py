@@ -23,7 +23,7 @@ else:
 
 # Parse file
 	
-from Tools.Parse import parse_source
+from Frontend.Parse import parse_source
 
 print "Parsing " + filename + " .... ", 
 template_code = " ".join(open(filename, 'r').readlines())

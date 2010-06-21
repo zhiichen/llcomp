@@ -5,7 +5,7 @@ from Tools.Dump import Dump
 
 from Mutators.Cuda.CM_OmpParallelFor import CM_OmpParallelFor
 
-from Tools.Parse import parse_source
+from Frontend.Parse import parse_source
 
 from Visitors.clone_visitor import CUDAWriter
 

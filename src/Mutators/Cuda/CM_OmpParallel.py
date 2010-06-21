@@ -11,10 +11,9 @@ from string import Template
 
 from TemplateEngine.TemplateParser import TemplateParser, get_template_array
 
-from Mutators.Cuda.CM_OmpParallelFor import CM_OmpParallelFor
 from Mutators.Cuda.Common import AbstractCudaMutator
 
-class CM_OmpParallel(CM_OmpParallelFor):
+class CM_OmpParallel(AbstractCudaMutator):
    def filter(self, ast):
       """ Filter definition
          Returns the first node matching with the filter"""
