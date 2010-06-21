@@ -37,7 +37,7 @@ print " Migrating to Internal Representation ...."
 
 from Frontend.InternalRepr import AstToIR
 # Transform the C ast into the internal representation
-new_ast = AstToIR(writer = CUDAWriter).transform(ast)
+new_ast = AstToIR(Writer = CUDAWriter).transform(ast)
 
 
 print " OK "

@@ -209,30 +209,35 @@ class AbstractCudaMutator(AbstractMutator):
 
 
    def buildHostReduction(self, reduction_vars, ast):
+      """ Instanciate the reduction pattern 
+   
+         @return Compound with the reduction code
+      """
       if len(reduction_vars) == 0:
          return c_ast.Compound(stmts = [], decls = [])
 
-      reduction_lines = ""
-      free_lines = ""
-      for elem in reduction_vars:
-         free_lines += "cudaFree(reduction_cu_" + (elem.name) + ");\n"
+#      for elem in reduction_vars:
+#         free_lines += "cudaFree(reduction_cu_" + (elem.name) + ");\n"
       # TODO: Add shared vars to free
 
-      wait_lines = "cudaThreadSynchronize();\n";
-      # TODO : Use common format
       template_code = """
       int fake() {
       #define LLC_REDUCTION_FUNC(dest, fuente) dest = dest + fuente 
       % for var in reduction_vars:
-         ${var} = kernelReduction_${type}(reduction_cu_${var}, numElems, ${var});
+         ${var} = kernelReduction_${var.type}(reduction_cu_${var.name}, numElems, ${var.name});
       % endfor
 
       /* By default, omp for has a wait at the end */
-      ${wait}
-      ${free_lines}
+      % if not nowait:
+         cudaThreadSynchronize();
+      % endif
+
+      % for var in reduction_vars:
+      cudaFree(reduction_cu_${var.name});
+      % endfor
       }
       """
-      return self.parse_snippet(template_code, {'reduction_vars' : [elem.name for elem in reduction_vars], 'type' : self.get_names(elem, ast)[0], 'free_lines' : free_lines, 'wait' : wait_lines}, name = 'HostReduction').ext[0].body
+      return self.parse_snippet(template_code, {'reduction_vars' : get_template_array(reduction_vars, ast), 'nowait' : False}, name = 'HostReduction').ext[0].body
 
    def buildKernel(self, shared_list, private_list, reduction_list, loop, ast):
       """ Build CUDA Kernel code """
