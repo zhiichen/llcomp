@@ -1,8 +1,8 @@
 from pycparser import c_parser, c_ast
 from Visitors.generic_visitors import IDFilter, FuncCallFilter, FuncDeclOfNameFilter, OmpForFilter, OmpParallelFilter,  OmpParallelForFilter, FilterError, TypedefFilter, IdentifierTypeFilter
 from Tools.tree import InsertTool, NodeNotFound, ReplaceTool, RemoveTool
-from Tools.search import type_of_id, decl_of_id
-from Tools.Dump import Dump
+from Tools.Declarations import type_of_id
+
 from Tools.Debug import DotDebugTool
 from Frontend.Parse import parse_source
 from Mutators.AstSupport import DeclsToParamsMutator, IDNameMutator, FuncToDeviceMutator, PointerMutator

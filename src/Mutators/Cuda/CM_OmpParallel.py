@@ -1,10 +1,12 @@
 
 from pycparser import c_parser, c_ast
 from Visitors.generic_visitors import IDFilter, FuncCallFilter, FuncDeclOfNameFilter, OmpForFilter, OmpParallelFilter, OmpThreadPrivateFilter
-from Tools.tree import InsertTool, NodeNotFound, ReplaceTool, RemoveTool, link_all_parents
-from Tools.search import type_of_id, decl_of_id
-from Tools.Dump import Dump
+from Tools.tree import InsertTool, NodeNotFound, ReplaceTool, RemoveTool
+
+from Tools.Declarations import decl_of_id
+
 from Tools.Debug import DotDebugTool
+
 from Mutators.AstSupport import DeclsToParamsMutator, IDNameMutator, FuncToDeviceMutator, PointerMutator
 
 from string import Template
@@ -46,7 +48,7 @@ class CM_OmpParallel(AbstractCudaMutator):
             self._parallel = elem
             start_node = self.mutatorFunction(ast, elem)
             # Restore previous state
-            link_all_parents(ast)  # Note: This could break the iterator? 
+            # TODO : Maybe a parent relink is needed?
             self._parallel = old_parallel
             self.kernel_prefix = old_prefix
             self.kernel_name = old_prefix

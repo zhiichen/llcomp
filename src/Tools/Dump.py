@@ -5,19 +5,25 @@ import pickle
 import config
 
 class Dump:
-	""" Previously parsed snippets, for templates """
+	"""Serializer class for Internal Representation """
 	def __init__(self):
 		pass
 
 	@staticmethod
 	def exists(name):
-		""" Check if a given dump exists """
+		"""Check if a given tree serialization exists 
+         
+          :param name: Name of the frozen tree
+      """
 		return os.path.isfile(config.WORKDIR + 'freezer/' + name)
 
 
 	@staticmethod
 	def load(name):
-		""" Load a frozen AST """
+		"""Deserialize a frozen AST 
+
+          :param name: Name of the frozen tree
+      """
 		file = open(config.WORKDIR + 'freezer/' + name, 'r') 
 		tree =  pickle.load(file)
 		file.close()
@@ -25,7 +31,10 @@ class Dump:
 
 	@staticmethod
 	def save(name, tree):
-		""" Freeze an AST """
+		"""Serialize an AST 
+
+         :param name: Name of the frozen tree
+      """
 		file = open(config.WORKDIR + 'freezer/' + name, 'w+') 
 		pickle.dump(tree, file)
 		file.close()

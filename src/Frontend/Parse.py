@@ -1,10 +1,11 @@
 # -*- encoding: utf8 -*-
-
 """
-Parse - Module with parsing utilities
 
+.. module:: Parse
+   :synopsis: Parsing utilities
 
-@author Ruymán Reyes Castro
+.. moduleauthor:: Ruymán Reyes Castro <rreyes@ull.es>
+
 
 """
 
@@ -12,23 +13,27 @@ Parse - Module with parsing utilities
 import subprocess
 from cStringIO import StringIO
 from pycparser import c_parser, c_ast
-
-
 import config
 
-def parse_source(template_source, template_name):
-   """ Parse the  source string using cpp as preprocessor and pycparser
+def parse_source(code_source, code_name):
+   """Parse the  source string using cpp as preprocessor and pycparser
 
-      @return ast FileAST of the source code
+      :param code_source: string with the source code
+      :param code_name: string with the code name
+      :rtype: ast FileAST of the source code
+
+      .. warning::
+         This function requires *cpp* to be in PATH.
+
    """
    # Prepare preprocessor pipe
    p = subprocess.Popen("cpp -w -ansi -pedantic -CC -U __USE_GNU  -P -I " + 
       config.INCLUDE_DIR + " -I " + config.FAKE_LIBC, shell=True, bufsize=1, 
       stdin=subprocess.PIPE, stdout=subprocess.PIPE, close_fds=True)
    # Send / Retrieve string to the preprocessor
-   stripped_source = p.communicate(template_source)[0]
+   stripped_source = p.communicate(code_source)[0]
    # Parse the file and get the AST
    ast = c_parser.CParser(lex_optimize = True, yacc_optimize = True).parse(
-      stripped_source, filename = template_name)
+      stripped_source, filename = code_name)
    return ast
 

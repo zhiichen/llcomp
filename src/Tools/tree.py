@@ -1,5 +1,3 @@
-
-
 from pycparser import c_ast
 
 class NodeNotFound(Exception):
@@ -21,33 +19,41 @@ class PositionNotValid(Exception):
       pass
 
    def __str__(self):
-      return "Position not valid (choose either begin or end ) "
+      return "Position not valid (choose either begin or end)"
 
 
 
-
-
-# InsertVisitor(mark_node = parent_stmt, subtree = maxThreadNumber_subtree, position = "mark", method = "append").apply(ast)
 class InsertTool:
-    """ Inserts the childs of a node (a subtree) on the given position. It doesn't insert the parent node of the new subtree. """
+    """Inserts the childs of a node (a subtree) on the given position. 
+
+       .. note:: 
+            It doesn't insert the parent node of the new subtree. 
+
+
+       Example:
+         >>> InsertTool(subtree = kernel_init_subtree, position = "begin").apply(cuda_stmts, 'decls')
+
+    """
     def __init__(self, subtree = None, position = "begin", node = None):
-       """ Inserter visitor """
-#       self.mark_node = mark_node
+       """Prepare insertion """
        self.subtree = subtree
        self.position = position # Options: begin, end
        self.node = node
        self.place = 0
 
     def apply(self, target_node, attribute_name):
-       """ Insert the object subtree inside the attribute node of the target_node """
+       """ Apply the insertion on the attribute of the target node
+   
+            :param target_node: Node where insert the subtree
+            :param attribute_name: Attribute of the target_node where the subtree is to be inserted
+
+            :return: Target node after insertion
+       """
        attr = getattr(target_node, attribute_name)
-       # 1. Check attribute is a list of nodes
+       # Check attribute is a list of nodes
        if not type(attr) == type([]):
            raise NodeNotValid(target_node)
-       # Find the insert place
-#       from Tools.Debug import DotDebugTool
-#       DotDebugTool(select_node = self.subtree).apply(target_node)
-
+       # Find the place to insert
        if self.node:
            self.place = attr.index(self.node)
        # Insert the node
@@ -61,55 +67,56 @@ class InsertTool:
            attr.extend(self.subtree.children())
        else:
            raise PositionNotValid
+       # Update the target_node with the new_subtree
        setattr(target_node, attribute_name, attr)
        return target_node
 
 
-# ReplaceTool(subtree = kernelLaunch_subtree, replaced_node = parent_stmt).apply(parent_stmt, 'stmts')
 class ReplaceTool:
-    """ Replace a subtree with another """
+    """ Replace a subtree with another 
+
+
+       >>> ReplaceTool(new_node = cuda_stmts, old_node = self._parallel.parent).apply(self._parallel.parent.parent, 'stmts')
+
+    """
     def __init__(self, new_node, old_node):
-       """ Replace visitor """
+       """ Prepare the replace """
        self.new_node = new_node
        self.old_node = old_node 
 
     def apply(self, target_node, attribute_name):
-       """ Replace self.old_node with self.new_node """
+       """ Apply the replace, effectively changing self.old_node by self.new_node 
+
+           :param target_node: parent node of old_node
+           :param attribute_name: Attribute name which contains the old_node on the parent
+
+           :return: Target Node after replace
+       """
        attr = getattr(target_node, attribute_name)
        # 1. Check attribute is a list of nodes
        if not type(attr) == type([]):
            raise NodeNotValid(target_node)
-#       print "************************** "
-#       for elem in attr:
-#         print str(type(elem)) + " --> ",
-#         if type(elem) == type(""):
-#            print elem
-#         elif hasattr(elem, 'name') and type(elem.name) == type(""):
-#            print elem.name
-#         elif hasattr(elem, 'name') and hasattr(elem.name, 'name') and type(elem.name.name) == type(""):
-#            print elem.name.name
-#         elif type(elem) == c_ast.FuncDef:
-#            if type(elem.decl.name) == type(""):
-#               print elem.decl.name
-#            else:
-#               print elem.decl.name.name
-#         else:
-#            print elem
-#       print "Old_node : " + str(self.old_node)
-#       print "************************** "
+
        position = attr.index(self.old_node)
        attr[position] = self.new_node
        setattr(target_node, attribute_name, attr)
        return target_node
 
 class RemoveTool:
-    """ Remove a subtree """
+    """ Remove a subtree from the AST
+
+    """
     def __init__(self, target_node):
-       """ Remove visitor """
+       """ Set the target node """
        self.target_node = target_node
 
     def apply(self, target_subtree, attribute_name):
-       """ Remove a subtree """
+       """ Apply the removal
+
+            :param target_subtree: target_subtree where target_node resides
+            :param attribute_name: Name of the attribute where the target_node resides in the target_subtree
+            :return: Target subtree (container of the removed target_node)
+       """
        if self.target_node == None: return target_subtree
        attr = getattr(target_subtree, attribute_name)
        position = attr.index(self.target_node)
@@ -124,33 +131,33 @@ class RemoveTool:
 
 
 
-# Parent link:
-
-def link_all_parents(ast):
-        """ Function to link the nodes of the AST in reverse order, using a parent attribute in each node """
-        def deep_first_search(root, visited = None,
-                preorder_process  = lambda x: None):
-                """
-                Given a starting vertex, root, do a depth-first search.
-                """
-                to_visit = [] 
-                if visited is None: visited = set()
-
-                to_visit.append(root) # Start with root
-                while len(to_visit) != 0:
-                        v = to_visit.pop()
-                        if v not in visited:
-                                visited.add(v)
-                                preorder_process(v)
-                                to_visit.extend(v.children())
-        def link_parent(node):
-                for child in node.children():
-                        child.parent = node
-
-        deep_first_search(root = ast, visited = None, preorder_process = link_parent)
-
-
-
-
-
+## Parent link:
+#
+#def link_all_parents(ast):
+#        """ Function to link the nodes of the AST in reverse order, using a parent attribute in each node """
+#        def deep_first_search(root, visited = None,
+#                preorder_process  = lambda x: None):
+#                """
+#                Given a starting vertex, root, do a depth-first search.
+#                """
+#                to_visit = [] 
+#                if visited is None: visited = set()
+#
+#                to_visit.append(root) # Start with root
+#                while len(to_visit) != 0:
+#                        v = to_visit.pop()
+#                        if v not in visited:
+#                                visited.add(v)
+#                                preorder_process(v)
+#                                to_visit.extend(v.children())
+#        def link_parent(node):
+#                for child in node.children():
+#                        child.parent = node
+#
+#        deep_first_search(root = ast, visited = None, preorder_process = link_parent)
+#
+#
+#
+#
+#
      
