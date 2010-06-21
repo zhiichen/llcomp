@@ -6,13 +6,14 @@ from Tools.Dump import Dump
 from Tools.Debug import DotDebugTool
 from Tools.Parse import parse_source
 from Mutators.AstSupport import DeclsToParamsMutator, IDNameMutator, FuncToDeviceMutator, PointerMutator
-from Mutators.AbstractMutator import IgnoreMutationException, AbstractMutator
 
 from TemplateEngine.TemplateParser import TemplateParser, get_template_array
 
 
 from Visitors.clone_visitor import CWriter
 
+
+from Mutators.Cuda.Cuda import AbstractCudaMutator
 
 class CM_OmpParallelFor(AbstractCudaMutator):
    """ This  mutator locates a omp parallel for reduction, and then

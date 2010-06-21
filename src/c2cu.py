@@ -2,7 +2,6 @@ from pycparser import parse_file
 
 from Visitors.clone_visitor import CUDAWriter
 
-
 from sys import argv, exit
 
 import config
@@ -54,7 +53,7 @@ MatrixDeclToPtr(start_ast = new_ast).fast_apply_all(new_ast)
 
 ConstantCalc().fast_apply_all(new_ast)
 
-from Mutators.Cuda import CudaMutatorError, CudaTransformer #, CM_OmpParallelFor
+from Mutators.Cuda.Cuda import CudaMutatorError, CudaTransformer #, CM_OmpParallelFor
 # from Mutators.CM_OmpFor import CM_OmpFor
 # from Mutators.CM_OmpParallel import CM_OmpParallel
 
