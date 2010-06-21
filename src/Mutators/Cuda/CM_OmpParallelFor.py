@@ -1,6 +1,6 @@
 from pycparser import c_parser, c_ast
 from Visitors.generic_visitors import IDFilter, FuncCallFilter, FuncDeclOfNameFilter, OmpForFilter, OmpParallelFilter,  OmpParallelForFilter, FilterError, TypedefFilter, IdentifierTypeFilter
-from Tools.tree import InsertTool, NodeNotFound, ReplaceTool, RemoveTool
+from Tools.Tree import InsertTool, NodeNotFound, ReplaceTool, RemoveTool
 
 from Tools.Debug import DotDebugTool
 

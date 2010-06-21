@@ -2,7 +2,7 @@
 
 from pycparser import c_parser, c_ast
 from Visitors.generic_visitors import AttributeFilter, FilterVisitor, NodeNotFound
-from Tools.tree import InsertTool, RemoveTool, ReplaceTool
+from Tools.Tree import InsertTool, RemoveTool, ReplaceTool
 
 from Tools.Declarations import decl_of_id
 
