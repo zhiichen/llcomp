@@ -1,6 +1,7 @@
 from pycparser import parse_file
 
-from Visitors.clone_visitor import CWriter, OmpWriter
+# from Visitors.clone_visitor import CWriter, OmpWriter
+from Backends.CBackend.Writers.OmpWriter import OmpWriter
 
 from sys import argv, exit
 
@@ -22,7 +23,7 @@ else:
 
 
 # Parse file
-from Tools.Parse import parse_source
+from Frontend.Parse import parse_source
 print "Parsing " + filename + " .... ", 
 template_code = " ".join(open(filename, 'r').readlines())
 ast = parse_source(template_code, filename)
@@ -39,7 +40,7 @@ print " Migrating to Internal Representation ....",
 from Frontend.InternalRepr import AstToIR
 
 # Transform the C ast into the internal representation
-new_ast = AstToIR(writer = OmpWriter).transform(ast)
+new_ast = AstToIR(Writer = OmpWriter).transform(ast)
 
 
 print " OK "

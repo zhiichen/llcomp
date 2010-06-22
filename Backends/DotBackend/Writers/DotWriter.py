@@ -1,4 +1,4 @@
-from pycparser import c_parser, c_ast
+from pycparser import c_ast
 
 import sys
 

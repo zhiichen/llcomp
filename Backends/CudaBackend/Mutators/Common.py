@@ -315,7 +315,7 @@ class CudaTransformer:
    @staticmethod
    def apply(ast):
       from Mutators.Cuda.CM_OmpParallelFor import CM_OmpParallelFor
-      from Mutators.Cuda.CM_OmpParallel import CM_OmpParallelFor
+      from Mutators.Cuda.CM_OmpParallel import CM_OmpParallel
 
       cuda_ast = CM_OmpParallelFor().apply_all(ast)
       # TODO Need to link parents after this?

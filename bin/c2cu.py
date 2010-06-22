@@ -1,6 +1,8 @@
 from pycparser import parse_file
 
-from Visitors.clone_visitor import CUDAWriter
+# from Visitors.clone_visitor import CUDAWriter
+
+from Backends.CudaBackend.Writers.CUDAWriter import CUDAWriter
 
 from sys import argv, exit
 
