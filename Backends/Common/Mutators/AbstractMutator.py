@@ -11,12 +11,10 @@ from Backends.Common.TemplateEngine.TemplateParser import TemplateParser, get_te
 
 from pycparser import  c_ast
 
-
-
-
-
 class MutatorException(Exception):
-   """ Generic mutator exception """
+   """ Exception during mutation
+
+   """
    def __init__(self, description):
       self.description = description 
   
@@ -30,8 +28,11 @@ class IgnoreMutationException(MutatorException):
    pass
 
 class AbortMutationException(MutatorException):
-   """ Abort mutation, error """
+   """ Error during mutation, cannot continue
+   """
    pass
+
+
 
 class AbstractMutator(object):
    """ Abstract class representing a mutation.
@@ -48,14 +49,14 @@ class AbstractMutator(object):
    def mutatorFunction(self, ast):
       """ Mutates the AST
 
-          @return Starting point of the mutation
+          :return: Starting point of the mutation
       """
       return ast
 
    def apply(self, ast, mutator_opt_arg = None):
       """ Apply a mutation 
    
-         @return filtered node
+         :return: filtered node
       """
       start_node = None
       self.ast = ast
@@ -78,7 +79,7 @@ class AbstractMutator(object):
    def apply_all(self, ast, mutator_opt_arg = None):
       """ Apply mutation to all matches 
 
-          @return pointer to last applied mutation
+          :return: pointer to last applied mutation
       """
       start_node = None
       self.ast = ast
@@ -100,7 +101,7 @@ class AbstractMutator(object):
       """ Apply mutation to all matches ignoring syntactic order
 
 
-         @return pointer to last applied mutation
+         :return: pointer to last applied mutation
       """
       start_node = None
       self.ast = ast
@@ -114,7 +115,7 @@ class AbstractMutator(object):
            Example: [OmpClause('REDUCTION', ...), OmpClause('PRIVATE', ...)]
              will return:  {'REDUCTION' : [....] , 'PRIVATE' : [...]}
 
-         @return dict with clauses
+         :return: dict with clauses
       """
       clause_names = ['SHARED', 'PRIVATE', 'NOWAIT', 'REDUCTION', 'COPY_IN', 'COPY_OUT']
       clause_dict = {}

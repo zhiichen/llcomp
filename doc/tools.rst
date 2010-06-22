@@ -1,5 +1,6 @@
 Tools
 *****************
+.. module:: Tools
 
 A set of tools have been developed in order to easier the work with the internal representation.
 
@@ -33,6 +34,7 @@ Provide functionality to look for declarations on the AST
 
 Debug Tools
 ==================
+
 
 .. automodule:: Tools.Debug
    :members:

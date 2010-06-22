@@ -4,6 +4,9 @@ import sys
 
 
 class DotWriter(object):
+   """ Generates Dot code from the IR
+
+   """
    inside = False
 
    def __init__(self, filename = None, highlight = None):
@@ -24,7 +27,8 @@ class DotWriter(object):
          self.write_highlights()
 
    def __del__(self):
-      """ Ensure closing the file when object dissapears """
+      """ Ensure closing the file when object dissapears 
+      """
       self.writeLn(0, "}")
       self.file.close()
 
@@ -51,18 +55,42 @@ class DotWriter(object):
    # ********** Dot language **********
 
    def write_line(self, begin, name, end):
+      """ Write a connection between two nodes
+      
+          :param begin: Start node
+          :param end: End node
+          :param name: Name of the line
+
+      """
       self.writeLn(0, begin  + "-> " + end + "[label = \"" + name + "\"]" + ";")
 
    def write_label(self, node, name):
+      """ Write a label for a node
+ 
+          :param node: Label of node
+          :param name: Name of the line
+
+      """
       self.writeLn(0, node + "[label = \"" + name + "\"]" + ";")
 
    def write_highlights(self):
+      """ Write a label to highlight nodes
+ 
+           The nodes to highlight come from self.highlight
+
+      """
       for node in self.highlight:
          dot_name = self.get_name(node)
          self.writeLn(0, dot_name +" [shape=box, color=red, style=filled];")
 
    def get_name(self, node):
-      """ Get the name of a node """
+      """ Get the name of a node 
+
+         .. note:: This method requires further explanation
+
+         :param node: Node to get the name
+
+      """
       if node in self.node_dir:
          return self.node_dir[node]
 
@@ -95,7 +123,7 @@ class DotWriter(object):
    # ********** Visit **********
 
    def visit(self, node, offset = 0):
-      """ Visit a node. 
+      """ Visit a node
       """
       method = 'visit_' + node.__class__.__name__
       visitor = getattr(self, method, self.generic_visit)
@@ -124,11 +152,6 @@ class DotWriter(object):
                   self.write_line(dot_name, attr, self.get_name(elem))
                self.visit(elem, offset)
          
-
-            
-#      for c in node.children():
-#         self.visit(node, c)
-
 
 
 
