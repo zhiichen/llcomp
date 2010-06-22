@@ -1,13 +1,13 @@
 
 from pycparser import c_parser, c_ast
 from Visitors.generic_visitors import AttributeFilter, FilterVisitor, NodeNotFound
-from Tools.tree import InsertTool, RemoveTool, ReplaceTool
+from Tools.Tree import InsertTool, RemoveTool, ReplaceTool
 
 from Visitors.generic_visitors import FilterVisitor, IDFilter, FuncCallFilter, FuncDeclOfNameFilter, StrFilter, FilterError
 
 from Mutators.AbstractMutator import AbstractMutator, IgnoreMutationException, AbortMutationException
 
-from Tools.search import type_of_id, decl_of_id
+from Tools.Declarations import type_of_id, decl_of_id
 
 
 class RemoveAttributeMutator(AbstractMutator):

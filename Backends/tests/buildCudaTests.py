@@ -3,7 +3,7 @@ from Tools.Dump import Dump
 
 from Mutators.Cuda import CM_OmpParallelFor
 
-from Tools.Parse import parse_source
+from Frontend.Parse import parse_source
 
 from Visitors.clone_visitor import CUDAWriter
 

@@ -6,9 +6,9 @@ from cStringIO import StringIO
 from pycparser import c_parser, c_ast
 
 
+from Frontend.Parse import parse_source
 from Tools.Dump import Dump
 
-from Tools.Parse import parse_source
 
 
 def build_test_trees():
