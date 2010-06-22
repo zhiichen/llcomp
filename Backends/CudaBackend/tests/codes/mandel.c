@@ -1,6 +1,6 @@
-#include <stdio.h>
+/* #include <stdio.h>*/
 /* #include <stdlib.h> */
-#include <math.h>
+/* #include <math.h> */
 
 
 /* ***********************************************************************
@@ -22,7 +22,7 @@ History:
 #ifndef MYTIME_H
 #define MYTIME_H
 
-#include <time.h> 
+/* #include <time.h> */
 
 #define MICROSEC_PER_SEC 1.0e6
 
@@ -93,7 +93,7 @@ double CLOCK_Max(double t);
 
 # define MAXITER 100000
 # define THRESOLD 2.0
-# define npoints 4092 * 4
+# define npoints 4092
 
 float uni (void) {
 	return (float) random() / RAND_MAX;
@@ -128,10 +128,6 @@ void rinit (int seed) {
 		CLOCK_TYPE chrono;
 		double t_llc, t_seq, t_mpi;
 
-/*
- *  1. Generate npoints random points in the complex plane
- */
-
 		LLC_printMaster ("\n\n\n*************** NUMPROCESSORS = %d ***************************\n\n",
 				LLC_NUMPROCESSORS);
     rinit (54321);
@@ -140,50 +136,11 @@ void rinit (int seed) {
         c[i].cimag = 1.125*uni();
     }
 
-/*
- *  2. Monte Carlo sampling 
- *
- *    2a. Outer loop runs over npoints, initilaise z=c
- *
- *    2b. Inner loop has the iteration z=z*z+c, and threshold test
- */
-	CLOCK_Start(chrono);
-	
-	numoutside = 0;
-  for(i = 0; i<npoints; i++) {
-    z.creal = c[i].creal;
-    z.cimag = c[i].cimag;
-    for (j = 0; j < MAXITER; j++) {
-      ztemp = (z.creal * z.creal) - (z.cimag * z.cimag) + c[i].creal;
-      z.cimag = z.creal * z.cimag * 2 + c[i].cimag;
-      z.creal = ztemp;
-      if (z.creal * z.creal + z.cimag * z.cimag > THRESOLD) {
-        numoutside++;
-        break;
-      }
-    }
-  }
-  numinside = npoints - numoutside;
 
-/*
- *  3. Calculate area and error and output the Results
- */
 
-    area_seq = 2.0 * 2.5 * 1.125 * numinside / npoints;
-    error_seq = area_seq / sqrt(npoints);
-		CLOCK_End(chrono, t_seq);
-/*
- *  4. Parallel (with llc)
- */
-#ifdef _OPENMP
-	#pragma omp parallel
-	{
-	num_threads = omp_get_num_threads();
-	}
-#endif
-	
 	CLOCK_Start(chrono);
  
+   printf ("** Loop **");
 	numoutside = 0;
 #pragma omp parallel for reduction(+:numoutside) private(i,j,ztemp,z) shared(nt,c)
     for(i = 0; i<npoints; i++) {
@@ -200,6 +157,7 @@ void rinit (int seed) {
       } /* for j */
     } /* for i */
   
+   printf ("** End Loop **");
 	numinside = npoints - numoutside;
 
 /* *  5. PARALLEL llc: Calculate area and error */
