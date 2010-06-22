@@ -4,6 +4,7 @@ from pycparser import c_ast
 from Tools.Tree import NodeNotFound, NodeNotValid
 
 class FilterError(Exception):
+   """ Filter error """
    def __init__(self, description):
       self.description = description
 
@@ -16,6 +17,7 @@ class FilterError(Exception):
 
 class GenericFilterVisitor(object):
    """ Returns the first node validating a condition function
+
    """
 
    def __init__(self, condition_func, prev_brother = None):
@@ -25,7 +27,14 @@ class GenericFilterVisitor(object):
        self.parent_of_match = None
 
    def apply(self, ast, ignore = []):
-      """ Apply filter to the ast """
+      """ Searchs the node matching the condition_func in the AST
+         
+         :param ast: Node to start search
+         :param ignore: List of nodes to ignore
+
+         :return: First matching node not in ignore list
+   
+      """
       self.match = False
       self.ast = ast
       node = ast
@@ -36,7 +45,15 @@ class GenericFilterVisitor(object):
       return node
 
    def visit(self, node, prev, offset = 1, ignore = []):
-        """ Visit a node. 
+        """ Finds a way to visit a node
+
+            :param node: Node to visit
+            :param prev: Syntactically previous node
+            :param offset: Not used
+            :param ignore: List of nodes to ignore
+      
+            :return: result of the node visit
+
         """
         # Continue the search....
         method = 'visit_' + node.__class__.__name__
@@ -45,7 +62,15 @@ class GenericFilterVisitor(object):
         
    def generic_visit(self, node, offset = 0, ignore = []):
        """ Called if no explicit visitor function exists for a 
-           node. Implements preorder visiting of the node.
+           node. Implements preorder (syntactically correct) node visit.
+ 
+            :param node: Node being visited
+            :param prev: Syntactically previous node
+            :param offset: Not used
+            :param ignore: List of nodes to ignore
+
+
+            :return: Result of the node visit
        """
        # Store the parent node of the match
        debug = False
@@ -96,10 +121,19 @@ class GenericFilterVisitor(object):
        return r
 
    def parentOfMatch(self):
+       """ Parent of the node matched
+
+           .. note::  This is not needed because we have a .parent attribute now
+
+       """
        return self.parent_of_match
 
    def iterate(self, ast):
-       """ Iterate through matching nodes """
+       """ Iterate through matching nodes 
+
+            :param ast: Node to start the search
+
+       """
        visited_nodes = []
        try:
          while 1:
@@ -111,10 +145,12 @@ class GenericFilterVisitor(object):
          raise StopIteration
 
    def dfs_iter(self, root, visited = None):
-      """
-       Given a starting node, root, do a depth-first search. 
+      """ Given a starting node, root, do a depth-first search. 
+          .. warning::
+            This method does not garantee to transverse the tree on the gramatically correct order
 
-       IMPORTANT: This method does not garantee to transverse the tree on the gramatically correct order
+          :return: Last match or raise StopIteration     
+
       """
       if self.prev_brother != None:
          # Prev brother using DFS won't be the gramatically correct one
