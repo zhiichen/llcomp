@@ -1,7 +1,7 @@
 
 import unittest
 
-from Backends.Common.Tools.Dump import Dump
+from Tools.Dump import Dump
 
 from Backends.CudaBackend.Mutators.CM_OmpParallelFor import CM_OmpParallelFor
 

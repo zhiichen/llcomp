@@ -4,10 +4,10 @@ from pycparser import c_ast
 from Backends.Common.Visitors.GenericVisitors import *
 
 
-from Backends.Common.Tools.Tree import InsertTool, NodeNotFound, ReplaceTool, RemoveTool
-from Backends.Common.Tools.Declarations import type_of_id
+from Tools.Tree import InsertTool, NodeNotFound, ReplaceTool, RemoveTool
+from Tools.Declarations import type_of_id
 
-from Backends.Common.Tools.Debug import DotDebugTool
+from Tools.Debug import DotDebugTool
 from Frontend.Parse import parse_source
 from Backends.Common.Mutators.AstSupport import DeclsToParamsMutator, IDNameMutator, FuncToDeviceMutator, PointerMutator
 from Backends.Common.Mutators.AbstractMutator import IgnoreMutationException, AbstractMutator
