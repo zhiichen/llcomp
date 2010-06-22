@@ -11,7 +11,7 @@ from Backends.CudaBackend.Mutators.Common import AbstractCudaMutator
 
 from Backends.CudaBackend.Visitors.CM_Visitors import OmpForFilter, OmpParallelFilter,  OmpParallelForFilter
 
-from Backends.Common.Tools.Tree import InsertTool, NodeNotFound, ReplaceTool, RemoveTool
+from Tools.Tree import InsertTool, NodeNotFound, ReplaceTool, RemoveTool
 
 class CM_OmpParallelFor(AbstractCudaMutator):
    """ This  mutator locates a omp parallel for reduction, and then

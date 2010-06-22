@@ -1,10 +1,10 @@
 from pycparser import c_parser, c_ast
 from Backends.Common.Visitors.GenericVisitors import *
 
-from Backends.Common.Tools.Tree import InsertTool, NodeNotFound, ReplaceTool, RemoveTool
-from Backends.Common.Tools.Declarations import type_of_id, decl_of_id
+from Tools.Tree import InsertTool, NodeNotFound, ReplaceTool, RemoveTool
+from Tools.Declarations import type_of_id, decl_of_id
 
-from Backends.Common.Tools.Debug import DotDebugTool
+from Tools.Debug import DotDebugTool
 from Frontend.Parse import parse_source
 
 from Backends.Common.TemplateEngine.TemplateParser import TemplateParser, get_template_array

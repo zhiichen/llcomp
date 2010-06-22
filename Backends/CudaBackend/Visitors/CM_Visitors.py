@@ -1,7 +1,7 @@
 from pycparser import c_ast
-from Backends.Common.Tools.Debug import DotDebugTool
+from Tools.Debug import DotDebugTool
 
-from Backends.Common.Tools.Tree import NodeNotFound
+from Tools.Tree import NodeNotFound
 
 from Backends.Common.Visitors.GenericVisitors import GenericFilterVisitor
 

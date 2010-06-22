@@ -3,7 +3,7 @@ from Backends.Common.Visitors.GenericVisitors import *
 
 from Backends.Common.Mutators.AbstractMutator import *
 
-from Backends.Common.Tools.Tree import InsertTool, RemoveTool, ReplaceTool
+from Tools.Tree import InsertTool, RemoveTool, ReplaceTool
 
 
 class ConstantBinaryExpressionFilter(GenericFilterVisitor):

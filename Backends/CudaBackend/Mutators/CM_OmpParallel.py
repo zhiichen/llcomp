@@ -6,11 +6,11 @@ from Backends.Common.Visitors.GenericVisitors import *
 
 from Backends.CudaBackend.Visitors.CM_Visitors import OmpForFilter, OmpParallelFilter, OmpThreadPrivateFilter
 
-from Backends.Common.Tools.Tree import InsertTool, NodeNotFound, ReplaceTool, RemoveTool
+from Tools.Tree import InsertTool, NodeNotFound, ReplaceTool, RemoveTool
 
-from Backends.Common.Tools.Declarations import decl_of_id
+from Tools.Declarations import decl_of_id
 
-from Backends.Common.Tools.Debug import DotDebugTool
+from Tools.Debug import DotDebugTool
 
 from Backends.Common.Mutators.AstSupport import DeclsToParamsMutator, IDNameMutator, FuncToDeviceMutator, PointerMutator
 

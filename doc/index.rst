@@ -20,7 +20,14 @@ In the diagram (layered_design_), the different layers of the framework are expo
 The uppermost level contains the :mod:`Frontend`, which gives the tools required to transform 
 the source code into the internal representation.
 
-The 
+The :mod:`MiddleEnd` module encapsulates transformations from the IR to the IR, for example, 
+loop optimizations or type data conversions.
+
+Finally :mod:`Backends` module contains all the implemented backends, and the tools needed for
+them to work.
+
+In addition, some utils are included, and examples of source code presented in order to test the framework.
+
 
 Contents:
 
