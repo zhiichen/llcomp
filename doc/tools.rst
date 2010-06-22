@@ -4,10 +4,13 @@ Tools
 A set of tools have been developed in order to easier the work with the internal representation.
 
 
-Debug Tools
-==================
 
-.. automodule:: Tools.Debug
+Tree Tools
+===================
+
+Tree manipulation tools
+
+.. automodule:: Tools.Tree
    :members:
 
 Serialization Tools
@@ -27,10 +30,11 @@ Provide functionality to look for declarations on the AST
    :members:
 
 
-Tree Tools
-===================
 
-Tree manipulation tools
+Debug Tools
+==================
 
-.. automodule:: Tools.Tree
+.. automodule:: Tools.Debug
    :members:
+
+
