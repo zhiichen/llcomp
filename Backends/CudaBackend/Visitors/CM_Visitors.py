@@ -7,7 +7,7 @@ from Backends.Common.Visitors.GenericVisitors import GenericFilterVisitor
 
 
 class OmpThreadPrivateFilter(GenericFilterVisitor):
-   """ Returns the first node with a FuncCall
+   """ Returns the ThreadPrivate constructs
    """
 
    def __init__(self, prev_brother = None):
@@ -20,6 +20,12 @@ class OmpThreadPrivateFilter(GenericFilterVisitor):
 
 class OmpForFilter(GenericFilterVisitor):
    """ Returns a OmpFor node , the parallel container and the function container
+
+       By defining specific visitor methods for *FuncDef* and *OmpParallel*, we can
+         save the last node visited of this types. Giving the fact that the visit is
+         done in syntax order, the last visited node will be the previous (parent) node
+         of the wanted node.
+
    """
    
    def __init__(self, prev_brother = None):
@@ -29,12 +35,6 @@ class OmpForFilter(GenericFilterVisitor):
          """ OmpFor filter """
          return type(node) == c_ast.OmpFor
       super(OmpForFilter, self).__init__(condition_func = condition, prev_brother = prev_brother)
-
-   #############################################
-   # This could be a little bit tricky. 
-   # By defining specific visitor methods for FuncDef and OmpParallel, we can save the last node visited of this types.
-   # Giving the fact that the visit is done in syntax order, the last visited node will be the previous (parent) node of the 
-   # wanted node.
 
    def visit_FuncDef(self, node, prev, offset = 1, ignore = []):
       if not self.match:
@@ -53,20 +53,26 @@ class OmpForFilter(GenericFilterVisitor):
       return self._funcdef
 
    def iterate(self, ast):
-       """ Iterate through matching nodes """
+       """ Iterate through matching nodes 
+       """
        visited_nodes = []
        try:
          while 1:
             visited_nodes.append(self.apply(ast, ignore = visited_nodes))
             yield visited_nodes[-1]
        except NodeNotFound:
-#         print "   *** Node not found on iterate, will raise StopIteration *** "
-#         raise NodeNotFound("Not")
          raise StopIteration
 
 
 class OmpParallelFilter(GenericFilterVisitor):
-   """ Returns a OmpFor node , the parallel container and the function container
+   """ Returns a OmpParallel node , the parallel container and the function container
+
+       By defining specific visitor methods for *FuncDef* and *OmpParallel*, we can
+         save the last node visited of this types. Giving the fact that the visit is
+         done in syntax order, the last visited node will be the previous (parent) node
+         of the wanted node.
+
+
    """
  
    def parallel_condition(self, node):
@@ -113,12 +119,6 @@ class OmpParallelFilter(GenericFilterVisitor):
       self._target_device_node = None
       super(OmpParallelFilter, self).__init__(condition_func = condition_func or parallel_condition, prev_brother = prev_brother)
 
-   #############################################
-   # This could be a little bit tricky. 
-   # By defining specific visitor methods for FuncDef and OmpParallel, we can save the last node visited of this types.
-   # Giving the fact that the visit is done in syntax order, the last visited node will be the previous (parent) node of the 
-   # wanted node.
-
    def visit_OmpTargetDevice(self, node, prev, offset = 1, ignore = []):
       """ Save target device node """
       if self.device and self.device == node.device:
@@ -137,7 +137,9 @@ class OmpParallelFilter(GenericFilterVisitor):
 
 
 class OmpParallelForFilter(OmpParallelFilter):
-   """ Returns a omp parallel for construct """
+   """ Returns a *omp parallel for* construct 
+
+   """
 
    def __init__(self, prev_brother = None, device = None):
       self._parallel = None

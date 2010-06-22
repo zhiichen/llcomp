@@ -4,7 +4,9 @@ from pycparser import c_parser, c_ast
 from Backends.CBackend.Writers.CWriter import CWriter
 
 class OmpWriter(CWriter):
-   """ OpenMP code writer """
+   """ Visitor which translates the IR to C/OpenMP.
+
+   """
    def visit_OmpParallel(self, node, offset):
       self.write_blank();
       self.write(offset, node.name)
