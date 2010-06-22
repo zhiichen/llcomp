@@ -29,6 +29,9 @@ class CudaMutatorError(Exception):
 
 
 class AbstractCudaMutator(AbstractMutator):
+   """ Common methods to work with CUDA
+
+   """
    def __init__(self, clauses = None, kernel_name = 'loopKernel', kernel_prefix = ''):
       if clauses == None:
          clauses = {}
