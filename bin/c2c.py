@@ -49,7 +49,7 @@ print " OK "
 
 
 # Optimize code
-from Mutators.Optimizer import MatrixDeclToPtr, ConstantCalc
+from MiddleEnd.Optimizer.Mutators.Optimizer import MatrixDeclToPtr, ConstantCalc
 
 MatrixDeclToPtr(start_ast = new_ast).fast_apply_all(new_ast)
 

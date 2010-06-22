@@ -1,13 +1,13 @@
 
 import unittest
 
-from Tools.Dump import Dump
+from Backends.Common.Tools.Dump import Dump
 
-from Mutators.Cuda.CM_OmpParallelFor import CM_OmpParallelFor
+from Backends.CudaBackend.Mutators.CM_OmpParallelFor import CM_OmpParallelFor
 
 from Frontend.Parse import parse_source
 
-from Visitors.clone_visitor import CUDAWriter
+from Backends.CudaBackend.Writers.CUDAWriter import CUDAWriter
 
 from Frontend.InternalRepr import AstToIR
 

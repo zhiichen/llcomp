@@ -1,9 +1,9 @@
 from pycparser import c_ast
-from Tools.Debug import DotDebugTool
+from Backends.Common.Tools.Debug import DotDebugTool
 
-from Tools.Tree import NodeNotFound
+from Backends.Common.Tools.Tree import NodeNotFound
 
-from Visitors.generic_visitors import GenericFilterVisitor
+from Backends.Common.Visitors.GenericVisitors import GenericFilterVisitor
 
 
 class OmpThreadPrivateFilter(GenericFilterVisitor):

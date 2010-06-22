@@ -1,21 +1,21 @@
 
-from pycparser import c_parser, c_ast
-from Visitors.generic_visitors import IDFilter, FuncCallFilter, FuncDeclOfNameFilter
+from pycparser import c_ast
 
-from Mutators.Cuda.CM_Visitors import OmpForFilter, OmpParallelFilter, OmpThreadPrivateFilter
-from Tools.Tree import InsertTool, NodeNotFound, ReplaceTool, RemoveTool
 
-from Tools.Declarations import decl_of_id
+from Backends.Common.Visitors.GenericVisitors import *
 
-from Tools.Debug import DotDebugTool
+from Backends.CudaBackend.Visitors.CM_Visitors import OmpForFilter, OmpParallelFilter, OmpThreadPrivateFilter
 
-from Mutators.AstSupport import DeclsToParamsMutator, IDNameMutator, FuncToDeviceMutator, PointerMutator
+from Backends.Common.Tools.Tree import InsertTool, NodeNotFound, ReplaceTool, RemoveTool
 
-from string import Template
+from Backends.Common.Tools.Declarations import decl_of_id
 
-from TemplateEngine.TemplateParser import TemplateParser, get_template_array
+from Backends.Common.Tools.Debug import DotDebugTool
 
-from Mutators.Cuda.Common import AbstractCudaMutator
+from Backends.Common.Mutators.AstSupport import DeclsToParamsMutator, IDNameMutator, FuncToDeviceMutator, PointerMutator
+
+
+from Backends.CudaBackend.Mutators.Common import AbstractCudaMutator
 
 class CM_OmpParallel(AbstractCudaMutator):
    def filter(self, ast):

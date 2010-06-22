@@ -1,18 +1,17 @@
-from pycparser import c_parser, c_ast
-from Visitors.generic_visitors import IDFilter, FuncCallFilter, FuncDeclOfNameFilter,  FilterError, TypedefFilter, IdentifierTypeFilter
+from pycparser import c_ast
+
+from Backends.Common.Visitors.GenericVisitors import IDFilter, FuncCallFilter, FuncDeclOfNameFilter,  FilterError, TypedefFilter, IdentifierTypeFilter
+
+from Backends.Common.Mutators.AstSupport import DeclsToParamsMutator, IDNameMutator, FuncToDeviceMutator, PointerMutator
+
+from Backends.Common.TemplateEngine.TemplateParser import TemplateParser, get_template_array
 
 
-from Mutators.AstSupport import DeclsToParamsMutator, IDNameMutator, FuncToDeviceMutator, PointerMutator
+from Backends.CudaBackend.Mutators.Common import AbstractCudaMutator
 
-from TemplateEngine.TemplateParser import TemplateParser, get_template_array
+from Backends.CudaBackend.Visitors.CM_Visitors import OmpForFilter, OmpParallelFilter,  OmpParallelForFilter
 
-from Visitors.clone_visitor import CWriter
-
-from Mutators.Cuda.Common import AbstractCudaMutator
-
-from Mutators.Cuda.CM_Visitors import OmpForFilter, OmpParallelFilter,  OmpParallelForFilter
-
-from Tools.Tree import InsertTool, NodeNotFound, ReplaceTool, RemoveTool
+from Backends.Common.Tools.Tree import InsertTool, NodeNotFound, ReplaceTool, RemoveTool
 
 class CM_OmpParallelFor(AbstractCudaMutator):
    """ This  mutator locates a omp parallel for reduction, and then

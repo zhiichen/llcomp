@@ -1,4 +1,4 @@
-from Visitors.dot_visitor import DotWriter
+from Backends.DotBackend.Writers import DotWriter
 import subprocess
 import os
 from cStringIO import StringIO

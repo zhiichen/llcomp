@@ -1,6 +1,3 @@
-from pycparser import parse_file
-
-# from Visitors.clone_visitor import CUDAWriter
 
 from Backends.CudaBackend.Writers.CUDAWriter import CUDAWriter
 
@@ -48,14 +45,13 @@ print " OK "
 print "Mutating ...",
 
 # Optimize code
-from Mutators.Optimizer import MatrixDeclToPtr, ConstantCalc
-
+from MiddleEnd.Optimizer.Mutators.Optimizer import MatrixDeclToPtr, ConstantCalc
 
 MatrixDeclToPtr(start_ast = new_ast).fast_apply_all(new_ast)
 
 ConstantCalc().fast_apply_all(new_ast)
 
-from Mutators.Cuda.Common import CudaMutatorError, CudaTransformer 
+from Backends.CudaBackend.Mutators.Common import CudaMutatorError, CudaTransformer
 
 try:
    end_ast = CudaTransformer.apply(new_ast)
@@ -66,7 +62,7 @@ except CudaMutatorError as cme:
 if end_ast:
 	print " OK "
 else:
-	print " Translation interrupted due to previous errors "
+	print " No mutation applied "
 	import sys
 	sys.exit(-1)
 

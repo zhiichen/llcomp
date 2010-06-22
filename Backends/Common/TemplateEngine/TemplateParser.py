@@ -4,7 +4,9 @@ from pycparser import c_parser, c_ast
 
 import subprocess
 from cStringIO import StringIO
-from Visitors.clone_visitor import CWriter
+
+from Backends.CBackend.Writers.CWriter import CWriter
+
 import cStringIO
 
 from mako.template import Template as MakoTemplate

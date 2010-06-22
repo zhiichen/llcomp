@@ -1,11 +1,11 @@
 
-from Tools.Dump import Dump
+from Backends.Common.Tools.Dump import Dump
 
-from Mutators.Cuda import CM_OmpParallelFor
+from Backends.CudaBackend.Mutators.CM_OmpParallelFor import CM_OmpParallelFor
 
 from Frontend.Parse import parse_source
 
-from Visitors.clone_visitor import CUDAWriter
+from Backends.CudaBackend.Writers.CUDAWriter import CUDAWriter
 
 from Frontend.InternalRepr import AstToIR
 
@@ -17,7 +17,7 @@ def build_mandel_tree():
     """
 
     # Mandel
-    template_code = open('examples/mandel.c', 'r').read()
+    template_code = open('Backends/CudaBackend/tests/codes/mandel.c', 'r').read()
     ast = parse_source(template_code, 'mandel_test')
     Dump.save('tests/mandel_tree', ast)
     tmp = AstToIR(Writer = CUDAWriter).transform(ast)
@@ -31,7 +31,7 @@ def build_pi_tree():
          Stores the tests ast under FREEZER_DIR/tests/pi{,cu}_tree
     """
     # Pi
-    template_code = open('examples/pi.c', 'r').read()
+    template_code = open('Backends/CudaBackend/tests/codes/pi.c', 'r').read()
     ast = parse_source(template_code, 'pi_test')
     Dump.save('tests/pi_tree', ast)
     # CUDA version

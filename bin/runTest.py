@@ -1,6 +1,7 @@
 
 import unittest
-from  tests import basic, cudaBackend, buildCudaTests
+from  Backends.CBackend.tests  import basic
+from  Backends.CudaBackend.tests import  cudaBackend, buildCudaTests
 
 import sys
 import getopt

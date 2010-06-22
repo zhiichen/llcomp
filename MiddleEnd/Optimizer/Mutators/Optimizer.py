@@ -1,10 +1,10 @@
 from pycparser import c_parser, c_ast
-from Visitors.generic_visitors import AttributeFilter, FilterVisitor, NodeNotFound
-from Tools.Tree import InsertTool, RemoveTool, ReplaceTool
-from Visitors.generic_visitors import FilterVisitor, IDFilter, FuncCallFilter, FuncDeclOfNameFilter, StrFilter
-from Mutators.AbstractMutator import AbstractMutator
+from Backends.Common.Visitors.GenericVisitors import * 
 
-from Visitors.generic_visitors import GenericFilterVisitor
+from Backends.Common.Mutators.AbstractMutator import *
+
+from Backends.Common.Tools.Tree import InsertTool, RemoveTool, ReplaceTool
+
 
 class ConstantBinaryExpressionFilter(GenericFilterVisitor):
    """ Returns the first node with the given attribute

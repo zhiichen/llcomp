@@ -1,10 +1,10 @@
 
 from pycparser import c_ast
-from Tools.Debug import DotDebugTool
+from Backends.Common.Tools.Debug import DotDebugTool
 
-from Tools.Tree import NodeNotFound
+from Backends.Common.Tools.Tree import NodeNotFound
 
-from Visitors.generic_visitors import DeclFilter
+from Backends.Common.Visitors.GenericVisitors import DeclFilter
 
 def decl_of_id(id, ast):
         """Returns the TypeDecl node of a given ID node 
