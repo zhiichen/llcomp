@@ -26,7 +26,7 @@ Mutators
 A separate Mutator have been written for each OpenMP construct.
 Their parent is :class:`Backends.CudaBackend.Mutators.Common`
 
-.. automodule:: Backends.DotBackend.Mutators.Common
+.. automodule:: Backends.CudaBackend.Mutators.Common
    :members: AbstractCudaMutator
 
 
@@ -34,21 +34,21 @@ The following constructs have been implemented:
 
 **OpenMP Parallel**
 
-.. automodule:: Backends.DotBackend.Mutators.CM_OmpParallel
+.. automodule:: Backends.CudaBackend.Mutators.CM_OmpParallel
    :members: 
 
 
 
 **OpenMP Parallel For**
 
-.. automodule:: Backends.DotBackend.Mutators.CM_OmpParallelFor
+.. automodule:: Backends.CudaBackend.Mutators.CM_OmpParallelFor
    :members: 
 
 
 **OpenMP for**
 
-.. automodule:: Backends.DotBackend.Mutators.CM_OmpFor
-   :members: 
+automodule:: Backends.CudaBackend.Mutators.CM_OmpFor
+members: 
 
 
 
