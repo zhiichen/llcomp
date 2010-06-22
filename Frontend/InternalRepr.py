@@ -5,8 +5,8 @@
 
 """
 
-from pycparser import parse_file, c_ast
-from Visitors.clone_visitor import CWriter, OmpWriter, CUDAWriter
+from pycparser import  c_ast
+
 import cStringIO
 
 

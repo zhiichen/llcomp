@@ -7,7 +7,7 @@ from pycparser import c_parser, c_ast
 
 
 from Frontend.Parse import parse_source
-from Tools.Dump import Dump
+from Backends.Common.Tools.Dump import Dump
 
 
 

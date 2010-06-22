@@ -1,22 +1,18 @@
 from pycparser import c_parser, c_ast
-from Visitors.generic_visitors import IDFilter, FuncCallFilter, FuncDeclOfNameFilter,  FilterError, TypedefFilter, IdentifierTypeFilter
+from Backends.Common.Visitors.GenericVisitors import *
 
-from Tools.Tree import InsertTool, NodeNotFound, ReplaceTool, RemoveTool
-from Tools.Declarations import type_of_id
+from Backends.Common.Tools.Tree import InsertTool, NodeNotFound, ReplaceTool, RemoveTool
+from Backends.Common.Tools.Declarations import type_of_id, decl_of_id
 
-from Tools.Debug import DotDebugTool
+from Backends.Common.Tools.Debug import DotDebugTool
 from Frontend.Parse import parse_source
 
-from TemplateEngine.TemplateParser import TemplateParser, get_template_array
+from Backends.Common.TemplateEngine.TemplateParser import TemplateParser, get_template_array
+
+from pycparser import  c_ast
 
 
-from pycparser import c_parser, c_ast
-from Visitors.generic_visitors import AttributeFilter, FilterVisitor, NodeNotFound
-from Tools.Tree import InsertTool, RemoveTool, ReplaceTool
 
-from Tools.Declarations import decl_of_id
-
-from Visitors.generic_visitors import FilterVisitor, IDFilter, FuncCallFilter, FuncDeclOfNameFilter, StrFilter
 
 
 class MutatorException(Exception):
