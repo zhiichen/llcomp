@@ -72,11 +72,10 @@ class AbstractCudaMutator(AbstractMutator):
             subtree = parse_source(template_code, name)
         except c_parser.ParseError, e:
             print "Parse error:" + str(e)
-
-	 return None
+            return None
         except IOError:
-            print "Pipe Error"
-	 return None
+                print "Pipe Error"
+                return None
         return subtree;
 
 
@@ -161,11 +160,11 @@ class AbstractCudaMutator(AbstractMutator):
     def buildKernelLaunch(self, reduction_vars, shared_vars, ast):
 
          template_code = """
-  	#include "llcomp_cuda.h" 
+      #include "llcomp_cuda.h" 
 
          int fake() {
                   dim3 dimGrid (numBlocks);
-      	          dim3 dimBlock (numThreadsPerBlock);
+                    dim3 dimBlock (numThreadsPerBlock);
 
              ${kernelName} <<< dimGrid, dimBlock >>> (${', '.join("reduction_cu_" + var.name for var in reduction_vars)}
                   %if len(reduction_vars) > 0 and len(shared_vars) > 0:
