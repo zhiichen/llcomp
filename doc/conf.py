@@ -173,7 +173,7 @@ htmlhelp_basename = 'llCoMPdoc'
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
   ('index', 'llCoMP.tex', u'llCoMP Documentation',
-   u'Ruymán Reyes', 'manual'),
+    u'Ruymán Reyes', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of

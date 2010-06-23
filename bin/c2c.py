@@ -60,14 +60,14 @@ ConstantCalc().fast_apply_all(new_ast)
 
 # Call pretty printer over the file
 if output_file:
-   v = OmpWriter(filename = output_file)
-   v.visit(new_ast)
-   del v  # Ensure file closing
-   import os
-   if os.system("indent -kr " + output_file) != 0:
-      print " You need to install the indent tool to pretty print ouput files "
+    v = OmpWriter(filename = output_file)
+    v.visit(new_ast)
+    del v  # Ensure file closing
+    import os
+    if os.system("indent -kr " + output_file) != 0:
+        print " You need to install the indent tool to pretty print ouput files "
 else:
-   new_ast.show(attrnames = True)
-   print "************"
-   print ast
+    new_ast.show(attrnames = True)
+    print "************"
+    print ast
 
