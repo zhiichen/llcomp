@@ -19,7 +19,7 @@ def build_mandel_tree():
      
          Stores the tests ast under FREEZER_DIR/tests/mandel{,cu}_tree
     """
-
+#    [CODE_PATH, TREE_PATH] = getPath(
     # Mandel
     template_code = open(CODE_PATH + '/mandel.c', 'r').read()
     ast = parse_source(template_code, 'mandel_test')
