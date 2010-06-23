@@ -10,10 +10,10 @@ import getopt
 opts = getopt.getopt(sys.argv[1:], '', ['create'])
 
 if ('--create', '') in opts[0]:
-   print " Building test trees "
-   basic.build_test_trees()
-   buildCudaTests.build_pi_tree()
-   buildCudaTests.build_mandel_tree()
+    print " Building test trees "
+    basic.build_test_trees()
+    buildCudaTests.build_pi_tree()
+    buildCudaTests.build_mandel_tree()
 
 print " Running basic parser tests "
 suite = unittest.TestLoader().loadTestsFromTestCase(basic.TestParserFunctions)

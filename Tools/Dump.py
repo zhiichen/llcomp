@@ -12,9 +12,9 @@ class Dump:
 	@staticmethod
 	def exists(name):
 		"""Check if a given tree serialization exists 
-         
-          :param name: Name of the frozen tree
-      """
+            
+             :param name: Name of the frozen tree
+        """
 		return os.path.isfile(config.WORKDIR + name)
 
 
@@ -22,8 +22,8 @@ class Dump:
 	def load(name):
 		"""Deserialize a frozen AST 
 
-          :param name: Name of the frozen tree
-      """
+             :param name: Name of the frozen tree
+        """
 		file = open(config.WORKDIR + name, 'r') 
 		tree =  pickle.load(file)
 		file.close()
@@ -33,8 +33,8 @@ class Dump:
 	def save(name, tree):
 		"""Serialize an AST 
 
-         :param name: Name of the frozen tree
-      """
+            :param name: Name of the frozen tree
+        """
 		file = open(config.WORKDIR + name, 'w+') 
 		pickle.dump(tree, file)
 		file.close()

@@ -54,10 +54,10 @@ ConstantCalc().fast_apply_all(new_ast)
 from Backends.CudaBackend.Mutators.Common import CudaMutatorError, CudaTransformer
 
 try:
-   end_ast = CudaTransformer.apply(new_ast)
+    end_ast = CudaTransformer.apply(new_ast)
 except CudaMutatorError as cme:
-   print " Error while mutating tree "
-   print cme
+    print " Error while mutating tree "
+    print cme
 
 if end_ast:
 	print " OK "
@@ -88,6 +88,6 @@ if output_file:
 	import os
 	if os.system("indent -kr " + config.WORKDIR + output_file) != 0:
 		print " You need to install the indent tool to pretty print ouput files "
-   
+    
 
 
