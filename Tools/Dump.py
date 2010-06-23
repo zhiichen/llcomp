@@ -15,7 +15,7 @@ class Dump:
          
           :param name: Name of the frozen tree
       """
-		return os.path.isfile(config.WORKDIR + 'freezer/' + name)
+		return os.path.isfile(config.WORKDIR + name)
 
 
 	@staticmethod
@@ -24,7 +24,7 @@ class Dump:
 
           :param name: Name of the frozen tree
       """
-		file = open(config.WORKDIR + 'freezer/' + name, 'r') 
+		file = open(config.WORKDIR + name, 'r') 
 		tree =  pickle.load(file)
 		file.close()
 		return tree
@@ -35,6 +35,6 @@ class Dump:
 
          :param name: Name of the frozen tree
       """
-		file = open(config.WORKDIR + 'freezer/' + name, 'w+') 
+		file = open(config.WORKDIR + name, 'w+') 
 		pickle.dump(tree, file)
 		file.close()
