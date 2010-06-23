@@ -1,3 +1,9 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/time.h>
+#include <assert.h>
+
+// #include "reduction_snippets.h"
 #define N 2048
 
 double * u; 
@@ -81,19 +87,15 @@ void jacobi(int n, int m, double *_dx, double *_dy, double alpha, double omega,
 
                 error = 0.0;
                 {
-#pragma omp target device (cuda) copy_in(u, uold) copy_out(uold) 
-#pragma omp parallel shared(omega,error,tol,n,m,ax,ay,b,alpha,uold,u,f)  private(i,j,resid) 
-{
- #pragma omp for
+                  #pragma omp target device (cuda) copy_in(u, uold, f) copy_out(uold, u) 
+                  #pragma omp parallel shared(omega,error,tol,n,m,ax,ay,b,alpha,uold,u,f)  private(i,j,resid) 
+                  {
+                        #pragma omp for
                         for (i = 0; i < m; i++)
                                 for (j = 0; j < n; j++)
                                         uold[(j * N) + i] = u[(j * N) + i];
-}
 
-#pragma omp target device (cuda) copy_in(uold, f, u) copy_out(u)
-#pragma omp parallel shared(omega,error,tol,n,m,ax,ay,b,alpha,uold,u,f)  private(i,j,resid) 
-{
-#pragma omp for reduction(+:error )
+                        #pragma omp for reduction(+:error)
                         for (i = 0; i < (m - 2); i++) {
 
                                 for (j = 0; j < (n - 2); j++) {
@@ -104,10 +106,9 @@ void jacobi(int n, int m, double *_dx, double *_dy, double alpha, double omega,
                                 }
 
                         }
-}
 
+                 }
                 }
-
                 k++;
                 error = sqrt(error) / (double) (n * m);
         }
