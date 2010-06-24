@@ -17,7 +17,6 @@ TREE_PATH =  TEST_PATH + 'trees/'
 def build_mandel_tree():
      """ Builds the tests AST for both mandel.c and mandel.cu 
       
-            Stores the tests ast under FREEZER_DIR/tests/mandel{,cu}_tree
      """
 #     [CODE_PATH, TREE_PATH] = getPath(
      # Mandel
@@ -32,7 +31,6 @@ def build_mandel_tree():
 def build_pi_tree():
      """ Builds the tests AST for both pi.c and pi.cu 
       
-            Stores the tests ast under FREEZER_DIR/tests/pi{,cu}_tree
      """
      # Pi
      template_code = open(CODE_PATH + '/pi.c', 'r').read()
@@ -43,4 +41,16 @@ def build_pi_tree():
      tmp = CM_OmpParallelFor().apply_all(new_ast)
      Dump.save(TREE_PATH + '/picu_tree', tmp)
 
+def build_jacobi_tree():
+     """ Builds the tests AST for both pi.c and pi.cu 
+      
+     """
+     # Pi
+     template_code = open(CODE_PATH + '/jacobi.c', 'r').read()
+     ast = parse_source(template_code, 'pi_test')
+     Dump.save(TREE_PATH + '/jacobi_tree', ast)
+     # CUDA version
+     new_ast = AstToIR(Writer = CUDAWriter).transform(ast)
+     tmp = CM_OmpParallel().apply_all(new_ast)
+     Dump.save(TREE_PATH + '/jacobicu_tree', tmp)
 
