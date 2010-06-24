@@ -86,9 +86,9 @@ class AbstractMutator(object):
         try:
             for elem in self.filter_iterator(ast):
                 if mutator_opt_arg:
-                    start_node = self.mutatorFunction(start_node, mutator_opt_arg)
+                    start_node = self.mutatorFunction(elem, mutator_opt_arg)
                 else:
-                    start_node = self.mutatorFunction(start_node)
+                    start_node = self.mutatorFunction(elem)
         except NodeNotFound as nf:
             print str(nf)
         return start_node

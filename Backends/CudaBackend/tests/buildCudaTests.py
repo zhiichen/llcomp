@@ -2,6 +2,7 @@
 from Tools.Dump import Dump
 
 from Backends.CudaBackend.Mutators.CM_OmpParallelFor import CM_OmpParallelFor
+from Backends.CudaBackend.Mutators.CM_OmpParallel import CM_OmpParallel
 
 from Frontend.Parse import parse_source
 

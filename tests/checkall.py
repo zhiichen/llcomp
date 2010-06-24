@@ -16,6 +16,7 @@ if ('--create', '') in COMMAND_LINE_OPTIONS[0]:
     basic.build_test_trees()
     buildCudaTests.build_pi_tree()
     buildCudaTests.build_mandel_tree()
+    buildCudaTests.build_jacobi_tree()
 
 print " Running basic parser tests "
 TEST_SUITE = unittest.TestLoader().loadTestsFromTestCase(
