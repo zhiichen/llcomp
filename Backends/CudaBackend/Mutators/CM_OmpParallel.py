@@ -14,8 +14,9 @@ from Tools.Debug import DotDebugTool
 
 from Backends.Common.Mutators.AstSupport import DeclsToParamsMutator, IDNameMutator, FuncToDeviceMutator, PointerMutator
 
-
 from Backends.CudaBackend.Mutators.Common import AbstractCudaMutator
+
+from Backends.Common.TemplateEngine.TemplateParser import TemplateParser, get_template_array
 
 class CM_OmpParallel(AbstractCudaMutator):
     def filter(self, ast):
@@ -73,7 +74,6 @@ class CM_OmpParallel(AbstractCudaMutator):
              @return Parallel Declarations subtree
         """ 
         # Position in the template for dimA declaration, just in case we change it
-#        shared_vars = [ [' '.join(self.get_names(elem, ast)), elem.name, elem.type.dim.value or 1] for elem in shared_node_list if isinstance(elem.type, c_ast.ArrayDecl) or isinstance(elem.type, c_ast.Struct)]
         tmp = []
         for elem in shared_node_list: 
             if isinstance(elem.type, c_ast.ArrayDecl) or isinstance(elem.type,c_ast.Struct):
@@ -95,7 +95,7 @@ class CM_OmpParallel(AbstractCudaMutator):
 
             """
         print "New kernel build with name : " + self.kernel_name
-        parallel_init = self.parse_snippet(template_code, {'shared_vars' : shared_vars}, name = 'Initialization of Parallel Region ' + self.kernel_name, show = True).ext[-1].body
+        parallel_init = self.parse_snippet(template_code, {'shared_vars' : shared_vars}, name = 'Initialization of Parallel Region ' + self.kernel_name, show = False).ext[-1].body
 #~     from Tools.Debug import DotDebugTool
 #~     DotDebugTool().apply(kernel_init)
         return parallel_init

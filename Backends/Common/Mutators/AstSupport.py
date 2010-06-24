@@ -129,6 +129,9 @@ class IDNameMutator(AbstractMutator):
         elif hasattr(ast, 'declname'):
             delattr(ast, 'declname')
             setattr(ast, 'declname', self.new.name)
+        else:
+            from Backends.Common.Mutators.AbstractMutator import MutatorException
+            raise MutatorException("Could not apply IDNameMutator, subtree was : " + str(ast))
         return ast
 
 

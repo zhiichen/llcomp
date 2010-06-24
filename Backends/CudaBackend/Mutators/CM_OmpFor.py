@@ -10,14 +10,12 @@ from Tools.Debug import DotDebugTool
 from Backends.Common.Mutators.AstSupport import DeclsToParamsMutator, IDNameMutator, FuncToDeviceMutator, PointerMutator
 
 
-# Copy substructures
-import copy
-
-
 from Backends.CudaBackend.Mutators.Common import AbstractCudaMutator
 
 from Backends.CudaBackend.Mutators.CM_OmpParallelFor import CM_OmpParallelFor
 
+
+from Backends.Common.TemplateEngine.TemplateParser import TemplateParser, get_template_array
 
 class CM_OmpFor(CM_OmpParallelFor):
 
