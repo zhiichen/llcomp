@@ -76,5 +76,15 @@ class TestCudaBackendFunctions(TestCase):
           self.check_output(new_ast, good_tree)
 
 
+     def test_mandelcu(self):
+          """ Test mutating mandel to cuda """
+          template_code = open(CODE_PATH + '/jacobi.c', 'r').read()
+          ast = parse_source(template_code, 'jacobi_test')
+          tmp = AstToIR(Writer = CUDAWriter).transform(ast)
+          new_ast = CM_OmpParallel().apply_all(tmp)
+          good_tree = Dump.load(TREE_PATH + '/jacobicu_tree')
+          self.check_output(new_ast, good_tree)
+
+
 if __name__ == '__main__':
      unittest.main()
