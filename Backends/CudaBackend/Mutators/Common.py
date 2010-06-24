@@ -212,7 +212,7 @@ class AbstractCudaMutator(AbstractMutator):
         # Retrieve list of shared vars and build the array to template parsing
         # TODO: Move this to some kind of template function
         def decls_to_param(elem):
-            if isinstance(elem.type, c_ast.ArrayDecl) or isinstance(elem.type, c_ast.PtrDecl):
+            if isinstance(elem.type, c_ast.ArrayDecl):
                 return "*" + elem.name + "_cu"
             return elem.name
 
@@ -242,11 +242,6 @@ class AbstractCudaMutator(AbstractMutator):
 
         typedef_list = [ elem for elem in decls_dict.values() ]
 
-#        print "Typedef :" + str(typedef_list)
-#        print "Param_var_list :" + str(param_var_list)
-#        print " Reduction_vars : " + str(reduction_vars)
-#        print " Shared_vars : " + str(shared_vars)
-#
         template_code = """
 
             #include "llcomp_cuda.h" 
@@ -254,7 +249,7 @@ class AbstractCudaMutator(AbstractMutator):
                 ${line}
             %endfor
 
-             __global__ void ${kernelName} (
+             __global__ void ${kernelName} ( 
                   ${', '.join(str(var.type) + " * reduction_cu_" + str(var.name) for var in reduction_vars)}
                   %if len(reduction_vars) > 0 and len(shared_vars) > 0:
                         ,
