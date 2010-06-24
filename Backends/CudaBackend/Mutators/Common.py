@@ -1,4 +1,4 @@
-from pycparser import c_ast
+from pycparser import c_ast, c_parser
 
 
 from Backends.Common.Visitors.GenericVisitors import *
@@ -36,7 +36,7 @@ class AbstractCudaMutator(AbstractMutator):
         if clauses == None:
             clauses = {}
         self.kernel_name = kernel_name
-        self.kernel_prefix = kernel_prefix
+        self.kernel_prefix = "CM_" + kernel_prefix
         self._func_def = None
         self._parallel = None
         self._clauses = clauses

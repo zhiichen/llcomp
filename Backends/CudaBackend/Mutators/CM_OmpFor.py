@@ -1,18 +1,22 @@
 from pycparser import c_parser, c_ast
-from Visitors.generic_visitors import IDFilter, FuncCallFilter, FuncDeclOfNameFilter, OmpForFilter, OmpParallelFilter
-from Tools.tree import InsertTool, NodeNotFound, ReplaceTool, RemoveTool
-from Tools.search import type_of_id, decl_of_id
+
+
+from Backends.CudaBackend.Visitors.CM_Visitors import *
+
+from Tools.Tree import InsertTool, NodeNotFound, ReplaceTool, RemoveTool
+from Tools.Declarations import type_of_id, decl_of_id
 from Tools.Dump import Dump
 from Tools.Debug import DotDebugTool
-from Mutators.AstSupport import DeclsToParamsMutator, IDNameMutator, FuncToDeviceMutator, PointerMutator
+from Backends.Common.Mutators.AstSupport import DeclsToParamsMutator, IDNameMutator, FuncToDeviceMutator, PointerMutator
 
-from string import Template
 
 # Copy substructures
 import copy
 
 
-from Mutators.Cuda import AbstractCudaMutator, CM_OmpParallelFor
+from Backends.CudaBackend.Mutators.Common import AbstractCudaMutator
+
+from Backends.CudaBackend.Mutators.CM_OmpParallelFor import CM_OmpParallelFor
 
 
 class CM_OmpFor(CM_OmpParallelFor):

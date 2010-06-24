@@ -4,6 +4,7 @@ import unittest
 from Tools.Dump import Dump
 
 from Backends.CudaBackend.Mutators.CM_OmpParallelFor import CM_OmpParallelFor
+from Backends.CudaBackend.Mutators.CM_OmpParallel import CM_OmpParallel
 
 from Frontend.Parse import parse_source
 
@@ -76,7 +77,7 @@ class TestCudaBackendFunctions(TestCase):
           self.check_output(new_ast, good_tree)
 
 
-     def test_mandelcu(self):
+     def test_jacobicu(self):
           """ Test mutating mandel to cuda """
           template_code = open(CODE_PATH + '/jacobi.c', 'r').read()
           ast = parse_source(template_code, 'jacobi_test')
