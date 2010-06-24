@@ -104,7 +104,7 @@ class CM_OmpParallel(AbstractCudaMutator):
     def mutatorFunction(self, ast, ompParallel_node):
         """ CUDA mutator, writes memory transfer operations for a parallel region
         """
-        from Mutators.CM_OmpFor import CM_OmpFor
+        from Backends.CudaBackend.Mutators.CM_OmpFor import CM_OmpFor
 
         threadprivate = []
         for elem in OmpThreadPrivateFilter().dfs_iter(ast):
