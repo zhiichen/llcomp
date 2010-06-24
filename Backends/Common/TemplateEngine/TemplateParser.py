@@ -84,6 +84,6 @@ def get_template_array(var_list, ast, func = lambda elem : True, name_func = lam
     for elem in var_list:
         if func(elem):
             # Type string | var name | pointer to type | pointer to var | declaration string
-            var = TemplateVarNode(var = elem, type_func = type_func, ast = ast)
+            var = TemplateVarNode(var = elem, name_func = name_func, type_func = type_func, ast = ast)
             names.append(var)
     return names

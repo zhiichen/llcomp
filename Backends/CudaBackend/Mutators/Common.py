@@ -212,7 +212,7 @@ class AbstractCudaMutator(AbstractMutator):
         # Retrieve list of shared vars and build the array to template parsing
         # TODO: Move this to some kind of template function
         def decls_to_param(elem):
-            if isinstance(elem.type, c_ast.ArrayDecl):
+            if isinstance(elem.type, c_ast.ArrayDecl) or isinstance(elem.type, c_ast.PtrDecl):
                 return "*" + elem.name + "_cu"
             return elem.name
 
@@ -255,11 +255,11 @@ class AbstractCudaMutator(AbstractMutator):
             %endfor
 
              __global__ void ${kernelName} (
-                  ${', '.join( str(var.type) + " * reduction_cu_" + str(var.name) for var in reduction_vars)}
+                  ${', '.join(str(var.type) + " * reduction_cu_" + str(var.name) for var in reduction_vars)}
                   %if len(reduction_vars) > 0 and len(shared_vars) > 0:
                         ,
                   %endif 
-                  ${', '.join( str(var.type) + " " + str(var.name) for var in shared_vars)}
+                  ${', '.join(str(var.type) + " " + str(var.name) for var in shared_vars)}
             )
              {
              int idx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -321,9 +321,9 @@ class CudaTransformer:
         from Backends.CudaBackend.Mutators.CM_OmpParallelFor import CM_OmpParallelFor
         from Backends.CudaBackend.Mutators.CM_OmpParallel import CM_OmpParallel
 
-        cuda_ast = CM_OmpParallelFor().apply_all(ast)
+        # cuda_ast = CM_OmpParallelFor().apply_all(ast)
         # TODO Need to link parents after this?
-        # cuda_ast = CM_OmpParallel().apply_all(cuda_ast)
+        cuda_ast = CM_OmpParallel().apply_all(ast)
         return cuda_ast
 
 
