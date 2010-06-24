@@ -87,14 +87,12 @@ void jacobi(int n, int m, double *_dx, double *_dy, double alpha, double omega,
                   {
                         #pragma omp for
                         for (i = 0; i < m; i++)
-                                for (j = 0; j < n; j++)
+                         for (j = 0; j < n; j++)
                                         uold[(j * N) + i] = u[(j * N) + i];
 
                         #pragma omp for reduction(+:error)
-                        for (i = 0; i < (m - 2); i++) {
-
+                            for (i = 0; i < (m - 2); i++) {
                                 for (j = 0; j < (n - 2); j++) {
-
                                         resid = ((((ax * (uold[((j + 1) * N) + ((i + 1) - 1)] + uold[((j + 1) * N) + ((i + 1) + 1)])) + (ay * (uold[(((j + 1) - 1) * N) + (i + 1)] + uold[(((j + 1) + 1) * N) + (i + 1)]))) + (b * uold[((j + 1) * N) + (i + 1)])) - f[((j + 1) * N) + (i + 1)]) / b; 
                                        u[((j + 1) * N) + (i + 1)] = uold[((j + 1) * N) + (i + 1)] - (omega * resid);
                                         error += resid * resid;
