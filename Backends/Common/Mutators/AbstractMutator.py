@@ -131,7 +131,7 @@ class AbstractMutator(object):
                 for id in elem.identifiers.params:
                     decl = decl_of_id(id, ast)
                     if not decl:
-                        raise CudaMutatorError(" Declaration of " + id.name + " in " + elem.name + " clause could not be found ")
+                        raise AbortMutationException(" Declaration of " + id.name + " in " + elem.name + " clause could not be found ")
                     # If a declaration with the same name is already stored, pass. Otherwise, append it to the list
                     for stored_decl in clause_dict[elem.name]:
                         if decl.name == stored_decl.name:
