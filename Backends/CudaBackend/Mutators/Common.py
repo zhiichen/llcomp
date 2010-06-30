@@ -158,10 +158,17 @@ class AbstractCudaMutator(AbstractMutator):
         return self.parse_snippet(template_code, {'reduction_vars' : reduction_vars, 'shared_vars' : shared_vars}, name = 'Retrieve', show = False).ext[0].body
         
     def buildKernelLaunch(self, reduction_vars, shared_vars, ast):
+        # TODO: Move this to some kind of template function
+        def decls_to_param(elem):
+            if isinstance(elem.type, c_ast.ArrayDecl):
+                return "*" + elem.name + "_cu"
+            return elem.name
 
-         template_code = """
-      #include "llcomp_cuda.h" 
+        shared_vars = get_template_array(shared_vars, ast, name_func = decls_to_param) 
 
+        template_code = """
+        #include "llcomp_cuda.h" 
+        
          int fake() {
                   dim3 dimGrid (numBlocks);
                     dim3 dimBlock (numThreadsPerBlock);
@@ -172,10 +179,10 @@ class AbstractCudaMutator(AbstractMutator):
                   %endif 
                   ${', '.join( var.name for var in shared_vars)});
          }
-         """
-         # The last element is the object function
-         tree = [ elem for elem in self.parse_snippet(template_code, {'reduction_vars' : reduction_vars, 'shared_vars' : shared_vars,  'kernelName' : self.kernel_name}, name = 'KernelLaunch', show = False).ext  if type(elem) == c_ast.FuncDef  ][-1].body
-         return tree
+        """
+        # The last element is the object function
+        tree = [ elem for elem in self.parse_snippet(template_code, {'reduction_vars' : reduction_vars, 'shared_vars' : shared_vars,  'kernelName' : self.kernel_name}, name = 'KernelLaunch', show = False).ext  if type(elem) == c_ast.FuncDef  ][-1].body
+        return tree
 
 
     def buildHostReduction(self, reduction_vars, ast):
