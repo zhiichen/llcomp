@@ -2,7 +2,7 @@ Index: pycparser/c_lexer.py
 ===================================================================
 --- pycparser/c_lexer.py	(revisión: 95)
 +++ pycparser/c_lexer.py	(copia de trabajo)
-@@ -157,6 +157,54 @@
+@@ -157,6 +157,64 @@
          
          # pre-processor 
          'PPHASH',      # '#'
@@ -12,6 +12,16 @@ Index: pycparser/c_lexer.py
 +	####################
 +	# Ruyk 
 +   ####################
++
++   ####################
++   # LLC v2 syntax
++
++	'LLC', # llc
++  
++   # Constructs
++    'NESTED_FOR', # nested for
++
++#    'RESULT', # result
 +
 +
 +   ####################
@@ -57,7 +67,7 @@ Index: pycparser/c_lexer.py
      )
  
      ##
-@@ -209,6 +257,7 @@
+@@ -209,6 +267,7 @@
          # ppline: preprocessor line directives
          # 
          ('ppline', 'exclusive'),
@@ -65,7 +75,7 @@ Index: pycparser/c_lexer.py
      )
      
      def t_PPHASH(self, t):
-@@ -216,14 +265,172 @@
+@@ -216,14 +275,183 @@
          m = self.line_pattern.match(
              t.lexer.lexdata, pos=t.lexer.lexpos)
          
@@ -88,6 +98,17 @@ Index: pycparser/c_lexer.py
 +        r'pragma'
 +        t.type = 'PRAGMA'
 +        return t
++
++    def t_directive_LLC(self, t):
++        r'llc'
++        t.type = 'LLC'
++        return t
++
++    def t_directive_NESTED_FOR(self, t):
++        r'nested'
++        t.type = 'NESTED_FOR'
++        return t
++
 +
 +    def t_directive_OMP(self, t):
 +        r'omp'
@@ -240,7 +261,7 @@ Index: pycparser/c_lexer.py
      ##
      ## Rules for the ppline state
      ##
-@@ -267,6 +474,18 @@
+@@ -267,6 +495,18 @@
          msg = 'invalid #line directive'
          self._error(msg, t)
  
@@ -259,7 +280,7 @@ Index: pycparser/c_lexer.py
      ##
      ## Rules for the normal state
      ##
-@@ -298,7 +517,12 @@
+@@ -298,7 +538,12 @@
      t_GE                = r'>='
      t_EQ                = r'=='
      t_NE                = r'!='
@@ -272,7 +293,7 @@ Index: pycparser/c_lexer.py
      # Assignment operators
      t_EQUALS            = r'='
      t_TIMESEQUAL        = r'\*='
-@@ -337,7 +561,7 @@
+@@ -337,7 +582,7 @@
  
      t_STRING_LITERAL    = string_literal
      
@@ -281,7 +302,7 @@ Index: pycparser/c_lexer.py
      # functions to impose a strict order (otherwise, decimal
      # is placed before the others because its regex is longer,
      # and this is bad)
-@@ -410,7 +634,8 @@
+@@ -410,7 +655,8 @@
  
  
  if __name__ == "__main__":
