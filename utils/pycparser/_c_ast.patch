@@ -17,7 +17,7 @@ Index: pycparser/_c_ast.yaml
  # type <decl>(args)
  #
  FuncDecl: [args*, type*]
-@@ -161,4 +169,56 @@
+@@ -161,4 +169,61 @@
  While: [cond*, stmt*]
  
  
@@ -25,6 +25,11 @@ Index: pycparser/_c_ast.yaml
 +# Ruyk
 +Pragma: [name, stmt*]
  
++# llc 
++
++llcNestedFor : [name, loop*]
++
++
 +# Construct
 +
 +OmpParallel : [name, clauses**, stmt*]
