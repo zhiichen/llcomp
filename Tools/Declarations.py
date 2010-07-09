@@ -68,3 +68,52 @@ def type_of_id(id, ast):
           return decl_of_id(id,ast).type
 
 
+
+from Backends.Common.Writers.CommonWriter import OffsetNodeVisitor
+
+class NodeTypeVisitor(OffsetNodeVisitor):
+    # Priority among C types
+    _type_priority = ['long double', 'double','float', 'long int', 'int', 'short int']
+
+
+    def __init__(self, ast = None):
+        self._ast = ast
+
+    def get_type_name(self, elem):
+        """ Return a list of names for a type """
+        while not hasattr(type, 'type') and not hasattr(type, 'name'):
+            type = type.type
+
+        type = type_of_id(elem, self._ast)
+        while not hasattr(type, 'names') and not hasattr(type, 'name'):
+            type = type.type
+        if hasattr(type, 'names'):
+            return ' '.join(type.names)
+        else:
+            return str(type.name)
+
+
+    def coherce_type(self, typeA, typeB):
+        if self._type_priority.index(self.get_type_name(typeA)) > self._type_priority.index(self.get_type_name(typeB)):
+            return typeA
+        else:
+            return typeB
+
+    def visit_BinaryOp(self, node, offset = 0):
+        typeA = self.visit(node.left)
+        typeB = self.visit(node.right)
+        return self.coherce_type(typeA, typeB)
+
+
+
+def type_of_node(node, ast):
+          """Returns the TypeDecl node of an expression
+
+
+                Rules are: double>float>int
+
+                :rtype: TypeDecl node of a given expression node
+
+          """
+          return NodeTypeVisitor(ast = ast).visit(node)
+

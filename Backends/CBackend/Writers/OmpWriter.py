@@ -49,6 +49,11 @@ class OmpWriter(CWriter):
             self.visit(node.stmt)
         self.write_blank();  
 
+    def visit_OmpSyncronization(self, node, offset):
+        self.write_blank();
+        self.write(offset, node.name)
+
+
     def visit_OmpClause(self, node, offset):
         # Handwrite the case of device clause
         if node.name == 'cuda':

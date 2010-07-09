@@ -140,9 +140,14 @@ void jacobi(int n, int m, double *_dx, double *_dy, double alpha, double omega,
 /* $omp& shared(omega,error,tol,n,m,ax,ay,b,alpha,uold,u,f) */
 /* $omp&private(i,j,resid) */
 /* $omp&reduction(+:error)  */
+   #pragma llc array pattern submatriz i radio
+/*   #pragma llc cache uold[1:m-1][1:n-1]
+   #pragma llc cache variable(uold) pattern(square) radio(2) */
 
    #pragma omp for reduction(+ : error)
 	for (i = 1; i < m - 1; i++) {
+
+
 	    for (j = 1; j < n - 1; j++) {
 		   resid = (ax * (uold[i - 1][j] + uold[i + 1][j])  /*      Evaluate residual  */
 		    + ay * (uold[i][j - 1] + uold[i][j + 1])
@@ -166,6 +171,101 @@ void jacobi(int n, int m, double *_dx, double *_dy, double alpha, double omega,
     *_dy = dy;
 
 }
+
+
+/* ***************************************************************** */
+/*  Subroutine HelmholtzJ */
+/*  Solves poisson equation on rectangular grid assuming :  */
+/*  (1) Uniform discretization in each direction, and  */
+/*  (2) Dirichlect boundary conditions  */
+/*   */
+/*  Jacobi method is used in this routine  */
+/*  */
+/*  Input : n,m   Number of grid points in the X/Y directions  */
+/*          dx,dy Grid spacing in the X/Y directions  */
+/*          alpha Helmholtz eqn. coefficient  */
+/*          omega Relaxation factor  */
+/*          f(n,m) Right hand side function  */
+/*          u(n,m) Dependent variable/Solution */
+/*          tol    Tolerance for iterative solver  */
+/*          maxit  Maximum number of iterations  */
+/*  */
+/*  Output : u(n,m) - Solution  */
+/* **************************************************************** */
+
+void jacobi_coales(int n, int m, double *_dx, double *_dy, double alpha, double omega,
+       double u[N][M], double f[N][M], double tol, double maxit)
+{
+    int i, j, k;
+    double error, resid, ax, ay, b;
+    double uold[N][M];
+
+    double dx = *_dx;
+    double dy = *_dy;
+
+
+    /*  Initialize coefficients */
+    ax = 1.0 / (dx * dx);	/*  X-direction coef */
+    ay = 1.0 / (dy * dy);	/*   Y-direction coef */
+      b = -2.0 / (dx * dx) - 2.0 / (dy * dy) - alpha;	/*  Central coeff   */
+
+    error = 10.0 * tol;
+    k = 1;
+
+     while (k < maxit && error > tol) { 
+	error = 0.0;
+/*  Copy new solution into old */
+/* $omp paralleldo schedule(static)  */
+/* $omp& shared(n,m,uold,u) */
+/* $omp&private(i,j) */
+#pragma omp parallel shared(omega,error,tol,n,m,ax,ay,b,alpha,uold,u,f) private(i, j, resid) target device(cuda)
+{
+   #pragma omp for
+	for (i = 0; i < m; i++)
+	    for (j = 0; j < n; j++)
+		uold[i][j] = u[i][j];
+
+/* $omp end paralleldo */
+
+/*  Compute stencil, residual, & update */
+
+/* $omp paralleldo schedule(static) */
+/* $omp& shared(omega,error,tol,n,m,ax,ay,b,alpha,uold,u,f) */
+/* $omp&private(i,j,resid) */
+/* $omp&reduction(+:error)  */
+   #pragma llc array pattern submatriz i radio
+/*   #pragma llc cache uold[1:m-1][1:n-1]
+   #pragma llc cache variable(uold) pattern(square) radio(2) */
+
+   #pragma omp for reduction(+ : error)
+	for (i = 1; i < m - 1; i++) {
+
+
+	    for (j = 1; j < n - 1; j++) {
+		   resid = (ax * (uold[i - 1][j] + uold[i + 1][j])  /*      Evaluate residual  */
+		    + ay * (uold[i][j - 1] + uold[i][j + 1])
+		    + b * uold[i][j] - f[i][j]) / b;
+		   u[i][j] = uold[i][j] - omega * resid;  /*  Update solution  */
+		   error += resid * resid;                /*  Accumulate residual error */
+	    }
+}
+
+	}
+/* $omp end paralleldo  */
+
+	/*  Error check  */
+	k++;
+	error = sqrt(error) / (double) (n * m);
+    } /*  End iteration loop  */
+
+    printf("Total Number of Iterations %d \n", k);
+    printf("Residual %g \n", error);
+    *_dx = dx;
+    *_dy = dy;
+
+}
+
+
 
 
 /* *********************************************************** */
