@@ -117,6 +117,11 @@ class CM_OmpParallel(AbstractCudaMutator):
         modified_shared_vars = clause_dict['COPY_OUT']
         copyin_shared_vars = clause_dict['COPY_IN']
 
+        # If no copy clauses specified, default to shared params
+        if len(copyin_shared_vars) == 0 and len(modified_shared_vars) == 0:
+            modified_shared_vars = shared_params
+            copyin_shared_vars = shared_params
+
         private_params = clause_dict['PRIVATE'] 
         nowait = clause_dict.has_key('NOWAIT')
         # If the parallel statement have declarations, they are private to the thread, so, we need to put them as params

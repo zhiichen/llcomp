@@ -1,5 +1,5 @@
 // #include "reduction_snippets.h"
-#define N 2048
+#define N 2048*2*2
 
 double * u; 
 
@@ -77,37 +77,41 @@ void jacobi(int n, int m, double *_dx, double *_dy, double alpha, double omega,
         ay = 1.0 / (dy * dy);
         b = ((-2.0 / (dx * dx)) - (2.0 / (dy * dy))) - alpha;
         error = 10.0 * tol;
-        k = 1;
-        while ((k < maxit) && (error > tol)) {
+  //      k = 1;
+        // while ((k < maxit) && (error > tol)) {
+        #pragma omp target device (cuda) copy_in(u, uold, f) copy_out(uold, u) 
+//        #pragma omp parallel shared(omega,error,tol,n,m,ax,ay,b,alpha,uold,u,f)  private(i,j,resid) 
+        #pragma omp parallel shared(omega,tol,n,m,ax,ay,b,alpha,uold,u,f)  private(i,j,resid) 
+        {
+            for (k = 0; k < 4096; k++) {
 
-                error = 0.0;
+                //              error = 0.0;
                 {
-                  #pragma omp target device (cuda) copy_in(u, uold, f) copy_out(uold, u) 
-                  #pragma omp parallel shared(omega,error,tol,n,m,ax,ay,b,alpha,uold,u,f)  private(i,j,resid) 
-                  {
+                    {
                         #pragma omp for
                         for (i = 0; i < m; i++)
-                         for (j = 0; j < n; j++)
-                                        uold[(j * N) + i] = u[(j * N) + i];
+                            for (j = 0; j < n; j++)
+                                uold[(j * N) + i] = u[(j * N) + i];
 
-                        #pragma omp for reduction(+:error)
-                            for (i = 0; i < (m - 2); i++) {
-                                for (j = 0; j < (n - 2); j++) {
-                                        resid = ((((ax * (uold[((j + 1) * N) + ((i + 1) - 1)] + uold[((j + 1) * N) + ((i + 1) + 1)])) + (ay * (uold[(((j + 1) - 1) * N) + (i + 1)] + uold[(((j + 1) + 1) * N) + (i + 1)]))) + (b * uold[((j + 1) * N) + (i + 1)])) - f[((j + 1) * N) + (i + 1)]) / b; 
-                                       u[((j + 1) * N) + (i + 1)] = uold[((j + 1) * N) + (i + 1)] - (omega * resid);
-                                        error += resid * resid;
-                                }
+                        #pragma omp for // reduction(+:error)
+                        for (i = 0; i < (m - 2); i++) {
+                            for (j = 0; j < (n - 2); j++) {
+                                resid = ((((ax * (uold[((j + 1) * N) + ((i + 1) - 1)] + uold[((j + 1) * N) + ((i + 1) + 1)])) + (ay * (uold[(((j + 1) - 1) * N) + (i + 1)] + uold[(((j + 1) + 1) * N) + (i + 1)]))) + (b * uold[((j + 1) * N) + (i + 1)])) - f[((j + 1) * N) + (i + 1)]) / b; 
+                                u[((j + 1) * N) + (i + 1)] = uold[((j + 1) * N) + (i + 1)] - (omega * resid);
+                                //    error += resid * resid;
+                            }
 
                         }
 
-                 }
+                    }
                 }
-                k++;
-                error = sqrt(error) / (double) (n * m);
+                //                k++;
+                //                error = sqrt(error) / (double) (n * m);
+            }
         }
 
         printf("Total Number of Iterations %d \n", k);
-        printf("Residual %g \n", error);
+//        printf("Residual %g \n", error);
         *_dx = dx;
         *_dy = dy;
 }

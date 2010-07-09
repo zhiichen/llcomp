@@ -113,9 +113,9 @@ class AbstractCudaMutator(AbstractMutator):
                   % endfor
                   /* Initialization */
                   % for var in reduction_names:
-                  cudaMalloc((void **) (&reduction_cu_${var.name}), numElems * sizeof(${var.type}));
+                    cudaMalloc((void **) (&reduction_cu_${var.name}), numElems * sizeof(${var.type}));
                     /* This may be incorrect in case reduction don't start with 0 or 1 */
-                  cudaMemset(reduction_cu_${var.name}, (int) ${var.name}, numElems * sizeof(${var.type}));
+                    cudaMemset(reduction_cu_${var.name}, (int) ${var.name}, numElems * sizeof(${var.type}));
                   % endfor
 
                   % for var in shared_vars:
@@ -161,7 +161,7 @@ class AbstractCudaMutator(AbstractMutator):
         # TODO: Move this to some kind of template function
         def decls_to_param(elem):
             if isinstance(elem.type, c_ast.ArrayDecl):
-                return "*" + elem.name + "_cu"
+                return elem.name + "_cu"
             return elem.name
 
         shared_vars = get_template_array(shared_vars, ast, name_func = decls_to_param) 
