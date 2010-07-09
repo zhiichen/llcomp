@@ -12,7 +12,7 @@ from Frontend.Parse import parse_source
 from Backends.Common.Mutators.AstSupport import DeclsToParamsMutator, IDNameMutator, FuncToDeviceMutator, PointerMutator
 from Backends.Common.Mutators.AbstractMutator import IgnoreMutationException, AbstractMutator
 
-from Backends.Common.TemplateEngine.TemplateParser import TemplateParser, get_template_array
+from Backends.Common.TemplateEngine.TemplateParser import TemplateParser, get_template_array, get_typedefs_to_template
 
 
 import cStringIO
@@ -225,29 +225,8 @@ class AbstractCudaMutator(AbstractMutator):
 
         shared_vars = get_template_array(shared_list, ast, name_func = decls_to_param) 
 
-        # TODO: Clean (Move this to external function)
-        decls_dict = {}
-        param_var_list = []
-        for elem in shared_vars:
-            try:
-                identifier_type = IdentifierTypeFilter().apply(elem.type)
-                if not identifier_type.names[0] in decls_dict:
-                    typedef_node = TypedefFilter(name = identifier_type.names[0]).apply(ast)
-                    # TODO: Avoid construction/destruction
-                    typedefIO = cStringIO.StringIO()
-                    cw = CWriter(stream = typedefIO)
-                    cw.visit(typedef_node)
-                    decls_dict[identifier_type.names[0]] = str(typedefIO.getvalue())
-            except NodeNotFound as nnf:
-                # It is not a complex type
-#                print " Not a userdefined-type " + elem[1]
-#                structIO = cStringIO.StringIO()
-#                cw = CWriter(stream = structIO)
-#                cw.visit(elem[3])
-#                param_var_list.append(str(structIO.getvalue()).replace(';','') )
-                pass
-
-        typedef_list = [ elem for elem in decls_dict.values() ]
+        typedef_list = get_typedefs_to_template(shared_vars,ast)
+        # typedef_list = [ elem for elem in decls_dict.values() ]
 
         template_code = """
 
