@@ -46,7 +46,7 @@ class DotDebugTool(object):
             DotWriter(filename = self.tmpfile, highlight = self.highlight).visit(node)
             size =  len(open(self.tmpfile).readlines())
             if not (size > self.MAX_LINES):
-                p = subprocess.Popen("python " + config.WORKDIR + "/xdot.py " + "/tmp/dotfile.dot", shell=True)
+                p = subprocess.Popen("python " + config.WORKDIR + "/utils/xdot.py " + "/tmp/dotfile.dot", shell=True)
                 sts = os.waitpid(p.pid, 0)[1]
             else:
                 print "DotDebugTool:::: AST Too big to show"

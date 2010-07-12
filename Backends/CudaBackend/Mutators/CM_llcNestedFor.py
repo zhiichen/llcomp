@@ -75,13 +75,14 @@ class CM_llcNestedFor(CM_OmpParallelFor):
         return start_node
 
 
-    def buildDeclarations(self, numThreads, reduction_node_list, shared_node_list, ast):
+    def buildDeclarations(self, maxLoopA, maxLoopB, reduction_node_list, shared_node_list, ast):
         """ Builds the declaration section 
              @param numThreads number of threads
              @return Declarations subtree
         """ 
         # Position in the template for dimA declaration, just in case we change it
         DIMA_POS = 0
+        DIMB_POS = 1
         MEMSIZE_POS = 4
         # TODO : Move this array creation to a template filter (something like |type)
         reduction_vars = get_template_array(reduction_node_list, ast)
@@ -93,10 +94,18 @@ class CM_llcNestedFor(CM_OmpParallelFor):
          /* Kernel configuration */
          void kernel_func() {
                   int dimA = 1;
-                  int numThreadsPerBlock = CUDA_NUM_THREADS;
+                  int dimB = 1;
+
+                  int numThreadsPerBlock = CUDA_NUM_THREADS/2;
                   int numBlocks = dimA / numThreadsPerBlock + (dimA % numThreadsPerBlock?1:0);
-                  int numElems = numBlocks * numThreadsPerBlock;
+
+                  int numThreadsPerBlockB = CUDA_NUM_THREADS/2;
+                  int numBlocksB = dimB / numThreadsPerBlock + (dimB % numThreadsPerBlock?1:0);
+
+
+                  int numElems = numBlocks * numThreadsPerBlock * numBlocksB * numThreadsPerBlockB;
                   int memSize = numElems * sizeof(double);
+
 
                   /* Variable declaration */
                   % for var in reduction_names:
@@ -122,7 +131,8 @@ class CM_llcNestedFor(CM_OmpParallelFor):
 
             """
         kernel_init = self.parse_snippet(template_code, {'reduction_names' : reduction_vars, 'shared_vars' : shared_vars}, name = 'Initialization of ' + self.kernel_name, show = False).ext[-1].body
-        kernel_init.decls[DIMA_POS].init = numThreads
+        kernel_init.decls[DIMA_POS].init = maxLoopA
+        kernel_init.decls[DIMB_POS].init = maxLoopB
         return kernel_init
 
 
@@ -130,6 +140,13 @@ class CM_llcNestedFor(CM_OmpParallelFor):
         """ Build CUDA Kernel code """
 
         reduction_vars = get_template_array(reduction_list, ast)
+
+        # only for inside for
+        loop_list = [loop.init.lvalue.name, loop.stmt.stmts[0].init.lvalue.name]
+        private_vars = get_template_array([var for var in private_list if not var.name in loop_list], ast)
+
+        loop_vars = get_template_array([var for var in private_list if var.name in loop_list], ast)
+
         # Retrieve list of shared vars and build the array to template parsing
         # TODO: Move this to some kind of template function
         def decls_to_param(elem):
@@ -157,10 +174,18 @@ class CM_llcNestedFor(CM_OmpParallelFor):
             )
              {
              int idx = blockIdx.x * blockDim.x + threadIdx.x;
+             int idy = blockIdx.y * blockDim.y + threadIdx.y;
+
+            ${loop_vars[0].declaration} ${loop_vars[0]} = idx;
+            ${loop_vars[1].declaration} ${loop_vars[1]} = idy;
+
+             %for var in private_vars:
+                ${var.declaration} ${var};
+             %endfor
              ;
              }
              """
-        tree = self.parse_snippet(template_code, {'kernelName' : self.kernel_name, 'reduction_vars' : reduction_vars, 'shared_vars' : shared_vars, 'typedefs' : typedef_list} , name = 'KernelBuild', show = False)
+        tree = self.parse_snippet(template_code, {'kernelName' : self.kernel_name, 'reduction_vars' : reduction_vars, 'shared_vars' : shared_vars, 'typedefs' : typedef_list, 'private_vars' : private_vars, 'loop_vars' : loop_vars} , name = 'KernelBuild', show = True)
 
         # OpenMP shared vars are parameters of the kernel function
         if shared_list:
@@ -173,14 +198,9 @@ class CM_llcNestedFor(CM_OmpParallelFor):
         DeclsToParamsMutator().apply(tree.ext[-1].function.decl.type.args)
         # OpenMP Private vars need to be declared inside kernel
         #     - we build a tmp Compound to group all declarations, and insert them once
-        tmp = c_ast.Compound(decls= private_list, stmts=[])
+        tmp = c_ast.Compound(decls = [], stmts=[])
         #     - Insert tool removes the parent node of the inserted subtree
         InsertTool(subtree = tmp, position = "end").apply(tree.ext[-1].function.body, 'decls')
-
-        # Add the loop statements, (but not the reduction)
-        IDNameMutator(old = loop.init.lvalue, new = c_ast.ID('idx')).apply_all(loop.stmt)
-        # Add the loop statements, (but not the reduction)
-        IDNameMutator(old = loop.init.lvalue, new = c_ast.ID('idx')).apply_all(loop.cond)
 
         # Identify function calls inside kernel and replace the definitions to __device__ 
         try:
@@ -203,10 +223,45 @@ class CM_llcNestedFor(CM_OmpParallelFor):
             IDNameMutator(old = c_ast.ID(name = elem.name, parent = elem.parent), new = c_ast.ID(name = 'reduction_cu_' + str(elem.name) + '[idx]', parent = elem.parent)).apply_all(loop.stmt)
         # Insert the code inside kernel
         # We need to check if the idx is inside for limits (in case we have more threads than iterations)
-        check_boundary_node = c_ast.Compound(decls = None, stmts = [c_ast.If(cond = loop.cond, iftrue = loop.stmt, iffalse = None)], parent = tree.ext[-1].function.body)
+        # TODO change this to generic form
+        merge_condition_node = c_ast.BinaryOp(op = '&&', left = loop.cond, right = loop.stmt.stmts[0].cond, parent = None)
+        # TODO change this to generic form
+        check_boundary_node = c_ast.Compound(decls = None, stmts = [c_ast.If(cond = merge_condition_node, iftrue = loop.stmt.stmts[0].stmt, iffalse = None)], parent = tree.ext[-1].function.body)
+        # Preserve parent node
+        merge_condition_node.parent = check_boundary_node;
+        assert check_boundary_node.stmts[0].cond.parent == check_boundary_node
+
         InsertTool(subtree = check_boundary_node, position = "begin").apply(tree.ext[-1].function.body, 'stmts')
         return c_ast.FileAST(ext = [tree.ext[-1]])
 
+
+
+    def buildKernelLaunch(self, reduction_vars, shared_vars, ast):
+        # TODO: Move this to some kind of template function
+        def decls_to_param(elem):
+            if isinstance(elem.type, c_ast.ArrayDecl):
+                return elem.name + "_cu"
+            return elem.name
+
+        shared_vars = get_template_array(shared_vars, ast, name_func = decls_to_param) 
+
+        template_code = """
+        #include "llcomp_cuda.h" 
+        
+         int fake() {
+                  dim3 dimGrid (numBlocks, numBlocksB);
+                    dim3 dimBlock (numThreadsPerBlock, numThreadsPerBlockB);
+
+             ${kernelName} <<< dimGrid, dimBlock >>> (${', '.join("reduction_cu_" + var.name for var in reduction_vars)}
+                  %if len(reduction_vars) > 0 and len(shared_vars) > 0:
+                        ,
+                  %endif 
+                  ${', '.join( var.name for var in shared_vars)});
+         }
+        """
+        # The last element is the object function
+        tree = [ elem for elem in self.parse_snippet(template_code, {'reduction_vars' : reduction_vars, 'shared_vars' : shared_vars,  'kernelName' : self.kernel_name}, name = 'KernelLaunch', show = False).ext  if type(elem) == c_ast.FuncDef  ][-1].body
+        return tree
 
 
     def buildRetrieve(self, reduction_vars, modified_shared_vars):
@@ -229,6 +284,8 @@ class CM_llcNestedFor(CM_OmpParallelFor):
         """
 
         maxThreadNumber_node = self.getThreadNum(ompFor_node.stmt.cond)
+        # TODO: Fix this with general case
+        maxLoopB_node = self.getThreadNum(ompFor_node.stmt.stmt.stmts[0].cond)
 
         ##################### Statement for cuda
         cuda_stmts = c_ast.Compound(stmts = [], decls = []);
@@ -247,7 +304,7 @@ class CM_llcNestedFor(CM_OmpParallelFor):
        
         ##################### Declarations
 
-        kernel_init_subtree = self.buildDeclarations(numThreads = maxThreadNumber_node, reduction_node_list = reduction_params, shared_node_list = [], ast = ast)
+        kernel_init_subtree = self.buildDeclarations(maxLoopA = maxThreadNumber_node, maxLoopB = maxLoopB_node, reduction_node_list = reduction_params, shared_node_list = [], ast = ast)
         InsertTool(subtree = kernel_init_subtree, position = "begin").apply(cuda_stmts, 'decls')
         
 
@@ -288,9 +345,6 @@ class CM_llcNestedFor(CM_OmpParallelFor):
         # Host reduction
         reduction_subtree = self.buildHostReduction(reduction_vars = reduction_params, ast = ast)
         InsertTool(subtree = reduction_subtree, position = "end").apply(cuda_stmts, 'stmts')
-
-        from Tools.Debug import DotDebugTool
-        DotDebugTool().apply(cuda_stmts)
 
         # Replace the entire pragma by a CompoundStatement with all the new statements
 #        DotDebugTool(highlight = [ompFor_node]).apply(self._parallel)
