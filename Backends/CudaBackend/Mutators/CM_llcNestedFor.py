@@ -3,6 +3,8 @@ from pycparser import c_parser, c_ast
 
 from Backends.CudaBackend.Visitors.CM_Visitors import *
 
+from Backends.Common.Visitors.GenericVisitors import *
+
 from Tools.Tree import InsertTool, NodeNotFound, ReplaceTool, RemoveTool
 from Tools.Declarations import type_of_id, decl_of_id
 from Tools.Dump import Dump
@@ -15,7 +17,7 @@ from Backends.CudaBackend.Mutators.Common import AbstractCudaMutator
 from Backends.CudaBackend.Mutators.CM_OmpParallelFor import CM_OmpParallelFor
 
 
-from Backends.Common.TemplateEngine.TemplateParser import TemplateParser, get_template_array
+from Backends.Common.TemplateEngine.TemplateParser import TemplateParser, get_template_array, get_typedefs_to_template
 
 class CM_llcNestedFor(CM_OmpParallelFor):
 
@@ -31,15 +33,17 @@ class CM_llcNestedFor(CM_OmpParallelFor):
 
     def apply_all(self, parent_parallel_node, ast):
         """ Apply mutation to all matches """
+
+        print "*****"
+        print "Apply mutation to all matches "
+
         start_node = None
         self.ast = ast
-        f = OmpForFilter()
-        num = 0;
- #          start_node = self.filter(ast)
- #          self.mutatorFunction(ast, start_node)
-
         try:
+            f = llcNestedForFilter()
+            num = 0;
             for elem in f.iterate(ast):
+                print " Elem: " + str(elem.loop)
                 # Save previous state
                 old_name = self.kernel_name
                 old_clauses = self._clauses
@@ -49,8 +53,14 @@ class CM_llcNestedFor(CM_OmpParallelFor):
                 self._parallel = f.get_parallel()
                 # If current node is not child of first parallel node, stop
                 if self._parallel != parent_parallel_node:
+                    print " Not in current parallel region "
+                    from Tools.Debug import DotDebugTool
+                    DotDebugTool().apply(self._parallel)
                     raise StopIteration
-                start_node = self.mutatorFunction(ast, elem)
+
+                print " ** Mutator function ** "
+                start_node = self.mutatorFunction(ast, elem.loop)
+                print " ** Done ** "
                 # Restore previous state
                 self.kernel_name = old_name
                 self._clauses = old_clauses
@@ -59,6 +69,9 @@ class CM_llcNestedFor(CM_OmpParallelFor):
             print str(nf)
         except StopIteration:
             return self._parallel
+
+        print "*****"
+
         return start_node
 
 
@@ -113,6 +126,88 @@ class CM_llcNestedFor(CM_OmpParallelFor):
         return kernel_init
 
 
+    def buildKernel(self, shared_list, private_list, reduction_list, loop, ast):
+        """ Build CUDA Kernel code """
+
+        reduction_vars = get_template_array(reduction_list, ast)
+        # Retrieve list of shared vars and build the array to template parsing
+        # TODO: Move this to some kind of template function
+        def decls_to_param(elem):
+            if isinstance(elem.type, c_ast.ArrayDecl):
+                return "*" + elem.name + "_cu"
+            return elem.name
+
+        shared_vars = get_template_array(shared_list, ast, name_func = decls_to_param) 
+
+        typedef_list = get_typedefs_to_template(shared_vars,ast)
+
+        template_code = """
+
+            #include "llcomp_cuda.h" 
+            %for line in typedefs:
+                ${line}
+            %endfor
+
+             __global__ void ${kernelName} ( 
+                  ${', '.join(str(var.type) + " * reduction_cu_" + str(var.name) for var in reduction_vars)}
+                  %if len(reduction_vars) > 0 and len(shared_vars) > 0:
+                        ,
+                  %endif 
+                  ${', '.join(str(var.type) + " " + str(var.name) for var in shared_vars)}
+            )
+             {
+             int idx = blockIdx.x * blockDim.x + threadIdx.x;
+             ;
+             }
+             """
+        tree = self.parse_snippet(template_code, {'kernelName' : self.kernel_name, 'reduction_vars' : reduction_vars, 'shared_vars' : shared_vars, 'typedefs' : typedef_list} , name = 'KernelBuild', show = False)
+
+        # OpenMP shared vars are parameters of the kernel function
+        if shared_list:
+          for elem in shared_list:
+                # Replace the name of the declaration in the kernel code. 
+                if isinstance(elem.type, c_ast.ArrayDecl) or isinstance(elem.type, c_ast.Struct):
+                    mut = IDNameMutator(old = c_ast.ID(elem.name), new = c_ast.ID(elem.name + '_cu'))
+                    mut.apply_all(loop.stmt)
+
+        DeclsToParamsMutator().apply(tree.ext[-1].function.decl.type.args)
+        # OpenMP Private vars need to be declared inside kernel
+        #     - we build a tmp Compound to group all declarations, and insert them once
+        tmp = c_ast.Compound(decls= private_list, stmts=[])
+        #     - Insert tool removes the parent node of the inserted subtree
+        InsertTool(subtree = tmp, position = "end").apply(tree.ext[-1].function.body, 'decls')
+
+        # Add the loop statements, (but not the reduction)
+        IDNameMutator(old = loop.init.lvalue, new = c_ast.ID('idx')).apply_all(loop.stmt)
+        # Add the loop statements, (but not the reduction)
+        IDNameMutator(old = loop.init.lvalue, new = c_ast.ID('idx')).apply_all(loop.cond)
+
+        # Identify function calls inside kernel and replace the definitions to __device__ 
+        try:
+            for func_call in FuncCallFilter().iterate(loop.stmt):
+              print " Writing " + func_call.name.name + " to device "
+              try:
+                  fcm = FuncToDeviceMutator(func_call = func_call).apply(ast)
+              except IgnoreMutationException as ime:
+                  # This function is already implemented on device, so we continue we don't need to convert it
+                  print "CudaMutator:: Warning :: " + str(ime)
+        except NodeNotFound:
+            # There are not function calls on the loop.stmt
+            pass
+        except FilterError as fe:
+            print " Filter error "
+            raise CudaMutatorError(fe.get_description())
+        # Identify function calls inside kernel and replace the definitions to __device__ 
+        # TODO: This is incorrect, we should write a subtree instead of a bare string...
+        for elem in reduction_list:
+            IDNameMutator(old = c_ast.ID(name = elem.name, parent = elem.parent), new = c_ast.ID(name = 'reduction_cu_' + str(elem.name) + '[idx]', parent = elem.parent)).apply_all(loop.stmt)
+        # Insert the code inside kernel
+        # We need to check if the idx is inside for limits (in case we have more threads than iterations)
+        check_boundary_node = c_ast.Compound(decls = None, stmts = [c_ast.If(cond = loop.cond, iftrue = loop.stmt, iffalse = None)], parent = tree.ext[-1].function.body)
+        InsertTool(subtree = check_boundary_node, position = "begin").apply(tree.ext[-1].function.body, 'stmts')
+        return c_ast.FileAST(ext = [tree.ext[-1]])
+
+
 
     def buildRetrieve(self, reduction_vars, modified_shared_vars):
         memcpy_lines = ""
@@ -132,6 +227,7 @@ class CM_llcNestedFor(CM_OmpParallelFor):
     def mutatorFunction(self, ast, ompFor_node):
         """ CUDA mutator, writes memory transfer operations for a parallel region
         """
+
         maxThreadNumber_node = self.getThreadNum(ompFor_node.stmt.cond)
 
         ##################### Statement for cuda
@@ -148,6 +244,7 @@ class CM_llcNestedFor(CM_OmpParallelFor):
         shared_params = clause_dict['SHARED']
 
 
+       
         ##################### Declarations
 
         kernel_init_subtree = self.buildDeclarations(numThreads = maxThreadNumber_node, reduction_node_list = reduction_params, shared_node_list = [], ast = ast)
@@ -191,6 +288,9 @@ class CM_llcNestedFor(CM_OmpParallelFor):
         # Host reduction
         reduction_subtree = self.buildHostReduction(reduction_vars = reduction_params, ast = ast)
         InsertTool(subtree = reduction_subtree, position = "end").apply(cuda_stmts, 'stmts')
+
+        from Tools.Debug import DotDebugTool
+        DotDebugTool().apply(cuda_stmts)
 
         # Replace the entire pragma by a CompoundStatement with all the new statements
 #        DotDebugTool(highlight = [ompFor_node]).apply(self._parallel)

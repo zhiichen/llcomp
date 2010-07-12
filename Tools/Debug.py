@@ -1,4 +1,4 @@
-from Backends.DotBackend.Writers import DotWriter
+from Backends.DotBackend.Writers.DotWriter import DotWriter
 import subprocess
 import os
 from cStringIO import StringIO

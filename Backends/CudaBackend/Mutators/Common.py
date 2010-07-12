@@ -226,7 +226,6 @@ class AbstractCudaMutator(AbstractMutator):
         shared_vars = get_template_array(shared_list, ast, name_func = decls_to_param) 
 
         typedef_list = get_typedefs_to_template(shared_vars,ast)
-        # typedef_list = [ elem for elem in decls_dict.values() ]
 
         template_code = """
 

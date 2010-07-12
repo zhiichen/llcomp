@@ -166,4 +166,38 @@ class OmpParallelForFilter(OmpParallelFilter):
         return self._ompFor
 
 
+class llcNestedForFilter(OmpParallelFilter):
+    """ Returns a *omp parallel for* construct 
+
+    """
+
+    def __init__(self, prev_brother = None, device = None):
+        self._parallel = None
+        self._ompFor = None
+
+        def condition(node):
+            """ If node is a parallel, check if has only one stmt and is a for """
+            if isinstance(node, c_ast.llcNestedFor):
+                tmp = node;
+                while tmp and not isinstance(tmp, c_ast.OmpParallel):
+                    tmp = tmp.parent
+                if not tmp:
+                    raise NodeNotFound("llc nested outside parallel region")
+    
+                self._parallel = tmp
+        
+                if isinstance(node.loop, c_ast.OmpFor):
+                    self._ompFor = node.loop
+                    return True
+                return False
+            return False
+
+        super(llcNestedForFilter, self).__init__(condition_func = self.parallel_condition and condition, prev_brother = prev_brother, device = device)
+
+
+    def get_parallel(self):
+        return self._parallel
+
+
+
 

@@ -104,6 +104,7 @@ class CM_OmpParallel(AbstractCudaMutator):
     def mutatorFunction(self, ast, ompParallel_node):
         """ CUDA mutator, writes memory transfer operations for a parallel region
         """
+        from Backends.CudaBackend.Mutators.CM_llcNestedFor import CM_llcNestedFor
         from Backends.CudaBackend.Mutators.CM_OmpFor import CM_OmpFor
 
         threadprivate = []
@@ -130,6 +131,7 @@ class CM_OmpParallel(AbstractCudaMutator):
         private_params.extend(threadprivate)
 
         # Loops inside parallel region (wired for now)
+        CM_llcNestedFor(clause_dict, kernel_name = self.kernel_prefix + "_nestedLoopKernel").apply_all(ompParallel_node, ast)
         CM_OmpFor(clause_dict, kernel_name = self.kernel_prefix + "_loopKernel").apply_all(ompParallel_node, ast)
 
         ##################### Statement for cuda
