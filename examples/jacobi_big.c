@@ -93,6 +93,7 @@ void jacobi(int n, int m, double *_dx, double *_dy, double alpha, double omega,
                             for (j = 0; j < n; j++)
                                 uold[(j * N) + i] = u[(j * N) + i];
 
+                        #pragma llc nested 
                         #pragma omp for // reduction(+:error)
                         for (i = 0; i < (m - 2); i++) {
                             for (j = 0; j < (n - 2); j++) {
