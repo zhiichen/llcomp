@@ -180,8 +180,8 @@ void update(int np, int nd, vnd_t pos[nparts], vnd_t vel[nparts], vnd_t f[nparts
   /* The time integration is fully parallel */
 /* #pragma omp parallel for default(shared) private(i,j) firstprivate(rmass, dt) */
 
-#pragma omp target device (cuda) copy_in(f, vel, pos, box, a) copy_out(pos, vel, a)
-#pragma omp parallel  private(i,j, rmass, dt) shared(pos, vel, a, f, np, nd) // firstprivate(rmass,dt)
+/* #pragma omp target device (cuda) copy_in(f, vel, pos, box, a) copy_out(pos, vel, a)*/
+#pragma omp parallel  private(i,j, rmass, dt) shared(pos, vel, a, f, np, nd) firstprivate(rmass,dt)
  {
 #pragma omp for 
 
