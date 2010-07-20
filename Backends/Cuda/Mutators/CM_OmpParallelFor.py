@@ -7,9 +7,9 @@ from Backends.Common.Mutators.AstSupport import DeclsToParamsMutator, IDNameMuta
 from Backends.Common.TemplateEngine.TemplateParser import TemplateParser, get_template_array
 
 
-from Backends.CudaBackend.Mutators.Common import AbstractCudaMutator
+from Backends.Cuda.Mutators.Common import AbstractCudaMutator
 
-from Backends.CudaBackend.Visitors.CM_Visitors import OmpForFilter, OmpParallelFilter,  OmpParallelForFilter
+from Backends.Cuda.Visitors.CM_Visitors import OmpForFilter, OmpParallelFilter,  OmpParallelForFilter
 
 from Tools.Tree import InsertTool, NodeNotFound, ReplaceTool, RemoveTool
 

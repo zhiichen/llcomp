@@ -5,7 +5,7 @@ from pycparser import c_parser, c_ast
 import subprocess
 from cStringIO import StringIO
 
-from Backends.CBackend.Writers.CWriter import CWriter
+from Backends.C.Writers.CWriter import CWriter
 
 from Backends.Common.Visitors.GenericVisitors import IdentifierTypeFilter, TypedefFilter
 

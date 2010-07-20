@@ -2,8 +2,8 @@
 
 """
 import unittest
-from  Backends.CBackend.tests  import basic
-from  Backends.CudaBackend.tests import  cudaBackend, buildCudaTests
+from  Backends.C.tests  import basic
+from  Backends.Cuda.tests import  cudaBackend, buildCudaTests
 
 import sys
 import getopt
@@ -33,5 +33,5 @@ unittest.TextTestRunner(verbosity=2).run(TEST_SUITE)
 
 print " Running Backend tests "
 TEST_SUITE = unittest.TestLoader().loadTestsFromTestCase(
-   cudaBackend.TestCudaBackendFunctions)
+   cudaBackend.TestCudaFunctions)
 unittest.TextTestRunner(verbosity=2).run(TEST_SUITE)

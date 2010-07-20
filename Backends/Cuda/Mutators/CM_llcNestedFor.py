@@ -1,7 +1,7 @@
 from pycparser import c_parser, c_ast
 
 
-from Backends.CudaBackend.Visitors.CM_Visitors import *
+from Backends.Cuda.Visitors.CM_Visitors import *
 
 from Backends.Common.Visitors.GenericVisitors import *
 
@@ -12,9 +12,9 @@ from Tools.Debug import DotDebugTool
 from Backends.Common.Mutators.AstSupport import DeclsToParamsMutator, IDNameMutator, FuncToDeviceMutator, PointerMutator
 
 
-from Backends.CudaBackend.Mutators.Common import AbstractCudaMutator
+from Backends.Cuda.Mutators.Common import AbstractCudaMutator
 
-from Backends.CudaBackend.Mutators.CM_OmpParallelFor import CM_OmpParallelFor
+from Backends.Cuda.Mutators.CM_OmpParallelFor import CM_OmpParallelFor
 
 
 from Backends.Common.TemplateEngine.TemplateParser import TemplateParser, get_template_array, get_typedefs_to_template
@@ -33,10 +33,6 @@ class CM_llcNestedFor(CM_OmpParallelFor):
 
     def apply_all(self, parent_parallel_node, ast):
         """ Apply mutation to all matches """
-
-        print "*****"
-        print "Apply mutation to all matches "
-
         start_node = None
         self.ast = ast
         try:
@@ -69,9 +65,6 @@ class CM_llcNestedFor(CM_OmpParallelFor):
             print str(nf)
         except StopIteration:
             return self._parallel
-
-        print "*****"
-
         return start_node
 
 

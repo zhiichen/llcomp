@@ -1,7 +1,7 @@
 from pycparser import c_parser, c_ast
 
 
-from Backends.CudaBackend.Visitors.CM_Visitors import *
+from Backends.Cuda.Visitors.CM_Visitors import *
 
 from Tools.Tree import InsertTool, NodeNotFound, ReplaceTool, RemoveTool
 from Tools.Declarations import type_of_id, decl_of_id
@@ -10,9 +10,9 @@ from Tools.Debug import DotDebugTool
 from Backends.Common.Mutators.AstSupport import DeclsToParamsMutator, IDNameMutator, FuncToDeviceMutator, PointerMutator
 
 
-from Backends.CudaBackend.Mutators.Common import AbstractCudaMutator
+from Backends.Cuda.Mutators.Common import AbstractCudaMutator
 
-from Backends.CudaBackend.Mutators.CM_OmpParallelFor import CM_OmpParallelFor
+from Backends.Cuda.Mutators.CM_OmpParallelFor import CM_OmpParallelFor
 
 
 from Backends.Common.TemplateEngine.TemplateParser import TemplateParser, get_template_array

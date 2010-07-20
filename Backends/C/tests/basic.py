@@ -18,7 +18,7 @@ def build_test_trees():
                 }
           """
      ast = parse_source(template_code, 'helloWorld_test')
-     Dump.save('Backends/CBackend/tests/trees/helloWorld_tree', ast)
+     Dump.save('Backends/C/tests/trees/helloWorld_tree', ast)
      template_code = """ 
 int main()
 {
@@ -37,11 +37,11 @@ int main()
 }
           """
      ast = parse_source(template_code, 'pragma_test')
-     Dump.save('Backends/CBackend/tests/trees/pragma_tree', ast)
+     Dump.save('Backends/C/tests/trees/pragma_tree', ast)
 
-     template_code = open('Backends/CBackend/tests/codes/jacobi_big.c', 'r').read()
+     template_code = open('Backends/C/tests/codes/jacobi_big.c', 'r').read()
      ast = parse_source(template_code, 'jacobi_c')
-     Dump.save('Backends/CBackend/tests/trees/jacobi_tree', ast)
+     Dump.save('Backends/C/tests/trees/jacobi_tree', ast)
 
 
 
@@ -59,7 +59,7 @@ class TestParserFunctions(unittest.TestCase):
           """
           ast = parse_source(template_code, 'helloWorld_test')
 
-          self.good_tree = Dump.load('Backends/CBackend/tests/trees/helloWorld_tree')
+          self.good_tree = Dump.load('Backends/C/tests/trees/helloWorld_tree')
           ast_str = StringIO();
           good_str = StringIO();
           ast.show(ast_str)
@@ -82,7 +82,7 @@ class TestParserFunctions(unittest.TestCase):
             }
             """
           ast = parse_source(template_code, 'pragma_test')
-          self.good_tree = Dump.load('Backends/CBackend/tests/trees/pragma_tree')
+          self.good_tree = Dump.load('Backends/C/tests/trees/pragma_tree')
           ast_str = StringIO();
           good_str = StringIO();
           ast.show(ast_str)
@@ -90,9 +90,9 @@ class TestParserFunctions(unittest.TestCase):
           self.assertEqual(ast_str.getvalue(), good_str.getvalue())
 
      def test_jacobi(self):
-         template_code = open('Backends/CBackend/tests/codes/jacobi_big.c', 'r').read()
+         template_code = open('Backends/C/tests/codes/jacobi_big.c', 'r').read()
          ast = parse_source(template_code, 'jacobi_test')
-         self.good_tree = Dump.load('Backends/CBackend/tests/trees/jacobi_tree')
+         self.good_tree = Dump.load('Backends/C/tests/trees/jacobi_tree')
          ast_str = StringIO();
          good_str = StringIO();
          ast.show(ast_str)

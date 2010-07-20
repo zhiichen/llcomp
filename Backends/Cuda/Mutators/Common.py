@@ -17,7 +17,7 @@ from Backends.Common.TemplateEngine.TemplateParser import TemplateParser, get_te
 
 import cStringIO
 
-from Backends.CBackend.Writers.CWriter import CWriter
+from Backends.C.Writers.CWriter import CWriter
 
 class CudaMutatorError(Exception):
     def __init__(self, description):
@@ -298,8 +298,8 @@ class AbstractCudaMutator(AbstractMutator):
 class CudaTransformer:
     @staticmethod
     def apply(ast):
-        from Backends.CudaBackend.Mutators.CM_OmpParallelFor import CM_OmpParallelFor
-        from Backends.CudaBackend.Mutators.CM_OmpParallel import CM_OmpParallel
+        from Backends.Cuda.Mutators.CM_OmpParallelFor import CM_OmpParallelFor
+        from Backends.Cuda.Mutators.CM_OmpParallel import CM_OmpParallel
 
         # cuda_ast = CM_OmpParallelFor().apply_all(ast)
         # TODO Need to link parents after this?

@@ -1,7 +1,7 @@
 from pycparser import parse_file
 
 # from Visitors.clone_visitor import CWriter, OmpWriter
-from Backends.CBackend.Writers.OmpWriter import OmpWriter
+from Backends.C.Writers.OmpWriter import OmpWriter
 
 from sys import argv, exit
 

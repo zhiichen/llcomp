@@ -1,7 +1,7 @@
 
 from pycparser import c_parser, c_ast
 
-from Backends.CBackend.Writers.CWriter import CWriter
+from Backends.C.Writers.CWriter import CWriter
 
 class OmpWriter(CWriter):
     """ Visitor which translates the IR to C/OpenMP.
