@@ -9,9 +9,16 @@ llCoMP Developer Documentation
 .. sectionauthor:: Ruymán Reyes Castro <rreyes@ull.es>
 
 llCoMP is a translator framework designed for *fast prototyping*. 
-With little effort, you can build translators from OpenMP/C to different High
-Performance Computing languages, libraries and frameworks.  Currently we have
+With a small development effort, developers can build translators from OpenMP/C to different High
+Performance Computing languages, libraries and frameworks. Currently we have
 implemented the CUDA Backend, but we have plans to implement new ones.
+
+Also, llCoMP allows users to apply different optimization techiniques before 
+translating, in order to optimize the final code. Although we plan to implement
+several optimization techiques, it is easy for developers to implement their own.
+
+Software Architecture
+**********************************
 
 
 .. _layered_design:
@@ -34,7 +41,8 @@ on the :mod:`Tools` module.
 In addition, some utils and examples are presented in order to show the capabilities of the framework.
 
 
-Contents:
+Contents
+********************************
 
 .. toctree::
    :maxdepth: 2

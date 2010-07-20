@@ -1,5 +1,5 @@
 // #include "reduction_snippets.h"
-#define N 2048*2*2
+#define N 2048*2
 
 double * u; 
 
