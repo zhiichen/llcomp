@@ -11,10 +11,10 @@ CUDA_INSTALL_DIR="/usr/local/cuda/"
 
 # C includes for templates
 # TODO: Automatically detect include dirs
-INCLUDE_DIR = WORKDIR + 'Backends/CudaBackend/Templates/include/'
+INCLUDE_DIR = WORKDIR + 'Backends/Cuda/Templates/include/'
 
 # Fake stdlib
-FAKE_LIBC = WORKDIR + 'Backends/CudaBackend/Templates/include/fake_libc_include'
+FAKE_LIBC = WORKDIR + 'Backends/Cuda/Templates/include/fake_libc_include'
 
 # Location of pycparser
 PYCPARSER_DIR="/home/rreyes/workspace/pycparser-read-only/"

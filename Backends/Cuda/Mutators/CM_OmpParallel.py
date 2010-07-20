@@ -4,7 +4,7 @@ from pycparser import c_ast
 
 from Backends.Common.Visitors.GenericVisitors import *
 
-from Backends.CudaBackend.Visitors.CM_Visitors import OmpForFilter, OmpParallelFilter, OmpThreadPrivateFilter
+from Backends.Cuda.Visitors.CM_Visitors import OmpForFilter, OmpParallelFilter, OmpThreadPrivateFilter
 
 from Tools.Tree import InsertTool, NodeNotFound, ReplaceTool, RemoveTool
 
@@ -14,7 +14,7 @@ from Tools.Debug import DotDebugTool
 
 from Backends.Common.Mutators.AstSupport import DeclsToParamsMutator, IDNameMutator, FuncToDeviceMutator, PointerMutator
 
-from Backends.CudaBackend.Mutators.Common import AbstractCudaMutator
+from Backends.Cuda.Mutators.Common import AbstractCudaMutator
 
 from Backends.Common.TemplateEngine.TemplateParser import TemplateParser, get_template_array
 
@@ -104,8 +104,8 @@ class CM_OmpParallel(AbstractCudaMutator):
     def mutatorFunction(self, ast, ompParallel_node):
         """ CUDA mutator, writes memory transfer operations for a parallel region
         """
-        from Backends.CudaBackend.Mutators.CM_llcNestedFor import CM_llcNestedFor
-        from Backends.CudaBackend.Mutators.CM_OmpFor import CM_OmpFor
+        from Backends.Cuda.Mutators.CM_llcNestedFor import CM_llcNestedFor
+        from Backends.Cuda.Mutators.CM_OmpFor import CM_OmpFor
 
         threadprivate = []
         for elem in OmpThreadPrivateFilter().dfs_iter(ast):

@@ -1,6 +1,6 @@
 from pycparser import c_ast
 
-from Backends.CBackend.Writers.OmpWriter import OmpWriter
+from Backends.C.Writers.OmpWriter import OmpWriter
 
 
 

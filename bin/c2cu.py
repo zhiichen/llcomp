@@ -1,5 +1,5 @@
 
-from Backends.CudaBackend.Writers.CUDAWriter import CUDAWriter
+from Backends.Cuda.Writers.CUDAWriter import CUDAWriter
 
 from sys import argv, exit
 
@@ -51,7 +51,7 @@ MatrixDeclToPtr(start_ast = new_ast).fast_apply_all(new_ast)
 
 ConstantCalc().fast_apply_all(new_ast)
 
-from Backends.CudaBackend.Mutators.Common import CudaMutatorError, CudaTransformer
+from Backends.Cuda.Mutators.Common import CudaMutatorError, CudaTransformer
 
 try:
     end_ast = CudaTransformer.apply(new_ast)

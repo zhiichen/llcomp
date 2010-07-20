@@ -1,16 +1,16 @@
 
 from Tools.Dump import Dump
 
-from Backends.CudaBackend.Mutators.CM_OmpParallelFor import CM_OmpParallelFor
-from Backends.CudaBackend.Mutators.CM_OmpParallel import CM_OmpParallel
+from Backends.Cuda.Mutators.CM_OmpParallelFor import CM_OmpParallelFor
+from Backends.Cuda.Mutators.CM_OmpParallel import CM_OmpParallel
 
 from Frontend.Parse import parse_source
 
-from Backends.CudaBackend.Writers.CUDAWriter import CUDAWriter
+from Backends.Cuda.Writers.CUDAWriter import CUDAWriter
 
 from Frontend.InternalRepr import AstToIR
 
-BACKEND_NAME = 'CudaBackend'
+BACKEND_NAME = 'Cuda'
 TEST_PATH = 'Backends/' + BACKEND_NAME + '/tests/'
 CODE_PATH =  TEST_PATH + 'codes/'
 TREE_PATH =  TEST_PATH + 'trees/'
