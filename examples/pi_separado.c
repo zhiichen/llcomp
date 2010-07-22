@@ -8,7 +8,8 @@
 int
 main (int argc, char *argv[])
 {
-  int done = 0, i;
+  int done = 0;
+  int i = 0;
   int n = N_ELEM;
   double PI25DT = 3.141592653589793238462643;
   double pi, sum, x;
@@ -22,7 +23,7 @@ main (int argc, char *argv[])
  
  /* reduction(+: sum) */
 #pragma omp target device(cuda)
-#pragma omp parallel shared(h) private(x) 
+#pragma omp parallel shared(h) private(x, i) 
 {
   #pragma omp for reduction(+ : sum)
   for (i = 0; i <= n; i++)

@@ -1,8 +1,3 @@
-# include <stdlib.h>
-# include <stdio.h>
-# include <math.h>
-# include <omp.h>
-
 int main ( int argc, char *argv[] );
 void r8_mxm ( int l, int m, int n );
 double r8_uniform_01 ( int *seed );
@@ -126,11 +121,9 @@ void r8_mxm ( int l, int m, int n )
 */
   time_begin = omp_get_wtime ( );
 
-# pragma omp parallel \
-  shared ( a, b, c, l, m, n ) \
-  private ( i, j, k )
-
-# pragma omp for
+#pragma omp parallel shared(a, b, c, l, m, n) private(i, j, k )
+{
+#pragma omp for
   for ( j = 0; j < n; j++)
   {
     for ( i = 0; i < l; i++ )
@@ -142,6 +135,7 @@ void r8_mxm ( int l, int m, int n )
       }
     }
   }
+}
   time_stop = omp_get_wtime ( );
 /*
   Report.
