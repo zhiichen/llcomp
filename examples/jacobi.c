@@ -32,9 +32,9 @@
 /*        : u(n,m) - Dependent variable (solutions) */
 /*        : f(n,m) - Right hand side function  */
 /* ************************************************************ */
-#include <stdio.h>
+/*#include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
+#include <math.h>*/
 /* Constants */
 #define N 1024
 #define M 1024
@@ -125,7 +125,8 @@ void jacobi(int n, int m, double *_dx, double *_dy, double alpha, double omega,
 /* $omp paralleldo schedule(static)  */
 /* $omp& shared(n,m,uold,u) */
 /* $omp&private(i,j) */
-#pragma omp parallel shared(omega,error,tol,n,m,ax,ay,b,alpha,uold,u,f) private(i, j, resid) target device(cuda)
+#pragma omp target device(cuda) copy_in(u, uold, f) copy_out(uold, u)
+#pragma omp parallel shared(omega,error,tol,n,m,ax,ay,b,alpha,uold,u,f) private(i, j, resid) 
 {
    #pragma omp for
 	for (i = 0; i < m; i++)
@@ -140,7 +141,7 @@ void jacobi(int n, int m, double *_dx, double *_dy, double alpha, double omega,
 /* $omp& shared(omega,error,tol,n,m,ax,ay,b,alpha,uold,u,f) */
 /* $omp&private(i,j,resid) */
 /* $omp&reduction(+:error)  */
-   #pragma llc array pattern submatriz i radio
+// #pragma llc array pattern submatriz i radio
 /*   #pragma llc cache uold[1:m-1][1:n-1]
    #pragma llc cache variable(uold) pattern(square) radio(2) */
 
@@ -216,7 +217,8 @@ void jacobi_coales(int n, int m, double *_dx, double *_dy, double alpha, double 
 /* $omp paralleldo schedule(static)  */
 /* $omp& shared(n,m,uold,u) */
 /* $omp&private(i,j) */
-#pragma omp parallel shared(omega,error,tol,n,m,ax,ay,b,alpha,uold,u,f) private(i, j, resid) target device(cuda)
+#pragma omp target device(cuda)
+#pragma omp parallel shared(omega,error,tol,n,m,ax,ay,b,alpha,uold,u,f) private(i, j, resid) 
 {
    #pragma omp for
 	for (i = 0; i < m; i++)
@@ -231,14 +233,11 @@ void jacobi_coales(int n, int m, double *_dx, double *_dy, double alpha, double 
 /* $omp& shared(omega,error,tol,n,m,ax,ay,b,alpha,uold,u,f) */
 /* $omp&private(i,j,resid) */
 /* $omp&reduction(+:error)  */
-   #pragma llc array pattern submatriz i radio
+//   #pragma llc array pattern submatriz i radio
 /*   #pragma llc cache uold[1:m-1][1:n-1]
    #pragma llc cache variable(uold) pattern(square) radio(2) */
-
    #pragma omp for reduction(+ : error)
 	for (i = 1; i < m - 1; i++) {
-
-
 	    for (j = 1; j < n - 1; j++) {
 		   resid = (ax * (uold[i - 1][j] + uold[i + 1][j])  /*      Evaluate residual  */
 		    + ay * (uold[i][j - 1] + uold[i][j + 1])

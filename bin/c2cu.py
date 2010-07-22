@@ -49,7 +49,7 @@ from MiddleEnd.Optimizer.Mutators.Optimizer import MatrixDeclToPtr, ConstantCalc
 
 MatrixDeclToPtr(start_ast = new_ast).fast_apply_all(new_ast)
 
-ConstantCalc().fast_apply_all(new_ast)
+# ConstantCalc().fast_apply_all(new_ast)
 
 from Backends.Cuda.Mutators.Common import CudaMutatorError, CudaTransformer
 
