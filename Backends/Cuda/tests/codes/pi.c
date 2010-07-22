@@ -21,7 +21,7 @@ main ()
   size_t = 3;
  
  /* reduction(+: sum) */
-#pragma omp parallel for shared(h) private(x) reduction(+ : sum)
+#pragma omp parallel for shared(h) private(x,i) reduction(+ : sum)
   for (i = 0; i <= n; i++)
     {
       x = h * ((double) i - 0.5);

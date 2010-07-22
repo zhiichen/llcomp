@@ -146,8 +146,6 @@ void jacobi(int n, int m, double *_dx, double *_dy, double alpha, double omega,
 
    #pragma omp for reduction(+ : error)
 	for (i = 1; i < m - 1; i++) {
-
-
 	    for (j = 1; j < n - 1; j++) {
 		   resid = (ax * (uold[i - 1][j] + uold[i + 1][j])  /*      Evaluate residual  */
 		    + ay * (uold[i][j - 1] + uold[i][j + 1])

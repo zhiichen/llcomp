@@ -10,7 +10,7 @@ from Tools.Declarations import type_of_id
 from Tools.Debug import DotDebugTool
 from Frontend.Parse import parse_source
 from Backends.Common.Mutators.AstSupport import DeclsToParamsMutator, IDNameMutator, FuncToDeviceMutator, PointerMutator
-from Backends.Common.Mutators.AbstractMutator import IgnoreMutationException, AbstractMutator
+from Backends.Common.Mutators.AbstractMutator import IgnoreMutationException, AbstractMutator, AbortMutationException
 
 from Backends.Common.TemplateEngine.TemplateParser import TemplateParser, get_template_array, get_typedefs_to_template
 
@@ -55,6 +55,8 @@ class AbstractCudaMutator(AbstractMutator):
         else:
             return [type.name]
 
+
+	 # TODO: Change method name to getLoopSize
     def getThreadNum(self, node):
         """ Gets the maximum number of threads needed """
         if node.op == '<' or node.op == '<=':
@@ -216,7 +218,23 @@ class AbstractCudaMutator(AbstractMutator):
         """ Build CUDA Kernel code """
 
         reduction_vars = get_template_array(reduction_list, ast)
+
         # Retrieve list of shared vars and build the array to template parsing
+        loop_list = [loop.init.lvalue.name]
+
+        private_vars = get_template_array([var for var in private_list if not var.name in loop_list], ast)
+        loop_vars = get_template_array([var for var in private_list if var.name in loop_list], ast)
+
+#~        print "Loop : " + str(loop.init.lvalue.name)
+#~        print "Loop_list : " + str(loop_list)
+#~        print "*** Private list : " + str(private_list)
+#~        print "*** Private vars : " + str(private_vars)
+#~        print "*** Loop vars : " + str(loop_vars)
+
+        if len(loop_vars) == 0:
+            raise AbortMutationException(" No loop vars found: check your private clause\n")
+
+
         # TODO: Move this to some kind of template function
         def decls_to_param(elem):
             if isinstance(elem.type, c_ast.ArrayDecl):
@@ -226,6 +244,7 @@ class AbstractCudaMutator(AbstractMutator):
         shared_vars = get_template_array(shared_list, ast, name_func = decls_to_param) 
 
         typedef_list = get_typedefs_to_template(shared_vars,ast)
+
 
         template_code = """
 
@@ -242,11 +261,16 @@ class AbstractCudaMutator(AbstractMutator):
                   ${', '.join(str(var.type) + " " + str(var.name) for var in shared_vars)}
             )
              {
-             int idx = blockIdx.x * blockDim.x + threadIdx.x;
-             ;
+
+              ${loop_vars[0].declaration} ${loop_vars[0]}  = blockIdx.x * blockDim.x + threadIdx.x;
+ 			 %for var in private_vars:
+              ${var.declaration} ${var};
+          %endfor
+                ;
              }
              """
-        tree = self.parse_snippet(template_code, {'kernelName' : self.kernel_name, 'reduction_vars' : reduction_vars, 'shared_vars' : shared_vars, 'typedefs' : typedef_list} , name = 'KernelBuild', show = False)
+        tree = self.parse_snippet(template_code, {'kernelName' : self.kernel_name, 'reduction_vars' : reduction_vars, 'shared_vars' : shared_vars, 'typedefs' : typedef_list, 'private_vars' : private_vars, 'loop_vars' : loop_vars} , name = 'KernelBuild', show = False)
+
 
         # OpenMP shared vars are parameters of the kernel function
         if shared_list:
@@ -262,11 +286,6 @@ class AbstractCudaMutator(AbstractMutator):
         tmp = c_ast.Compound(decls= private_list, stmts=[])
         #     - Insert tool removes the parent node of the inserted subtree
         InsertTool(subtree = tmp, position = "end").apply(tree.ext[-1].function.body, 'decls')
-
-        # Add the loop statements, (but not the reduction)
-        IDNameMutator(old = loop.init.lvalue, new = c_ast.ID('idx')).apply_all(loop.stmt)
-        # Add the loop statements, (but not the reduction)
-        IDNameMutator(old = loop.init.lvalue, new = c_ast.ID('idx')).apply_all(loop.cond)
 
         # Identify function calls inside kernel and replace the definitions to __device__ 
         try:
