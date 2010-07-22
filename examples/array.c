@@ -1,5 +1,5 @@
 
-/* void testfunc (double vnd[10][10]) {
+void testfunc (double vnd[10][10]) {
   int i, j;
 
 
@@ -10,7 +10,7 @@
   }
 
 }
-*/
+
 int main () {
   double vnd[10][20];
   int i, j;
@@ -21,6 +21,6 @@ int main () {
     
   }
 
-//   testfunc(vnd);
+  testfunc(vnd);
 
 }
