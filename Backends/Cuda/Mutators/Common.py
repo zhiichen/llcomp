@@ -266,10 +266,12 @@ class AbstractCudaMutator(AbstractMutator):
  			 %for var in private_vars:
               ${var.declaration} ${var};
           %endfor
-                ;
+                if ((${loop.init.rvalue} < i) && (i < ${loop.cond})) {
+                    ;
+                }
              }
              """
-        tree = self.parse_snippet(template_code, {'kernelName' : self.kernel_name, 'reduction_vars' : reduction_vars, 'shared_vars' : shared_vars, 'typedefs' : typedef_list, 'private_vars' : private_vars, 'loop_vars' : loop_vars} , name = 'KernelBuild', show = False)
+        tree = self.parse_snippet(template_code, {'kernelName' : self.kernel_name, 'reduction_vars' : reduction_vars, 'shared_vars' : shared_vars, 'typedefs' : typedef_list, 'private_vars' : private_vars, 'loop_vars' : loop_vars} , name = 'KernelBuild', show = True)
 
 
         # OpenMP shared vars are parameters of the kernel function
@@ -308,8 +310,8 @@ class AbstractCudaMutator(AbstractMutator):
             IDNameMutator(old = c_ast.ID(name = elem.name, parent = elem.parent), new = c_ast.ID(name = 'reduction_cu_' + str(elem.name) + '[idx]', parent = elem.parent)).apply_all(loop.stmt)
         # Insert the code inside kernel
         # We need to check if the idx is inside for limits (in case we have more threads than iterations)
-        check_boundary_node = c_ast.Compound(decls = None, stmts = [c_ast.If(cond = loop.cond, iftrue = loop.stmt, iffalse = None)], parent = tree.ext[-1].function.body)
-        InsertTool(subtree = check_boundary_node, position = "begin").apply(tree.ext[-1].function.body, 'stmts')
+#        check_boundary_node = c_ast.Compound(decls = None, stmts = [c_ast.If(cond = loop.cond, iftrue = loop.stmt, iffalse = None)], parent = tree.ext[-1].function.body)
+#        InsertTool(subtree = check_boundary_node, position = "begin").apply(tree.ext[-1].function.body, 'stmts')
         return c_ast.FileAST(ext = [tree.ext[-1]])
 
 
