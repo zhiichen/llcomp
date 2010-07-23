@@ -245,6 +245,35 @@ class AbstractCudaMutator(AbstractMutator):
 
         typedef_list = get_typedefs_to_template(shared_vars,ast)
 
+        # Identify function calls inside kernel and replace the definitions to __device__ 
+        try:
+            for func_call in FuncCallFilter().iterate(loop.stmt):
+              print " Writing " + func_call.name.name + " to device "
+              try:
+                  fcm = FuncToDeviceMutator(func_call = func_call).apply(ast)
+              except IgnoreMutationException as ime:
+                  # This function is already implemented on device, so we continue we don't need to convert it
+                  print "CudaMutator:: Warning :: " + str(ime)
+        except NodeNotFound:
+            # There are not function calls on the loop.stmt
+            pass
+        except FilterError as fe:
+            print " Filter error "
+            raise CudaMutatorError(fe.get_description())
+        # Identify function calls inside kernel and replace the definitions to __device__ 
+        # TODO: This is incorrect, we should write a subtree instead of a bare string...
+        for elem in reduction_list:
+            IDNameMutator(old = c_ast.ID(name = elem.name, parent = elem.parent), new = c_ast.ID(name = 'reduction_cu_' + str(elem.name) + '[idx]', parent = elem.parent)).apply_all(loop.stmt)
+
+        # OpenMP shared vars are parameters of the kernel function
+        if shared_list:
+          for elem in shared_list:
+                # Replace the name of the declaration in the kernel code. 
+                if isinstance(elem.type, c_ast.ArrayDecl) or isinstance(elem.type, c_ast.Struct):
+                    mut = IDNameMutator(old = c_ast.ID(elem.name), new = c_ast.ID(elem.name + '_cu'))
+                    mut.apply_all(loop.stmt)
+
+
 
         template_code = """
 
@@ -266,48 +295,22 @@ class AbstractCudaMutator(AbstractMutator):
  			 %for var in private_vars:
               ${var.declaration} ${var};
           %endfor
-                if ((${loop.init.rvalue} < i) && (i < ${loop.cond})) {
-                    ;
-                }
+                if ((${loop.init.rvalue} < i) && (${loop.cond})) 
+                    ${loop.stmt};
+                
              }
              """
-        tree = self.parse_snippet(template_code, {'kernelName' : self.kernel_name, 'reduction_vars' : reduction_vars, 'shared_vars' : shared_vars, 'typedefs' : typedef_list, 'private_vars' : private_vars, 'loop_vars' : loop_vars} , name = 'KernelBuild', show = True)
+        tree = self.parse_snippet(template_code, {'kernelName' : self.kernel_name, 'reduction_vars' : reduction_vars, 'shared_vars' : shared_vars, 'typedefs' : typedef_list, 'private_vars' : private_vars, 'loop_vars' : loop_vars, 'loop' : loop} , name = 'KernelBuild', show = False)
 
-
-        # OpenMP shared vars are parameters of the kernel function
-        if shared_list:
-          for elem in shared_list:
-                # Replace the name of the declaration in the kernel code. 
-                if isinstance(elem.type, c_ast.ArrayDecl) or isinstance(elem.type, c_ast.Struct):
-                    mut = IDNameMutator(old = c_ast.ID(elem.name), new = c_ast.ID(elem.name + '_cu'))
-                    mut.apply_all(loop.stmt)
-
-        DeclsToParamsMutator().apply(tree.ext[-1].function.decl.type.args)
+        
+        # DeclsToParamsMutator().apply(tree.ext[-1].function.decl.type.args)
         # OpenMP Private vars need to be declared inside kernel
         #     - we build a tmp Compound to group all declarations, and insert them once
         tmp = c_ast.Compound(decls= private_list, stmts=[])
         #     - Insert tool removes the parent node of the inserted subtree
         InsertTool(subtree = tmp, position = "end").apply(tree.ext[-1].function.body, 'decls')
 
-        # Identify function calls inside kernel and replace the definitions to __device__ 
-        try:
-            for func_call in FuncCallFilter().iterate(loop.stmt):
-              print " Writing " + func_call.name.name + " to device "
-              try:
-                  fcm = FuncToDeviceMutator(func_call = func_call).apply(ast)
-              except IgnoreMutationException as ime:
-                  # This function is already implemented on device, so we continue we don't need to convert it
-                  print "CudaMutator:: Warning :: " + str(ime)
-        except NodeNotFound:
-            # There are not function calls on the loop.stmt
-            pass
-        except FilterError as fe:
-            print " Filter error "
-            raise CudaMutatorError(fe.get_description())
-        # Identify function calls inside kernel and replace the definitions to __device__ 
-        # TODO: This is incorrect, we should write a subtree instead of a bare string...
-        for elem in reduction_list:
-            IDNameMutator(old = c_ast.ID(name = elem.name, parent = elem.parent), new = c_ast.ID(name = 'reduction_cu_' + str(elem.name) + '[idx]', parent = elem.parent)).apply_all(loop.stmt)
+
         # Insert the code inside kernel
         # We need to check if the idx is inside for limits (in case we have more threads than iterations)
 #        check_boundary_node = c_ast.Compound(decls = None, stmts = [c_ast.If(cond = loop.cond, iftrue = loop.stmt, iffalse = None)], parent = tree.ext[-1].function.body)
