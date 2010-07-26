@@ -1,0 +1,396 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Common &mdash; llCoMP v1.0 documentation</title>
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '#',
+        VERSION:     '1.0',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="llCoMP v1.0 documentation" href="index.html" />
+    <link rel="up" title="Backends" href="backends.html" />
+    <link rel="next" title="Dot Backend" href="dotbackend.html" />
+    <link rel="prev" title="Backends" href="backends.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="modindex.html" title="Global Module Index"
+             accesskey="M">modules</a> |</li>
+        <li class="right" >
+          <a href="dotbackend.html" title="Dot Backend"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="backends.html" title="Backends"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">llCoMP v1.0 documentation</a> &raquo;</li>
+          <li><a href="backends.html" accesskey="U">Backends</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-Common">
+<h1>Common<a class="headerlink" href="#module-Common" title="Permalink to this headline">¶</a></h1>
+<p>The Common module contains common operations to the different backends.</p>
+<div class="section" id="mutators">
+<h2>Mutators<a class="headerlink" href="#mutators" title="Permalink to this headline">¶</a></h2>
+<p>Some <a class="reference external" href="glossary.html#term-mutator"><em class="xref">Mutator</em></a> are declared on the <tt class="xref docutils literal"><span class="pre">Mutators</span></tt> module.</p>
+<div class="section" id="module-Backends.Common.Mutators.AbstractMutator">
+<h3>AbstractMutator<a class="headerlink" href="#module-Backends.Common.Mutators.AbstractMutator" title="Permalink to this headline">¶</a></h3>
+<p>As you may see on the diagram, all mutators inherits from <tt class="xref docutils literal"><span class="pre">AbstractMutator</span></tt>.</p>
+<div class="figure">
+<img alt="_images/mutator_inheritance.png" src="_images/mutator_inheritance.png" />
+</div>
+<dl class="class">
+<dt id="Backends.Common.Mutators.AbstractMutator.AbstractMutator">
+<em class="property">class </em><tt class="descclassname">Backends.Common.Mutators.AbstractMutator.</tt><tt class="descname">AbstractMutator</tt><a class="headerlink" href="#Backends.Common.Mutators.AbstractMutator.AbstractMutator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Abstract class representing a mutation.</p>
+<dl class="method">
+<dt id="Backends.Common.Mutators.AbstractMutator.AbstractMutator.apply">
+<tt class="descname">apply</tt><big>(</big><em>ast</em>, <em>mutator_opt_arg=None</em><big>)</big><a class="headerlink" href="#Backends.Common.Mutators.AbstractMutator.AbstractMutator.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply a mutation</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Returns:</th><td class="field-body">filtered node</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="Backends.Common.Mutators.AbstractMutator.AbstractMutator.apply_all">
+<tt class="descname">apply_all</tt><big>(</big><em>ast</em>, <em>mutator_opt_arg=None</em><big>)</big><a class="headerlink" href="#Backends.Common.Mutators.AbstractMutator.AbstractMutator.apply_all" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply mutation to all matches</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Returns:</th><td class="field-body">pointer to last applied mutation</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="Backends.Common.Mutators.AbstractMutator.AbstractMutator.fast_apply_all">
+<tt class="descname">fast_apply_all</tt><big>(</big><em>ast</em><big>)</big><a class="headerlink" href="#Backends.Common.Mutators.AbstractMutator.AbstractMutator.fast_apply_all" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply mutation to all matches ignoring syntactic order</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Returns:</th><td class="field-body">pointer to last applied mutation</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="Backends.Common.Mutators.AbstractMutator.AbstractMutator.filter">
+<tt class="descname">filter</tt><big>(</big><em>ast</em><big>)</big><a class="headerlink" href="#Backends.Common.Mutators.AbstractMutator.AbstractMutator.filter" title="Permalink to this definition">¶</a></dt>
+<dd>Calls to a simple filter</dd></dl>
+
+<dl class="method">
+<dt id="Backends.Common.Mutators.AbstractMutator.AbstractMutator.filter_iterator">
+<tt class="descname">filter_iterator</tt><big>(</big><em>ast</em><big>)</big><a class="headerlink" href="#Backends.Common.Mutators.AbstractMutator.AbstractMutator.filter_iterator" title="Permalink to this definition">¶</a></dt>
+<dd>Calls an iterable filter</dd></dl>
+
+<dl class="method">
+<dt id="Backends.Common.Mutators.AbstractMutator.AbstractMutator.mutatorFunction">
+<tt class="descname">mutatorFunction</tt><big>(</big><em>ast</em><big>)</big><a class="headerlink" href="#Backends.Common.Mutators.AbstractMutator.AbstractMutator.mutatorFunction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Mutates the AST</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Returns:</th><td class="field-body">Starting point of the mutation</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-Backends.Common.Mutators.AstSupport">
+<h3>AstSupport<a class="headerlink" href="#module-Backends.Common.Mutators.AstSupport" title="Permalink to this headline">¶</a></h3>
+<p>Additional mutators are provided in order to easier the backend writing process.</p>
+<dl class="class">
+<dt id="Backends.Common.Mutators.AstSupport.DeclsToParamsMutator">
+<em class="property">class </em><tt class="descclassname">Backends.Common.Mutators.AstSupport.</tt><tt class="descname">DeclsToParamsMutator</tt><a class="headerlink" href="#Backends.Common.Mutators.AstSupport.DeclsToParamsMutator" title="Permalink to this definition">¶</a></dt>
+<dd><p>DeclsToParams</p>
+<dl class="method">
+<dt id="Backends.Common.Mutators.AstSupport.DeclsToParamsMutator.convert">
+<tt class="descname">convert</tt><big>(</big><em>node</em><big>)</big><a class="headerlink" href="#Backends.Common.Mutators.AstSupport.DeclsToParamsMutator.convert" title="Permalink to this definition">¶</a></dt>
+<dd>Transform a type declaration to a parameter declaration</dd></dl>
+
+<dl class="method">
+<dt id="Backends.Common.Mutators.AstSupport.DeclsToParamsMutator.filter">
+<tt class="descname">filter</tt><big>(</big><em>ast</em><big>)</big><a class="headerlink" href="#Backends.Common.Mutators.AstSupport.DeclsToParamsMutator.filter" title="Permalink to this definition">¶</a></dt>
+<dd>Filter definition
+Returns the first node matching with the filter</dd></dl>
+
+<dl class="method">
+<dt id="Backends.Common.Mutators.AstSupport.DeclsToParamsMutator.mutatorFunction">
+<tt class="descname">mutatorFunction</tt><big>(</big><em>ast</em><big>)</big><a class="headerlink" href="#Backends.Common.Mutators.AstSupport.DeclsToParamsMutator.mutatorFunction" title="Permalink to this definition">¶</a></dt>
+<dd>Mutator code</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="Backends.Common.Mutators.AstSupport.FuncToDeviceMutator">
+<em class="property">class </em><tt class="descclassname">Backends.Common.Mutators.AstSupport.</tt><tt class="descname">FuncToDeviceMutator</tt><big>(</big><em>func_call</em><big>)</big><a class="headerlink" href="#Backends.Common.Mutators.AstSupport.FuncToDeviceMutator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Replace the definition of a FuncCall with a CUDAKernel with type __device__</p>
+<dl class="method">
+<dt id="Backends.Common.Mutators.AstSupport.FuncToDeviceMutator.filter">
+<tt class="descname">filter</tt><big>(</big><em>ast</em><big>)</big><a class="headerlink" href="#Backends.Common.Mutators.AstSupport.FuncToDeviceMutator.filter" title="Permalink to this definition">¶</a></dt>
+<dd>Find the declaration of the</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="Backends.Common.Mutators.AstSupport.IDNameMutator">
+<em class="property">class </em><tt class="descclassname">Backends.Common.Mutators.AstSupport.</tt><tt class="descname">IDNameMutator</tt><big>(</big><em>old</em>, <em>new</em><big>)</big><a class="headerlink" href="#Backends.Common.Mutators.AstSupport.IDNameMutator" title="Permalink to this definition">¶</a></dt>
+<dd>Replace and ID name with another ID name</dd></dl>
+
+<dl class="class">
+<dt id="Backends.Common.Mutators.AstSupport.RemoveAttributeMutator">
+<em class="property">class </em><tt class="descclassname">Backends.Common.Mutators.AstSupport.</tt><tt class="descname">RemoveAttributeMutator</tt><big>(</big><em>attr</em><big>)</big><a class="headerlink" href="#Backends.Common.Mutators.AstSupport.RemoveAttributeMutator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove the child of the first apperance of an attribute inside a node</p>
+<dl class="method">
+<dt id="Backends.Common.Mutators.AstSupport.RemoveAttributeMutator.apply">
+<tt class="descname">apply</tt><big>(</big><em>ast</em><big>)</big><a class="headerlink" href="#Backends.Common.Mutators.AstSupport.RemoveAttributeMutator.apply" title="Permalink to this definition">¶</a></dt>
+<dd>Apply the mutation</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="module-Backends.Common.Visitors.GenericVisitors">
+<h2>Filter visitors<a class="headerlink" href="#module-Backends.Common.Visitors.GenericVisitors" title="Permalink to this headline">¶</a></h2>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">Mabye a name change is needed, <em>SearchVisitor</em> will be more clear.</p>
+</div>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">Some cleaning needs to be done in this module.</p>
+</div>
+<p>In order to search nodes on the AST, the programmer needs to implements a <a class="reference external" href="glossary.html#term-filter"><em class="xref">Filter</em></a>.
+<tt class="xref docutils literal"><span class="pre">GenericFilterVisitor</span></tt> is the parent of all filters, defining the commom methods
+of all filters.</p>
+<p>This module has other members, which are concrete implementations of the <tt class="xref docutils literal"><span class="pre">GenericFilterVisitor</span></tt>.</p>
+<dl class="class">
+<dt id="Backends.Common.Visitors.GenericVisitors.GenericFilterVisitor">
+<em class="property">class </em><tt class="descclassname">Backends.Common.Visitors.GenericVisitors.</tt><tt class="descname">GenericFilterVisitor</tt><big>(</big><em>condition_func</em>, <em>prev_brother=None</em><big>)</big><a class="headerlink" href="#Backends.Common.Visitors.GenericVisitors.GenericFilterVisitor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the first node validating a condition function</p>
+<dl class="method">
+<dt id="Backends.Common.Visitors.GenericVisitors.GenericFilterVisitor.apply">
+<tt class="descname">apply</tt><big>(</big><em>ast</em>, <em>ignore=</em><span class="optional">[</span><span class="optional">]</span><big>)</big><a class="headerlink" href="#Backends.Common.Visitors.GenericVisitors.GenericFilterVisitor.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Searchs the node matching the condition_func in the AST</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><em>ast</em> &#8211; Node to start search</li>
+<li><em>ignore</em> &#8211; List of nodes to ignore</li>
+</ul>
+</td>
+</tr>
+<tr class="field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">First matching node not in ignore list</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="Backends.Common.Visitors.GenericVisitors.GenericFilterVisitor.dfs_iter">
+<tt class="descname">dfs_iter</tt><big>(</big><em>root</em>, <em>visited=None</em><big>)</big><a class="headerlink" href="#Backends.Common.Visitors.GenericVisitors.GenericFilterVisitor.dfs_iter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a starting node, root, do a depth-first search. 
+.. warning:</p>
+<div class="highlight-python"><pre>This method does not garantee to transverse the tree on the gramatically correct order</pre>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Returns:</th><td class="field-body">Last match or raise StopIteration</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="Backends.Common.Visitors.GenericVisitors.GenericFilterVisitor.generic_visit">
+<tt class="descname">generic_visit</tt><big>(</big><em>node</em>, <em>offset=0</em>, <em>ignore=</em><span class="optional">[</span><span class="optional">]</span><big>)</big><a class="headerlink" href="#Backends.Common.Visitors.GenericVisitors.GenericFilterVisitor.generic_visit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called if no explicit visitor function exists for a 
+node. Implements preorder (syntactically correct) node visit.</p>
+<blockquote>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">param node:</th><td class="field-body">Node being visited</td>
+</tr>
+<tr class="field"><th class="field-name">param prev:</th><td class="field-body">Syntactically previous node</td>
+</tr>
+<tr class="field"><th class="field-name">param offset:</th><td class="field-body">Not used</td>
+</tr>
+<tr class="field"><th class="field-name">param ignore:</th><td class="field-body">List of nodes to ignore</td>
+</tr>
+<tr class="field"><th class="field-name">return:</th><td class="field-body">Result of the node visit</td>
+</tr>
+</tbody>
+</table>
+</blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="Backends.Common.Visitors.GenericVisitors.GenericFilterVisitor.iterate">
+<tt class="descname">iterate</tt><big>(</big><em>ast</em><big>)</big><a class="headerlink" href="#Backends.Common.Visitors.GenericVisitors.GenericFilterVisitor.iterate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Iterate through matching nodes</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameter:</th><td class="field-body"><em>ast</em> &#8211; Node to start the search</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="Backends.Common.Visitors.GenericVisitors.GenericFilterVisitor.parentOfMatch">
+<tt class="descname">parentOfMatch</tt><big>(</big><big>)</big><a class="headerlink" href="#Backends.Common.Visitors.GenericVisitors.GenericFilterVisitor.parentOfMatch" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parent of the node matched</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This is not needed because we have a .parent attribute now</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="Backends.Common.Visitors.GenericVisitors.GenericFilterVisitor.visit">
+<tt class="descname">visit</tt><big>(</big><em>node</em>, <em>prev</em>, <em>offset=1</em>, <em>ignore=</em><span class="optional">[</span><span class="optional">]</span><big>)</big><a class="headerlink" href="#Backends.Common.Visitors.GenericVisitors.GenericFilterVisitor.visit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds a way to visit a node</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><em>node</em> &#8211; Node to visit</li>
+<li><em>prev</em> &#8211; Syntactically previous node</li>
+<li><em>offset</em> &#8211; Not used</li>
+<li><em>ignore</em> &#8211; List of nodes to ignore</li>
+</ul>
+</td>
+</tr>
+<tr class="field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">result of the node visit</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h3><a href="index.html">Table Of Contents</a></h3>
+            <ul>
+<li><a class="reference external" href="#">Common</a><ul>
+<li><a class="reference external" href="#mutators">Mutators</a><ul>
+<li><a class="reference external" href="#module-Backends.Common.Mutators.AbstractMutator">AbstractMutator</a></li>
+<li><a class="reference external" href="#module-Backends.Common.Mutators.AstSupport">AstSupport</a></li>
+</ul>
+</li>
+<li><a class="reference external" href="#module-Backends.Common.Visitors.GenericVisitors">Filter visitors</a></li>
+</ul>
+</li>
+</ul>
+
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="backends.html"
+                                  title="previous chapter">Backends</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="dotbackend.html"
+                                  title="next chapter">Dot Backend</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="_sources/common.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <input type="submit" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="modindex.html" title="Global Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="dotbackend.html" title="Dot Backend"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="backends.html" title="Backends"
+             >previous</a> |</li>
+        <li><a href="index.html">llCoMP v1.0 documentation</a> &raquo;</li>
+          <li><a href="backends.html" >Backends</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+      &copy; Copyright 2010, Ruymán Reyes &lt;rreyes@ull.es&gt;.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.4.
+    </div>
+  </body>
+</html>

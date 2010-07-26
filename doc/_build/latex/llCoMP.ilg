@@ -1,0 +1,7 @@
+This is makeindex, version 2.15 [TeX Live 2009] (kpathsea + Thai support).
+Scanning style file ./python.ist......done (6 attributes redefined, 0 ignored).
+Scanning input file llCoMP.idx....done (70 entries accepted, 0 rejected).
+Sorting entries....done (474 comparisons).
+Generating output file llCoMP.ind....done (138 lines written, 0 warnings).
+Output written in llCoMP.ind.
+Transcript written in llCoMP.ilg.
