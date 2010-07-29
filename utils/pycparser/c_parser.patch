@@ -1,0 +1,249 @@
+Index: pycparser/c_parser.py
+===================================================================
+--- pycparser/c_parser.py	(revisión: 95)
++++ pycparser/c_parser.py	(copia de trabajo)
+@@ -21,9 +21,9 @@
+ class CParser(PLYParser):    
+     def __init__(
+             self, 
+-            lex_optimize=True,
++            lex_optimize=False,
+             lextab='pycparser.lextab',
+-            yacc_optimize=True,
++            yacc_optimize=False,
+             yacctab='pycparser.yacctab',
+             yacc_debug=False):
+         """ Create a new CParser.
+@@ -292,6 +292,7 @@
+             bitsize=None, 
+             coord=decl.coord)
+         
++
+         typename = spec['type']
+         declaration = self._fix_decl_name_type(declaration, typename)
+         return c_ast.FuncDef(
+@@ -362,12 +363,192 @@
+         """
+         p[0] = p[1]
+ 
+-    def p_pp_directive(self, p):
+-        """ pp_directive  : PPHASH 
++    def p_external_declaration_4(self, p):
++        """ external_declaration    : cuda_kernel 
+         """
++        p[0] = [p[1]]
++    
++    def p_cuda_kernel(self, p):
++       """ cuda_kernel : GLOBAL function_definition """
++#       p[0] = p[2]
++       p[0] = c_ast.CUDAKernel(
++                        name=p[2].decl.name,
++                        type='global',
++                        function = p[2],
++                        coord=p[2].coord)
++
++
++
++#    def p_pp_directive(self, p):
++#        """ pp_directive  : PPHASH 
++#        """
++#        self._parse_error('Directives not supported yet', 
++#            self._coord(p.lineno(1)))
++
++
++####################
++# Ruyk
++# Adding support for OpenMP 3.0
++
++    def p_pp_directive_1(self, p):
++        """ pp_directive  : PPHASH pragma_directive 
++        """
++        p[0] = p[2]
++#        self._parse_error('Directives not supported yet', 
++#            self._coord(p.lineno(1)))
++
++    def p_pp_directive_2(self, p):
++        """ pp_directive  : PPHASH
++        """
+         self._parse_error('Directives not supported yet', 
+             self._coord(p.lineno(1)))
+ 
++    def p_pragma_directive_1(self, p):
++       """ pragma_directive : PRAGMA OMP directive"""
++       p[0] = [c_ast.Pragma(
++            name='omp', 
++            stmt = p[3],
++            coord=self._coord(p.lineno(1)))]
++      # self._parse_error('Directives not supported yet', 
++      #     self._coord(p.lineno(1)))
++
++
++    def p_pragma_directive_2(self, p):
++       """ pragma_directive : PRAGMA LLC llc_directive"""
++       p[0] = [c_ast.Pragma(
++            name='llc', 
++            stmt = p[3],
++            coord=self._coord(p.lineno(1)))]
++
++    def p_llc_directive(self, p):
++       """ llc_directive : NESTED_FOR PPHASH PRAGMA OMP workshare_directive"""
++       p[0] = c_ast.llcNestedFor(name = 'NESTED FOR', loop = p[5], coord=self._coord(p.lineno(1)))
++
++    def p_workshare_directive_1(self, p):
++       """ workshare_directive : FOR omp_clause_list iteration_statement """
++       # Start of a parallel region within a for
++       p[0] = c_ast.OmpFor(name='for', clauses = p[2], stmt = p[3], coord = self._coord(p.lineno(1)))
++
++    def p_workshare_directive_2(self, p):
++       """ workshare_directive : FOR  iteration_statement """
++       # Start of a parallel region within a for
++       p[0] = c_ast.OmpFor(name='for', clauses = [], stmt = p[2], coord = self._coord(p.lineno(1)))
++
++
++    def p_workshare_direcitve_3(self, p):
++       """ workshare_directive : SECTIONS omp_clause_list compound_statement """
++       # Start of a parallel region within a for
++       print " SECTIONS Not implemented "
++       p[0] = p[3]
++
++
++    def p_directive_1(self, p):
++       """ directive : PARALLEL omp_clause_list compound_statement
++       """
++       p[0] =  c_ast.OmpParallel(name='parallel', clauses = p[2], stmt = p[3], coord = self._coord(p.lineno(1)))
++
++
++    def p_directive_2(self, p):
++       """ directive : PARALLEL workshare_directive
++       """
++       p[0] = c_ast.OmpParallel(name='parallel', clauses = [p[2]], stmt = None, coord = self._coord(p.lineno(1)))
++
++    def p_directive_3(self,p):
++       """ directive : PARALLEL compound_statement """
++       # Start of a parallel region
++       p[0] = c_ast.OmpParallel(name='parallel', clauses = None, stmt = p[2], coord = self._coord(p.lineno(1)))
++
++    def p_directive_4(self, p):
++       """ directive : workshare_directive """
++       # We are on a parallel region
++       p[0] = p[1]
++
++
++    def p_directive_5(self, p):
++       """ directive : THREADPRIVATE LPAREN identifier_list RPAREN """
++       p[0] = c_ast.OmpThreadPrivate(name = 'threadprivate', identifiers = p[3], coord = self._coord(p.lineno(1)))
++
++
++    def p_directive_6(self, p):
++       """ directive : CRITICAL
++                  | MASTER
++                  | ATOMIC
++                  | FLUSH
++                  | BARRIER 
++                  | SINGLE  """
++       p[0] = c_ast.OmpSyncronization(name = p[1], identifiers = None, coord = self._coord(p.lineno(1)))
++
++    def p_directive_7(self, p):
++       """ directive : TARGET DEVICE LPAREN device_list RPAREN omp_clause_list
++                     | TARGET DEVICE LPAREN device_list RPAREN 
++       """
++       p[0] = c_ast.OmpTargetDevice(name = "device", device = p[4], clauses = p[6] if len(p) > 6 else [], coord = self._coord(p.lineno(1)))
++
++
++    def p_omp_clause_list(self, p):
++       """ omp_clause_list : omp_clause_list clause
++                           | clause """
++       p[0] = p[1] if len(p) == 2 else p[1] + p[2]
++
++    def p_clause_1(self, p):
++       """ clause : SHARED LPAREN identifier_list RPAREN 
++                  | PRIVATE LPAREN identifier_list RPAREN 
++                  | COPYIN LPAREN identifier_list RPAREN 
++                  | FLUSH LPAREN identifier_list RPAREN
++                  | FIRSTPRIVATE LPAREN identifier_list RPAREN
++       """
++       p[0] = [c_ast.OmpClause(type = 'memory', name = str(p[1]).upper(), identifiers = p[3], coord = self._coord(p.lineno(1)))]
++
++
++    def p_clause_2(self, p):
++       """ clause : REDUCTION LPAREN reduction_operator  COLON identifier_list RPAREN """
++       p[0] = [c_ast.OmpClause(type = p[3] , name = 'REDUCTION', identifiers = p[5], coord = self._coord(p.lineno(1)))]
++
++    def p_clause_3(self, p):
++       """ clause : NOWAIT """
++       p[0] = [c_ast.OmpClause(type = str(p[1]) , name = str(p[1]).upper(), identifiers = None, coord = self._coord(p.lineno(1)))]
++
++
++
++    def p_clause_4(self, p):
++       """ clause : SCHEDULE LPAREN OMP_SCHEDULE_KIND RPAREN 
++                  | SCHEDULE LPAREN OMP_SCHEDULE_KIND COMMA INT_CONST_DEC RPAREN 
++       """
++       p[0] = [c_ast.OmpSchedule(type = str(p[1]) , name = str(p[1]).upper(), chunk_size = p[5] if len(p) > 5 else 0, kind = p[3], coord = self._coord(p.lineno(1)))]
++
++
++
++    def p_clause_5(self, p):
++       """ clause : COPY_IN LPAREN identifier_list RPAREN """
++       p[0] = [c_ast.OmpClause(type = str(p[1]) , name = str(p[1]).upper(), identifiers = p[3], coord = self._coord(p.lineno(1)))]
++
++    def p_clause_6(self, p):
++       """ clause : COPY_OUT LPAREN identifier_list RPAREN """
++       p[0] = [c_ast.OmpClause(type = str(p[1]) , name = str(p[1]).upper(), identifiers = p[3], coord = self._coord(p.lineno(1)))]
++
++
++    def p_device_list(self, p):
++       """ device_list  : CUDA
++                        | FPGA
++                        | CELL 
++                        | MPI
++                        | SMP
++                        | HYBRID """
++       p[0] = p[1]
++
++
++
++    def p_reduction_operator(self, p):
++       """ reduction_operator  : PLUS 
++                               | MINUS
++                               | TIMES """
++       p[0] = p[1]
++
++
++# End of OpenMP
++####################
++
++
+     # In function definitions, the declarator can be followed by
+     # a declaration list, for old "K&R style" function definitios.
+     #
+@@ -404,6 +585,13 @@
+         """
+         p[0] = p[1]
+ 
++# Ruyk : Directives inside statements
++    def p_statement_1(self, p):
++        """ statement : pp_directive
++        """
++        p[0] = p[1][0]
++
++
+     # In C, declarations can come several in a line:
+     #   int x, *px, romulo = 5;
+     #
+@@ -1176,6 +1364,15 @@
+         """
+         p[0] = c_ast.UnaryOp('p' + p[2], p[1], p[1].coord)
+ 
++# Ruyk: CUDA Kernel Launch
++    def p_postfix_exptession_6(self, p):
++        """ postfix_expression  : postfix_expression LKLAUNCH primary_expression COMMA primary_expression RKLAUNCH LPAREN argument_expression_list RPAREN
++                                | postfix_expression LKLAUNCH primary_expression COMMA primary_expression RKLAUNCH LPAREN  RPAREN
++
++        """
++        p[0] = c_ast.CUDAKernelCall(p[1], p[3], p[5], p[8] if len(p) > 9 else None, p[1].coord)
++
++
+     def p_primary_expression_1(self, p):
+         """ primary_expression  : identifier """
+         p[0] = p[1]
