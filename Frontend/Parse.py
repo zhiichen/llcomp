@@ -27,7 +27,7 @@ def parse_source(code_source, code_name):
 
     """
     # Prepare preprocessor pipe
-    p = subprocess.Popen("cpp -w -ansi -pedantic -CC -U __USE_GNU  -P -I " + 
+    p = subprocess.Popen("cpp -w -ansi -pedantic -CC -U __USE_GNU  -DLLC_TRANSLATION -P -I " + 
         config.INCLUDE_DIR + " -I " + config.FAKE_LIBC, shell=True, bufsize=1, 
         stdin=subprocess.PIPE, stdout=subprocess.PIPE, close_fds=True)
     # Send / Retrieve string to the preprocessor

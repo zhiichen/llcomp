@@ -126,6 +126,7 @@ class CM_OmpParallel(AbstractCudaMutator):
         private_params = clause_dict['PRIVATE'] 
         nowait = clause_dict.has_key('NOWAIT')
         # If the parallel statement have declarations, they are private to the thread, so, we need to put them as params
+        print " Parallel : " + str(ompParallel_node)
         if ompParallel_node.stmt.decls:
             private_params += ompParallel_node.stmt.decls
         private_params.extend(threadprivate)

@@ -243,7 +243,11 @@ class AbstractCudaMutator(AbstractMutator):
 
         shared_vars = get_template_array(shared_list, ast, name_func = decls_to_param) 
 
-        typedef_list = get_typedefs_to_template(shared_vars,ast)
+        clause_vars = []
+        clause_vars.extend(shared_vars)
+        clause_vars.extend(private_vars)
+        typedef_list = get_typedefs_to_template(clause_vars,ast)
+
 
         # Identify function calls inside kernel and replace the definitions to __device__ 
         try:
@@ -300,7 +304,7 @@ class AbstractCudaMutator(AbstractMutator):
                 
              }
              """
-        tree = self.parse_snippet(template_code, {'kernelName' : self.kernel_name, 'reduction_vars' : reduction_vars, 'shared_vars' : shared_vars, 'typedefs' : typedef_list, 'private_vars' : private_vars, 'loop_vars' : loop_vars, 'loop' : loop} , name = 'KernelBuild', show = False)
+        tree = self.parse_snippet(template_code, {'kernelName' : self.kernel_name, 'reduction_vars' : reduction_vars, 'shared_vars' : shared_vars, 'typedefs' : typedef_list, 'private_vars' : private_vars, 'loop_vars' : loop_vars, 'loop' : loop} , name = 'KernelBuild', show = True)
 
         
         # DeclsToParamsMutator().apply(tree.ext[-1].function.decl.type.args)
@@ -322,7 +326,7 @@ class AbstractCudaMutator(AbstractMutator):
 class CudaTransformer:
     @staticmethod
     def apply(ast):
-        from Backends.Cuda.Mutators.CM_OmpParallelFor import CM_OmpParallelFor
+ #       from Backends.Cuda.Mutators.CM_OmpParallelFor import CM_OmpParallelFor
         from Backends.Cuda.Mutators.CM_OmpParallel import CM_OmpParallel
 
         # cuda_ast = CM_OmpParallelFor().apply_all(ast)
