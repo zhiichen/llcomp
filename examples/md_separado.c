@@ -146,13 +146,13 @@ void compute(int np, int nd,
 
     for (j = 0; j < np; j++) { 
       if (i != j) {
-   	d = dist(nd,box,pos[i],pos[j],rij);
-   	/* attribute half of the potential energy to particle 'j' */
-   	pot = pot + 0.5 * v(d);
-      	for (k = 0; k < nd; k++) {
-   	   	f[i][k] = f[i][k] - rij[k]* dv(d) /d;
-         } 
-      }
+           	d = dist(nd,box,pos[i],pos[j],rij);
+           	/* attribute half of the potential energy to particle 'j' */
+        	pot = pot + 0.5 * v(d);
+      	    for (k = 0; k < nd; k++) {
+             	   	f[i][k] = f[i][k] - rij[k]* dv(d) /d;
+              } 
+            }
      } 
     /* compute kinetic energy */
     kin = kin + dotr8(nd,vel[i],vel[i]);
@@ -183,6 +183,7 @@ void update(int np, int nd, vnd_t pos[nparts], vnd_t vel[nparts], vnd_t f[nparts
 #pragma omp target device (cuda) copy_in(f, vel, pos, box, a) copy_out(pos, vel, a)
 #pragma omp parallel  private(i,j, rmass, dt) shared(pos, vel, a, f, np, nd) /* firstprivate(rmass,dt) */
  {
+#pragma llc nested
 #pragma omp for 
    for (i = 0; i < np; i++) {
     for (j = 0; j < nd; j++) {
