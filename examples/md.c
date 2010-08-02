@@ -41,7 +41,7 @@ int num_threads;
 
 typedef double real8;
 
-typedef double vnd_t[ndim] ;
+typedef double vnd_t[ndim];
 
 double t() {
     struct timeval tv;

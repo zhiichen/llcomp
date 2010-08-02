@@ -50,8 +50,8 @@ class CM_llcNestedFor(CM_OmpParallelFor):
                 # If current node is not child of first parallel node, stop
                 if self._parallel != parent_parallel_node:
                     print " Not in current parallel region "
-                    from Tools.Debug import DotDebugTool
-                    DotDebugTool().apply(self._parallel)
+ #                   from Tools.Debug import DotDebugTool
+ #                   DotDebugTool().apply(self._parallel)
                     raise StopIteration
 
                 print " ** Mutator function ** "
@@ -149,7 +149,11 @@ class CM_llcNestedFor(CM_OmpParallelFor):
 
         shared_vars = get_template_array(shared_list, ast, name_func = decls_to_param) 
 
-        typedef_list = get_typedefs_to_template(shared_vars,ast)
+        clause_vars = []
+        clause_vars.extend(shared_vars)
+        clause_vars.extend(private_vars)
+        typedef_list = get_typedefs_to_template(clause_vars,ast)
+
 
         template_code = """
 
