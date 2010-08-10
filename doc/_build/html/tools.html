@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Tools &mdash; llCoMP v1.0 documentation</title>
+    <title>Tools &mdash; llCoMP v1.0.1 documentation</title>
     <link rel="stylesheet" href="_static/default.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '#',
-        VERSION:     '1.0',
+        VERSION:     '1.0.1',
         COLLAPSE_MODINDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -19,7 +19,8 @@
     </script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="llCoMP v1.0 documentation" href="index.html" />
+    <link rel="top" title="llCoMP v1.0.1 documentation" href="index.html" />
+    <link rel="up" title="Software Architecture" href="softwareArchitecture.html" />
     <link rel="next" title="Glossary" href="glossary.html" />
     <link rel="prev" title="CUDA Backend" href="cudabackend.html" /> 
   </head>
@@ -39,7 +40,8 @@
         <li class="right" >
           <a href="cudabackend.html" title="CUDA Backend"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">llCoMP v1.0 documentation</a> &raquo;</li> 
+        <li><a href="index.html">llCoMP v1.0.1 documentation</a> &raquo;</li>
+          <li><a href="softwareArchitecture.html" accesskey="U">Software Architecture</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -51,19 +53,263 @@
   <div class="section" id="module-Tools">
 <h1>Tools<a class="headerlink" href="#module-Tools" title="Permalink to this headline">¶</a></h1>
 <p>A set of tools have been developed in order to easier the work with the internal representation.</p>
-<div class="section" id="tree-tools">
-<h2>Tree Tools<a class="headerlink" href="#tree-tools" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-Tools.Tree">
+<h2>Tree Tools<a class="headerlink" href="#module-Tools.Tree" title="Permalink to this headline">¶</a></h2>
 <p>Tree manipulation tools</p>
+<dl class="class">
+<dt id="Tools.Tree.InsertTool">
+<em class="property">class </em><tt class="descclassname">Tools.Tree.</tt><tt class="descname">InsertTool</tt><big>(</big><em>subtree=None</em>, <em>position='begin'</em>, <em>node=None</em><big>)</big><a class="headerlink" href="#Tools.Tree.InsertTool" title="Permalink to this definition">¶</a></dt>
+<dd><p>Inserts the childs of a node (a subtree) on the given position.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">It doesn&#8217;t insert the parent node of the new subtree.</p>
 </div>
-<div class="section" id="serialization-tools">
-<h2>Serialization Tools<a class="headerlink" href="#serialization-tools" title="Permalink to this headline">¶</a></h2>
+<dl class="docutils">
+<dt>Example:</dt>
+<dd><div class="first last highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">InsertTool</span><span class="p">(</span><span class="n">subtree</span> <span class="o">=</span> <span class="n">kernel_init_subtree</span><span class="p">,</span> <span class="n">position</span> <span class="o">=</span> <span class="s">&quot;begin&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">cuda_stmts</span><span class="p">,</span> <span class="s">&#39;decls&#39;</span><span class="p">)</span>
+</pre></div>
 </div>
-<div class="section" id="declarations-tools">
-<h2>Declarations Tools<a class="headerlink" href="#declarations-tools" title="Permalink to this headline">¶</a></h2>
+</dd>
+</dl>
+<dl class="method">
+<dt id="Tools.Tree.InsertTool.apply">
+<tt class="descname">apply</tt><big>(</big><em>target_node</em>, <em>attribute_name</em><big>)</big><a class="headerlink" href="#Tools.Tree.InsertTool.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply the insertion on the attribute of the target node</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><em>target_node</em> &#8211; Node where insert the subtree</li>
+<li><em>attribute_name</em> &#8211; Attribute of the target_node where the subtree is to be inserted</li>
+</ul>
+</td>
+</tr>
+<tr class="field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Target node after insertion</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="Tools.Tree.RemoveTool">
+<em class="property">class </em><tt class="descclassname">Tools.Tree.</tt><tt class="descname">RemoveTool</tt><big>(</big><em>target_node</em><big>)</big><a class="headerlink" href="#Tools.Tree.RemoveTool" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove a subtree from the AST</p>
+<dl class="method">
+<dt id="Tools.Tree.RemoveTool.apply">
+<tt class="descname">apply</tt><big>(</big><em>target_subtree</em>, <em>attribute_name</em><big>)</big><a class="headerlink" href="#Tools.Tree.RemoveTool.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply the removal</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><em>target_subtree</em> &#8211; target_subtree where target_node resides</li>
+<li><em>attribute_name</em> &#8211; Name of the attribute where the target_node resides in the target_subtree</li>
+</ul>
+</td>
+</tr>
+<tr class="field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Target subtree (container of the removed target_node)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="Tools.Tree.ReplaceTool">
+<em class="property">class </em><tt class="descclassname">Tools.Tree.</tt><tt class="descname">ReplaceTool</tt><big>(</big><em>new_node</em>, <em>old_node</em><big>)</big><a class="headerlink" href="#Tools.Tree.ReplaceTool" title="Permalink to this definition">¶</a></dt>
+<dd><p>Replace a subtree with another</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">ReplaceTool</span><span class="p">(</span><span class="n">new_node</span> <span class="o">=</span> <span class="n">cuda_stmts</span><span class="p">,</span> <span class="n">old_node</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parallel</span><span class="o">.</span><span class="n">parent</span><span class="p">)</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_parallel</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">parent</span><span class="p">,</span> <span class="s">&#39;stmts&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="method">
+<dt id="Tools.Tree.ReplaceTool.apply">
+<tt class="descname">apply</tt><big>(</big><em>target_node</em>, <em>attribute_name</em><big>)</big><a class="headerlink" href="#Tools.Tree.ReplaceTool.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply the replace, effectively changing self.old_node by self.new_node</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><em>target_node</em> &#8211; parent node of old_node</li>
+<li><em>attribute_name</em> &#8211; Attribute name which contains the old_node on the parent</li>
+</ul>
+</td>
+</tr>
+<tr class="field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Target Node after replace</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-Tools.Dump">
+<h2>Serialization Tools<a class="headerlink" href="#module-Tools.Dump" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="Tools.Dump.Dump">
+<em class="property">class </em><tt class="descclassname">Tools.Dump.</tt><tt class="descname">Dump</tt><a class="headerlink" href="#Tools.Dump.Dump" title="Permalink to this definition">¶</a></dt>
+<dd><p>Serializer class for Internal Representation</p>
+<dl class="staticmethod">
+<dt id="Tools.Dump.Dump.exists">
+<em class="property">static </em><tt class="descname">exists</tt><big>(</big><em>name</em><big>)</big><a class="headerlink" href="#Tools.Dump.Dump.exists" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check if a given tree serialization exists</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameter:</th><td class="field-body"><em>name</em> &#8211; Name of the frozen tree</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="Tools.Dump.Dump.load">
+<em class="property">static </em><tt class="descname">load</tt><big>(</big><em>name</em><big>)</big><a class="headerlink" href="#Tools.Dump.Dump.load" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deserialize a frozen AST</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameter:</th><td class="field-body"><em>name</em> &#8211; Name of the frozen tree</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="Tools.Dump.Dump.save">
+<em class="property">static </em><tt class="descname">save</tt><big>(</big><em>name</em>, <em>tree</em><big>)</big><a class="headerlink" href="#Tools.Dump.Dump.save" title="Permalink to this definition">¶</a></dt>
+<dd><p>Serialize an AST</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameter:</th><td class="field-body"><em>name</em> &#8211; Name of the frozen tree</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-Tools.Declarations">
+<h2>Declarations Tools<a class="headerlink" href="#module-Tools.Declarations" title="Permalink to this headline">¶</a></h2>
 <p>Provide functionality to look for declarations on the AST</p>
+<dl class="function">
+<dt id="Tools.Declarations.decl_of_id">
+<tt class="descclassname">Tools.Declarations.</tt><tt class="descname">decl_of_id</tt><big>(</big><em>id</em>, <em>ast</em><big>)</big><a class="headerlink" href="#Tools.Declarations.decl_of_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the TypeDecl node of a given ID node</p>
+<p>Because we don&#8217;t have a symbol table, we transverse the tree using
+the parent link attribute, in order to find the declaration of the identifier.
+This process is slow, a symbol table needs to be implemented.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><em>id</em> &#8211; ID Node</li>
+<li><em>ast</em> &#8211; Pointer to start reverse search</li>
+</ul>
+</td>
+</tr>
+<tr class="field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Decl node of the identifier</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="Tools.Declarations.type_of_id">
+<tt class="descclassname">Tools.Declarations.</tt><tt class="descname">type_of_id</tt><big>(</big><em>id</em>, <em>ast</em><big>)</big><a class="headerlink" href="#Tools.Declarations.type_of_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the TypeDecl node of a given ID node</p>
+<p>Calls decl_of_id but returns the type argument</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Return type:</th><td class="field-body">TypeDecl node of a given ID node</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="Tools.Declarations.type_of_node">
+<tt class="descclassname">Tools.Declarations.</tt><tt class="descname">type_of_node</tt><big>(</big><em>node</em>, <em>ast</em><big>)</big><a class="headerlink" href="#Tools.Declarations.type_of_node" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the TypeDecl node of an expression</p>
+<p>Rules are: double&gt;float&gt;int</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Return type:</th><td class="field-body">TypeDecl node of a given expression node</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
 </div>
-<div class="section" id="debug-tools">
-<h2>Debug Tools<a class="headerlink" href="#debug-tools" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-Tools.Debug">
+<h2>Debug Tools<a class="headerlink" href="#module-Tools.Debug" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="Tools.Debug.DotDebugTool">
+<em class="property">class </em><tt class="descclassname">Tools.Debug.</tt><tt class="descname">DotDebugTool</tt><big>(</big><em>highlight=None</em><big>)</big><a class="headerlink" href="#Tools.Debug.DotDebugTool" title="Permalink to this definition">¶</a></dt>
+<dd><p>Display the tree with xdot, highlighting the given nodes</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameter:</th><td class="field-body"><em>highlight</em> &#8211; Nodes to highlight, default: None</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">This tool requires xdot in <em>config.WORKDIR</em>, and uses a temporary
+storage for the dot file</p>
+</div>
+<dl class="method">
+<dt id="Tools.Debug.DotDebugTool.apply">
+<tt class="descname">apply</tt><big>(</big><em>node</em><big>)</big><a class="headerlink" href="#Tools.Debug.DotDebugTool.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Display the given node (or list of nodes)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameter:</th><td class="field-body"><em>node</em> &#8211; Node or list of nodes to begin display</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="Tools.Debug.DotDebugTool.debug_node">
+<tt class="descname">debug_node</tt><big>(</big><em>node</em><big>)</big><a class="headerlink" href="#Tools.Debug.DotDebugTool.debug_node" title="Permalink to this definition">¶</a></dt>
+<dd><p>Display the given node (or list of nodes)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameter:</th><td class="field-body"><em>node</em> &#8211; Node to display</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
 </div>
 </div>
 
@@ -76,10 +322,10 @@
             <h3><a href="index.html">Table Of Contents</a></h3>
             <ul>
 <li><a class="reference external" href="#">Tools</a><ul>
-<li><a class="reference external" href="#tree-tools">Tree Tools</a></li>
-<li><a class="reference external" href="#serialization-tools">Serialization Tools</a></li>
-<li><a class="reference external" href="#declarations-tools">Declarations Tools</a></li>
-<li><a class="reference external" href="#debug-tools">Debug Tools</a></li>
+<li><a class="reference external" href="#module-Tools.Tree">Tree Tools</a></li>
+<li><a class="reference external" href="#module-Tools.Dump">Serialization Tools</a></li>
+<li><a class="reference external" href="#module-Tools.Declarations">Declarations Tools</a></li>
+<li><a class="reference external" href="#module-Tools.Debug">Debug Tools</a></li>
 </ul>
 </li>
 </ul>
@@ -127,7 +373,8 @@
         <li class="right" >
           <a href="cudabackend.html" title="CUDA Backend"
              >previous</a> |</li>
-        <li><a href="index.html">llCoMP v1.0 documentation</a> &raquo;</li> 
+        <li><a href="index.html">llCoMP v1.0.1 documentation</a> &raquo;</li>
+          <li><a href="softwareArchitecture.html" >Software Architecture</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

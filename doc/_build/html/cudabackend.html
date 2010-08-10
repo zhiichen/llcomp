@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>CUDA Backend &mdash; llCoMP v1.0 documentation</title>
+    <title>CUDA Backend &mdash; llCoMP v1.0.1 documentation</title>
     <link rel="stylesheet" href="_static/default.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '#',
-        VERSION:     '1.0',
+        VERSION:     '1.0.1',
         COLLAPSE_MODINDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -19,7 +19,7 @@
     </script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="llCoMP v1.0 documentation" href="index.html" />
+    <link rel="top" title="llCoMP v1.0.1 documentation" href="index.html" />
     <link rel="up" title="Backends" href="backends.html" />
     <link rel="next" title="Tools" href="tools.html" />
     <link rel="prev" title="CBackend" href="cbackend.html" /> 
@@ -40,7 +40,8 @@
         <li class="right" >
           <a href="cbackend.html" title="CBackend"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">llCoMP v1.0 documentation</a> &raquo;</li>
+        <li><a href="index.html">llCoMP v1.0.1 documentation</a> &raquo;</li>
+          <li><a href="softwareArchitecture.html" >Software Architecture</a> &raquo;</li>
           <li><a href="backends.html" accesskey="U">Backends</a> &raquo;</li> 
       </ul>
     </div>  
@@ -50,15 +51,15 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="module-CudaBackend">
-<h1>CUDA Backend<a class="headerlink" href="#module-CudaBackend" title="Permalink to this headline">¶</a></h1>
-<p>The <tt class="xref docutils literal"><span class="pre">CudaBackend</span></tt> module contains a set of Mutators, Filters and Templates
+  <div class="section" id="module-Cuda">
+<h1>CUDA Backend<a class="headerlink" href="#module-Cuda" title="Permalink to this headline">¶</a></h1>
+<p>The <tt class="xref docutils literal"><span class="pre">Cuda</span></tt> module contains a set of Mutators, Filters and Templates
 which creates CUDA code from the IR.</p>
-<div class="section" id="module-Backends.CudaBackend.Visitors.CM_Visitors">
-<h2>Filters<a class="headerlink" href="#module-Backends.CudaBackend.Visitors.CM_Visitors" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-Backends.Cuda.Visitors.CM_Visitors">
+<h2>Filters<a class="headerlink" href="#module-Backends.Cuda.Visitors.CM_Visitors" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
-<dt id="Backends.CudaBackend.Visitors.CM_Visitors.OmpForFilter">
-<em class="property">class </em><tt class="descclassname">Backends.CudaBackend.Visitors.CM_Visitors.</tt><tt class="descname">OmpForFilter</tt><big>(</big><em>prev_brother=None</em><big>)</big><a class="headerlink" href="#Backends.CudaBackend.Visitors.CM_Visitors.OmpForFilter" title="Permalink to this definition">¶</a></dt>
+<dt id="Backends.Cuda.Visitors.CM_Visitors.OmpForFilter">
+<em class="property">class </em><tt class="descclassname">Backends.Cuda.Visitors.CM_Visitors.</tt><tt class="descname">OmpForFilter</tt><big>(</big><em>prev_brother=None</em><big>)</big><a class="headerlink" href="#Backends.Cuda.Visitors.CM_Visitors.OmpForFilter" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a OmpFor node , the parallel container and the function container</p>
 <dl class="docutils">
 <dt>By defining specific visitor methods for <em>FuncDef</em> and <em>OmpParallel</em>, we can</dt>
@@ -67,15 +68,15 @@ done in syntax order, the last visited node will be the previous (parent) node
 of the wanted node.</dd>
 </dl>
 <dl class="method">
-<dt id="Backends.CudaBackend.Visitors.CM_Visitors.OmpForFilter.iterate">
-<tt class="descname">iterate</tt><big>(</big><em>ast</em><big>)</big><a class="headerlink" href="#Backends.CudaBackend.Visitors.CM_Visitors.OmpForFilter.iterate" title="Permalink to this definition">¶</a></dt>
+<dt id="Backends.Cuda.Visitors.CM_Visitors.OmpForFilter.iterate">
+<tt class="descname">iterate</tt><big>(</big><em>ast</em><big>)</big><a class="headerlink" href="#Backends.Cuda.Visitors.CM_Visitors.OmpForFilter.iterate" title="Permalink to this definition">¶</a></dt>
 <dd>Iterate through matching nodes</dd></dl>
 
 </dd></dl>
 
 <dl class="class">
-<dt id="Backends.CudaBackend.Visitors.CM_Visitors.OmpParallelFilter">
-<em class="property">class </em><tt class="descclassname">Backends.CudaBackend.Visitors.CM_Visitors.</tt><tt class="descname">OmpParallelFilter</tt><big>(</big><em>condition_func=None</em>, <em>prev_brother=None</em>, <em>device=None</em><big>)</big><a class="headerlink" href="#Backends.CudaBackend.Visitors.CM_Visitors.OmpParallelFilter" title="Permalink to this definition">¶</a></dt>
+<dt id="Backends.Cuda.Visitors.CM_Visitors.OmpParallelFilter">
+<em class="property">class </em><tt class="descclassname">Backends.Cuda.Visitors.CM_Visitors.</tt><tt class="descname">OmpParallelFilter</tt><big>(</big><em>condition_func=None</em>, <em>prev_brother=None</em>, <em>device=None</em><big>)</big><a class="headerlink" href="#Backends.Cuda.Visitors.CM_Visitors.OmpParallelFilter" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a OmpParallel node , the parallel container and the function container</p>
 <dl class="docutils">
 <dt>By defining specific visitor methods for <em>FuncDef</em> and <em>OmpParallel</em>, we can</dt>
@@ -84,30 +85,30 @@ done in syntax order, the last visited node will be the previous (parent) node
 of the wanted node.</dd>
 </dl>
 <dl class="method">
-<dt id="Backends.CudaBackend.Visitors.CM_Visitors.OmpParallelFilter.parallel_condition">
-<tt class="descname">parallel_condition</tt><big>(</big><em>node</em><big>)</big><a class="headerlink" href="#Backends.CudaBackend.Visitors.CM_Visitors.OmpParallelFilter.parallel_condition" title="Permalink to this definition">¶</a></dt>
+<dt id="Backends.Cuda.Visitors.CM_Visitors.OmpParallelFilter.parallel_condition">
+<tt class="descname">parallel_condition</tt><big>(</big><em>node</em><big>)</big><a class="headerlink" href="#Backends.Cuda.Visitors.CM_Visitors.OmpParallelFilter.parallel_condition" title="Permalink to this definition">¶</a></dt>
 <dd>OmpParallel filter</dd></dl>
 
 <dl class="method">
-<dt id="Backends.CudaBackend.Visitors.CM_Visitors.OmpParallelFilter.visit_OmpTargetDevice">
-<tt class="descname">visit_OmpTargetDevice</tt><big>(</big><em>node</em>, <em>prev</em>, <em>offset=1</em>, <em>ignore=</em><span class="optional">[</span><span class="optional">]</span><big>)</big><a class="headerlink" href="#Backends.CudaBackend.Visitors.CM_Visitors.OmpParallelFilter.visit_OmpTargetDevice" title="Permalink to this definition">¶</a></dt>
+<dt id="Backends.Cuda.Visitors.CM_Visitors.OmpParallelFilter.visit_OmpTargetDevice">
+<tt class="descname">visit_OmpTargetDevice</tt><big>(</big><em>node</em>, <em>prev</em>, <em>offset=1</em>, <em>ignore=</em><span class="optional">[</span><span class="optional">]</span><big>)</big><a class="headerlink" href="#Backends.Cuda.Visitors.CM_Visitors.OmpParallelFilter.visit_OmpTargetDevice" title="Permalink to this definition">¶</a></dt>
 <dd>Save target device node</dd></dl>
 
 </dd></dl>
 
 <dl class="class">
-<dt id="Backends.CudaBackend.Visitors.CM_Visitors.OmpParallelForFilter">
-<em class="property">class </em><tt class="descclassname">Backends.CudaBackend.Visitors.CM_Visitors.</tt><tt class="descname">OmpParallelForFilter</tt><big>(</big><em>prev_brother=None</em>, <em>device=None</em><big>)</big><a class="headerlink" href="#Backends.CudaBackend.Visitors.CM_Visitors.OmpParallelForFilter" title="Permalink to this definition">¶</a></dt>
+<dt id="Backends.Cuda.Visitors.CM_Visitors.OmpParallelForFilter">
+<em class="property">class </em><tt class="descclassname">Backends.Cuda.Visitors.CM_Visitors.</tt><tt class="descname">OmpParallelForFilter</tt><big>(</big><em>prev_brother=None</em>, <em>device=None</em><big>)</big><a class="headerlink" href="#Backends.Cuda.Visitors.CM_Visitors.OmpParallelForFilter" title="Permalink to this definition">¶</a></dt>
 <dd>Returns a <em>omp parallel for</em> construct</dd></dl>
 
 <dl class="class">
-<dt id="Backends.CudaBackend.Visitors.CM_Visitors.OmpThreadPrivateFilter">
-<em class="property">class </em><tt class="descclassname">Backends.CudaBackend.Visitors.CM_Visitors.</tt><tt class="descname">OmpThreadPrivateFilter</tt><big>(</big><em>prev_brother=None</em><big>)</big><a class="headerlink" href="#Backends.CudaBackend.Visitors.CM_Visitors.OmpThreadPrivateFilter" title="Permalink to this definition">¶</a></dt>
+<dt id="Backends.Cuda.Visitors.CM_Visitors.OmpThreadPrivateFilter">
+<em class="property">class </em><tt class="descclassname">Backends.Cuda.Visitors.CM_Visitors.</tt><tt class="descname">OmpThreadPrivateFilter</tt><big>(</big><em>prev_brother=None</em><big>)</big><a class="headerlink" href="#Backends.Cuda.Visitors.CM_Visitors.OmpThreadPrivateFilter" title="Permalink to this definition">¶</a></dt>
 <dd>Returns the ThreadPrivate constructs</dd></dl>
 
 <dl class="class">
-<dt id="Backends.CudaBackend.Visitors.CM_Visitors.llcNestedForFilter">
-<em class="property">class </em><tt class="descclassname">Backends.CudaBackend.Visitors.CM_Visitors.</tt><tt class="descname">llcNestedForFilter</tt><big>(</big><em>prev_brother=None</em>, <em>device=None</em><big>)</big><a class="headerlink" href="#Backends.CudaBackend.Visitors.CM_Visitors.llcNestedForFilter" title="Permalink to this definition">¶</a></dt>
+<dt id="Backends.Cuda.Visitors.CM_Visitors.llcNestedForFilter">
+<em class="property">class </em><tt class="descclassname">Backends.Cuda.Visitors.CM_Visitors.</tt><tt class="descname">llcNestedForFilter</tt><big>(</big><em>prev_brother=None</em>, <em>device=None</em><big>)</big><a class="headerlink" href="#Backends.Cuda.Visitors.CM_Visitors.llcNestedForFilter" title="Permalink to this definition">¶</a></dt>
 <dd>Returns a <em>omp parallel for</em> construct</dd></dl>
 
 </div>
@@ -115,42 +116,87 @@ of the wanted node.</dd>
 <h2>Templates<a class="headerlink" href="#templates" title="Permalink to this headline">¶</a></h2>
 <p>Currently, templates are held inside <tt class="xref docutils literal"><span class="pre">Mutators</span></tt> code.</p>
 </div>
-<div class="section" id="module-Backends.CudaBackend.Mutators.CM_OmpParallelFor">
-<h2>Mutators<a class="headerlink" href="#module-Backends.CudaBackend.Mutators.CM_OmpParallelFor" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-Backends.Cuda.Mutators.CM_OmpFor">
+<h2>Mutators<a class="headerlink" href="#module-Backends.Cuda.Mutators.CM_OmpFor" title="Permalink to this headline">¶</a></h2>
 <p>A separate Mutator have been written for each OpenMP construct.
-Their parent is <tt class="xref docutils literal"><span class="pre">Backends.CudaBackend.Mutators.Common</span></tt></p>
+Their parent is <tt class="xref docutils literal"><span class="pre">Backends.Cuda.Mutators.Common</span></tt></p>
 <dl class="class">
-<dt id="Backends.CudaBackend.Mutators.Common.AbstractCudaMutator">
-<em class="property">class </em><tt class="descclassname">Backends.CudaBackend.Mutators.Common.</tt><tt class="descname">AbstractCudaMutator</tt><big>(</big><em>clauses=None</em>, <em>kernel_name='loopKernel'</em>, <em>kernel_prefix=''</em><big>)</big><a class="headerlink" href="#Backends.CudaBackend.Mutators.Common.AbstractCudaMutator" title="Permalink to this definition">¶</a></dt>
+<dt id="Backends.Cuda.Mutators.Common.AbstractCudaMutator">
+<em class="property">class </em><tt class="descclassname">Backends.Cuda.Mutators.Common.</tt><tt class="descname">AbstractCudaMutator</tt><big>(</big><em>clauses=None</em>, <em>kernel_name='loopKernel'</em>, <em>kernel_prefix=''</em><big>)</big><a class="headerlink" href="#Backends.Cuda.Mutators.Common.AbstractCudaMutator" title="Permalink to this definition">¶</a></dt>
 <dd><p>Common methods to work with CUDA</p>
 <dl class="method">
-<dt id="Backends.CudaBackend.Mutators.Common.AbstractCudaMutator.buildDeclarations">
-<tt class="descname">buildDeclarations</tt><big>(</big><em>numThreads</em>, <em>reduction_node_list</em>, <em>shared_node_list</em>, <em>ast</em><big>)</big><a class="headerlink" href="#Backends.CudaBackend.Mutators.Common.AbstractCudaMutator.buildDeclarations" title="Permalink to this definition">¶</a></dt>
-<dd>Builds the declaration section 
-&#64;param numThreads number of threads
-&#64;return Declarations subtree</dd></dl>
-
-<dl class="method">
-<dt id="Backends.CudaBackend.Mutators.Common.AbstractCudaMutator.buildHostReduction">
-<tt class="descname">buildHostReduction</tt><big>(</big><em>reduction_vars</em>, <em>ast</em><big>)</big><a class="headerlink" href="#Backends.CudaBackend.Mutators.Common.AbstractCudaMutator.buildHostReduction" title="Permalink to this definition">¶</a></dt>
-<dd><p>Instanciate the reduction pattern</p>
-<p>&#64;return Compound with the reduction code</p>
+<dt id="Backends.Cuda.Mutators.Common.AbstractCudaMutator.buildDeclarations">
+<tt class="descname">buildDeclarations</tt><big>(</big><em>numThreads</em>, <em>reduction_node_list</em>, <em>shared_node_list</em>, <em>ast</em><big>)</big><a class="headerlink" href="#Backends.Cuda.Mutators.Common.AbstractCudaMutator.buildDeclarations" title="Permalink to this definition">¶</a></dt>
+<dd><p>Builds the declaration section</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameter:</th><td class="field-body"><em>numThreads</em> &#8211; number of threads involved</td>
+</tr>
+<tr class="field"><th class="field-name">Returns:</th><td class="field-body">Declarations subtree</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
-<dt id="Backends.CudaBackend.Mutators.Common.AbstractCudaMutator.buildKernel">
-<tt class="descname">buildKernel</tt><big>(</big><em>shared_list</em>, <em>private_list</em>, <em>reduction_list</em>, <em>loop</em>, <em>ast</em><big>)</big><a class="headerlink" href="#Backends.CudaBackend.Mutators.Common.AbstractCudaMutator.buildKernel" title="Permalink to this definition">¶</a></dt>
-<dd>Build CUDA Kernel code</dd></dl>
+<dt id="Backends.Cuda.Mutators.Common.AbstractCudaMutator.buildHostReduction">
+<tt class="descname">buildHostReduction</tt><big>(</big><em>reduction_vars</em>, <em>ast</em><big>)</big><a class="headerlink" href="#Backends.Cuda.Mutators.Common.AbstractCudaMutator.buildHostReduction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Instanciate the reduction pattern</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameter:</th><td class="field-body"><em>reduction_vars</em> &#8211; Vars in the reduction clause</td>
+</tr>
+<tr class="field"><th class="field-name">Returns:</th><td class="field-body">Compound with the reduction code</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
 
 <dl class="method">
-<dt id="Backends.CudaBackend.Mutators.Common.AbstractCudaMutator.getThreadNum">
-<tt class="descname">getThreadNum</tt><big>(</big><em>node</em><big>)</big><a class="headerlink" href="#Backends.CudaBackend.Mutators.Common.AbstractCudaMutator.getThreadNum" title="Permalink to this definition">¶</a></dt>
+<dt id="Backends.Cuda.Mutators.Common.AbstractCudaMutator.buildKernel">
+<tt class="descname">buildKernel</tt><big>(</big><em>shared_list</em>, <em>private_list</em>, <em>reduction_list</em>, <em>loop</em>, <em>ast</em><big>)</big><a class="headerlink" href="#Backends.Cuda.Mutators.Common.AbstractCudaMutator.buildKernel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Build CUDA Kernel code</p>
+<p><a href="#id1"><span class="problematic" id="id2">|return|</span></a> Cast with the kernel source</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="Backends.Cuda.Mutators.Common.AbstractCudaMutator.getThreadNum">
+<tt class="descname">getThreadNum</tt><big>(</big><em>node</em><big>)</big><a class="headerlink" href="#Backends.Cuda.Mutators.Common.AbstractCudaMutator.getThreadNum" title="Permalink to this definition">¶</a></dt>
 <dd>Gets the maximum number of threads needed</dd></dl>
 
 <dl class="method">
-<dt id="Backends.CudaBackend.Mutators.Common.AbstractCudaMutator.get_names">
-<tt class="descname">get_names</tt><big>(</big><em>elem</em>, <em>ast</em><big>)</big><a class="headerlink" href="#Backends.CudaBackend.Mutators.Common.AbstractCudaMutator.get_names" title="Permalink to this definition">¶</a></dt>
+<dt id="Backends.Cuda.Mutators.Common.AbstractCudaMutator.get_names">
+<tt class="descname">get_names</tt><big>(</big><em>elem</em>, <em>ast</em><big>)</big><a class="headerlink" href="#Backends.Cuda.Mutators.Common.AbstractCudaMutator.get_names" title="Permalink to this definition">¶</a></dt>
 <dd>Return a list of names for a type</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="Backends.Cuda.Mutators.Common.CudaTransformer">
+<em class="property">class </em><tt class="descclassname">Backends.Cuda.Mutators.Common.</tt><tt class="descname">CudaTransformer</tt><a class="headerlink" href="#Backends.Cuda.Mutators.Common.CudaTransformer" title="Permalink to this definition">¶</a></dt>
+<dd><p>CudaTransformer pretends to be the main class for all CUDA code transformations.</p>
+<dl class="staticmethod">
+<dt id="Backends.Cuda.Mutators.Common.CudaTransformer.apply">
+<em class="property">static </em><tt class="descname">apply</tt><big>(</big><em>ast</em><big>)</big><a class="headerlink" href="#Backends.Cuda.Mutators.Common.CudaTransformer.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>The apply method calls al the known CUDA mutators, in an specified order.
+This method need heavy re-engineering.</p>
+<blockquote>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">param ast:</th><td class="field-body">Original AST</td>
+</tr>
+<tr class="field"><th class="field-name">return:</th><td class="field-body">CUDA Ast</td>
+</tr>
+</tbody>
+</table>
+</blockquote>
+</dd></dl>
 
 </dd></dl>
 
@@ -158,27 +204,27 @@ Their parent is <tt class="xref docutils literal"><span class="pre">Backends.Cud
 <p><strong>OpenMP Parallel</strong></p>
 <p><strong>OpenMP Parallel For</strong></p>
 <dl class="class">
-<dt id="Backends.CudaBackend.Mutators.CM_OmpParallelFor.CM_OmpParallelFor">
-<em class="property">class </em><tt class="descclassname">Backends.CudaBackend.Mutators.CM_OmpParallelFor.</tt><tt class="descname">CM_OmpParallelFor</tt><big>(</big><em>clauses=None</em>, <em>kernel_name='loopKernel'</em>, <em>kernel_prefix=''</em><big>)</big><a class="headerlink" href="#Backends.CudaBackend.Mutators.CM_OmpParallelFor.CM_OmpParallelFor" title="Permalink to this definition">¶</a></dt>
+<dt id="Backends.Cuda.Mutators.CM_OmpParallelFor.CM_OmpParallelFor">
+<em class="property">class </em><tt class="descclassname">Backends.Cuda.Mutators.CM_OmpParallelFor.</tt><tt class="descname">CM_OmpParallelFor</tt><big>(</big><em>clauses=None</em>, <em>kernel_name='loopKernel'</em>, <em>kernel_prefix=''</em><big>)</big><a class="headerlink" href="#Backends.Cuda.Mutators.CM_OmpParallelFor.CM_OmpParallelFor" title="Permalink to this definition">¶</a></dt>
 <dd><p>This  mutator locates a omp parallel for reduction, and then
 translate the original source to an equivalent cuda implementation</p>
 <dl class="method">
-<dt id="Backends.CudaBackend.Mutators.CM_OmpParallelFor.CM_OmpParallelFor.apply_all">
-<tt class="descname">apply_all</tt><big>(</big><em>ast</em><big>)</big><a class="headerlink" href="#Backends.CudaBackend.Mutators.CM_OmpParallelFor.CM_OmpParallelFor.apply_all" title="Permalink to this definition">¶</a></dt>
+<dt id="Backends.Cuda.Mutators.CM_OmpParallelFor.CM_OmpParallelFor.apply_all">
+<tt class="descname">apply_all</tt><big>(</big><em>ast</em><big>)</big><a class="headerlink" href="#Backends.Cuda.Mutators.CM_OmpParallelFor.CM_OmpParallelFor.apply_all" title="Permalink to this definition">¶</a></dt>
 <dd><p>Apply mutation to all matches</p>
 <p>&#64;return last node changed</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="Backends.CudaBackend.Mutators.CM_OmpParallelFor.CM_OmpParallelFor.filter">
-<tt class="descname">filter</tt><big>(</big><em>ast</em><big>)</big><a class="headerlink" href="#Backends.CudaBackend.Mutators.CM_OmpParallelFor.CM_OmpParallelFor.filter" title="Permalink to this definition">¶</a></dt>
+<dt id="Backends.Cuda.Mutators.CM_OmpParallelFor.CM_OmpParallelFor.filter">
+<tt class="descname">filter</tt><big>(</big><em>ast</em><big>)</big><a class="headerlink" href="#Backends.Cuda.Mutators.CM_OmpParallelFor.CM_OmpParallelFor.filter" title="Permalink to this definition">¶</a></dt>
 <dd><p>Filter definition</p>
 <p>&#64;return first node matching with the filter</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="Backends.CudaBackend.Mutators.CM_OmpParallelFor.CM_OmpParallelFor.mutatorFunction">
-<tt class="descname">mutatorFunction</tt><big>(</big><em>ast</em>, <em>ompFor_node</em><big>)</big><a class="headerlink" href="#Backends.CudaBackend.Mutators.CM_OmpParallelFor.CM_OmpParallelFor.mutatorFunction" title="Permalink to this definition">¶</a></dt>
+<dt id="Backends.Cuda.Mutators.CM_OmpParallelFor.CM_OmpParallelFor.mutatorFunction">
+<tt class="descname">mutatorFunction</tt><big>(</big><em>ast</em>, <em>ompFor_node</em><big>)</big><a class="headerlink" href="#Backends.Cuda.Mutators.CM_OmpParallelFor.CM_OmpParallelFor.mutatorFunction" title="Permalink to this definition">¶</a></dt>
 <dd><p>Main mutator for OpenMP Parallel For construct</p>
 <dl class="docutils">
 <dt>Writes the optimized code of an OpenMP Parallel For construct, building a kernel</dt>
@@ -189,8 +235,6 @@ translate the original source to an equivalent cuda implementation</p>
 </dd></dl>
 
 <p><strong>OpenMP for</strong></p>
-<p>automodule:: Backends.CudaBackend.Mutators.CM_OmpFor
-members:</p>
 </div>
 </div>
 
@@ -203,9 +247,9 @@ members:</p>
             <h3><a href="index.html">Table Of Contents</a></h3>
             <ul>
 <li><a class="reference external" href="#">CUDA Backend</a><ul>
-<li><a class="reference external" href="#module-Backends.CudaBackend.Visitors.CM_Visitors">Filters</a></li>
+<li><a class="reference external" href="#module-Backends.Cuda.Visitors.CM_Visitors">Filters</a></li>
 <li><a class="reference external" href="#templates">Templates</a></li>
-<li><a class="reference external" href="#module-Backends.CudaBackend.Mutators.CM_OmpParallelFor">Mutators</a></li>
+<li><a class="reference external" href="#module-Backends.Cuda.Mutators.CM_OmpFor">Mutators</a></li>
 </ul>
 </li>
 </ul>
@@ -253,7 +297,8 @@ members:</p>
         <li class="right" >
           <a href="cbackend.html" title="CBackend"
              >previous</a> |</li>
-        <li><a href="index.html">llCoMP v1.0 documentation</a> &raquo;</li>
+        <li><a href="index.html">llCoMP v1.0.1 documentation</a> &raquo;</li>
+          <li><a href="softwareArchitecture.html" >Software Architecture</a> &raquo;</li>
           <li><a href="backends.html" >Backends</a> &raquo;</li> 
       </ul>
     </div>

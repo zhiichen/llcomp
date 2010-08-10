@@ -12,10 +12,10 @@ The :mod:`DotBackend` module is able to translate the :term:`Internal
 Representation` (IR) to :term:`Dot language`, which may be printed with
 graphviz.
 
-The :mod:`CBackend` module contains writers capable of converting the IR to
+The :mod:`C` module contains writers capable of converting the IR to
 C or OpenMP code.
 
-Module :mod:`CudaBackend` encapsulates Mutators, Visitors and Writers, capable of
+Module :mod:`Cuda` encapsulates Mutators, Visitors and Writers, capable of
 translating the IR to CUDA code.
 
 .. toctree::

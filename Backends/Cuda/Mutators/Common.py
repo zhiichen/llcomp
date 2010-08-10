@@ -84,8 +84,9 @@ class AbstractCudaMutator(AbstractMutator):
  
     def buildDeclarations(self, numThreads, reduction_node_list, shared_node_list, ast):
         """ Builds the declaration section 
-             @param numThreads number of threads
-             @return Declarations subtree
+
+            :param numThreads: number of threads involved
+            :return: Declarations subtree
         """ 
         # Position in the template for dimA declaration, just in case we change it
         DIMA_POS = 0
@@ -189,8 +190,9 @@ class AbstractCudaMutator(AbstractMutator):
 
     def buildHostReduction(self, reduction_vars, ast):
         """ Instanciate the reduction pattern 
-    
-            @return Compound with the reduction code
+
+            :param reduction_vars: Vars in the reduction clause
+            :return: Compound with the reduction code
         """
         if len(reduction_vars) == 0:
             return c_ast.Compound(stmts = [], decls = [])
@@ -215,7 +217,10 @@ class AbstractCudaMutator(AbstractMutator):
         return self.parse_snippet(template_code, {'reduction_vars' : get_template_array(reduction_vars, ast), 'nowait' : False}, name = 'HostReduction').ext[0].body
 
     def buildKernel(self, shared_list, private_list, reduction_list, loop, ast):
-        """ Build CUDA Kernel code """
+        """ Build CUDA Kernel code 
+
+            |return| Cast with the kernel source
+        """
 
         reduction_vars = get_template_array(reduction_list, ast)
 
@@ -224,12 +229,6 @@ class AbstractCudaMutator(AbstractMutator):
 
         private_vars = get_template_array([var for var in private_list if not var.name in loop_list], ast)
         loop_vars = get_template_array([var for var in private_list if var.name in loop_list], ast)
-
-#~        print "Loop : " + str(loop.init.lvalue.name)
-#~        print "Loop_list : " + str(loop_list)
-#~        print "*** Private list : " + str(private_list)
-#~        print "*** Private vars : " + str(private_vars)
-#~        print "*** Loop vars : " + str(loop_vars)
 
         if len(loop_vars) == 0:
             raise AbortMutationException(" No loop vars found: check your private clause\n")
@@ -320,8 +319,23 @@ class AbstractCudaMutator(AbstractMutator):
 
 
 class CudaTransformer:
+    """
+       CudaTransformer pretends to be the main class for all CUDA code transformations.
+
+    """
+
+
     @staticmethod
     def apply(ast):
+	"""
+        The apply method calls al the known CUDA mutators, in an specified order.
+        This method need heavy re-engineering.
+
+	   :param ast: Original AST
+           :return: CUDA Ast
+
+        """
+
         from Backends.Cuda.Mutators.CM_OmpParallelFor import CM_OmpParallelFor
         from Backends.Cuda.Mutators.CM_OmpParallel import CM_OmpParallel
 
