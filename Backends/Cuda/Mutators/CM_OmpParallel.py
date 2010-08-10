@@ -68,10 +68,10 @@ class CM_OmpParallel(AbstractCudaMutator):
         """ Builds the declaration section of a Parallel Region
                 This code handles memory transfers between host and cuda
               
-                @param shared_node_list List of shared variable declarations
-                @param ast Full ast (for type search)
+             :param shared_node_list: List of shared variable declarations
+             :param ast: Original ast (for type search)
 
-             @return Parallel Declarations subtree
+             :return: Parallel Declarations subtree
         """ 
         # Position in the template for dimA declaration, just in case we change it
         tmp = []

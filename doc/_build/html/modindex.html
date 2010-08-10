@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Global Module Index &mdash; llCoMP v1.0 documentation</title>
+    <title>Global Module Index &mdash; llCoMP v1.0.1 documentation</title>
     <link rel="stylesheet" href="_static/default.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '#',
-        VERSION:     '1.0',
+        VERSION:     '1.0.1',
         COLLAPSE_MODINDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -19,7 +19,7 @@
     </script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="llCoMP v1.0 documentation" href="index.html" />
+    <link rel="top" title="llCoMP v1.0.1 documentation" href="index.html" />
  
 
 
@@ -34,7 +34,7 @@
         <li class="right" >
           <a href="#" title="Global Module Index"
              accesskey="M">modules</a> |</li>
-        <li><a href="index.html">llCoMP v1.0 documentation</a> &raquo;</li> 
+        <li><a href="index.html">llCoMP v1.0.1 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -49,6 +49,7 @@
    <a href="#cap-C"><strong>C</strong></a> | 
    <a href="#cap-D"><strong>D</strong></a> | 
    <a href="#cap-F"><strong>F</strong></a> | 
+   <a href="#cap-P"><strong>P</strong></a> | 
    <a href="#cap-T"><strong>T</strong></a> 
    <hr/>
 
@@ -61,11 +62,11 @@
      <em>Repository of implemented backends</em></td></tr><tr class="cg-1">
      <td></td>
      <td>&nbsp;&nbsp;&nbsp;
-     <a href="cbackend.html#module-Backends.CBackend.Writers.CWriter"><tt class="xref">Backends.CBackend.Writers.CWriter</tt></a></td><td>
+     <a href="cbackend.html#module-Backends.C.Writers.CWriter"><tt class="xref">Backends.C.Writers.CWriter</tt></a></td><td>
      <em></em></td></tr><tr class="cg-1">
      <td></td>
      <td>&nbsp;&nbsp;&nbsp;
-     <a href="cbackend.html#module-Backends.CBackend.Writers.OmpWriter"><tt class="xref">Backends.CBackend.Writers.OmpWriter</tt></a></td><td>
+     <a href="cbackend.html#module-Backends.C.Writers.OmpWriter"><tt class="xref">Backends.C.Writers.OmpWriter</tt></a></td><td>
      <em></em></td></tr><tr class="cg-1">
      <td></td>
      <td>&nbsp;&nbsp;&nbsp;
@@ -81,19 +82,23 @@
      <em></em></td></tr><tr class="cg-1">
      <td></td>
      <td>&nbsp;&nbsp;&nbsp;
-     <a href="cudabackend.html#module-Backends.CudaBackend.Mutators.CM_OmpParallel"><tt class="xref">Backends.CudaBackend.Mutators.CM_OmpParallel</tt></a></td><td>
+     <a href="cudabackend.html#module-Backends.Cuda.Mutators.CM_OmpFor"><tt class="xref">Backends.Cuda.Mutators.CM_OmpFor</tt></a></td><td>
      <em></em></td></tr><tr class="cg-1">
      <td></td>
      <td>&nbsp;&nbsp;&nbsp;
-     <a href="cudabackend.html#module-Backends.CudaBackend.Mutators.CM_OmpParallelFor"><tt class="xref">Backends.CudaBackend.Mutators.CM_OmpParallelFor</tt></a></td><td>
+     <a href="cudabackend.html#module-Backends.Cuda.Mutators.CM_OmpParallel"><tt class="xref">Backends.Cuda.Mutators.CM_OmpParallel</tt></a></td><td>
      <em></em></td></tr><tr class="cg-1">
      <td></td>
      <td>&nbsp;&nbsp;&nbsp;
-     <a href="cudabackend.html#module-Backends.CudaBackend.Mutators.Common"><tt class="xref">Backends.CudaBackend.Mutators.Common</tt></a></td><td>
+     <a href="cudabackend.html#module-Backends.Cuda.Mutators.CM_OmpParallelFor"><tt class="xref">Backends.Cuda.Mutators.CM_OmpParallelFor</tt></a></td><td>
      <em></em></td></tr><tr class="cg-1">
      <td></td>
      <td>&nbsp;&nbsp;&nbsp;
-     <a href="cudabackend.html#module-Backends.CudaBackend.Visitors.CM_Visitors"><tt class="xref">Backends.CudaBackend.Visitors.CM_Visitors</tt></a></td><td>
+     <a href="cudabackend.html#module-Backends.Cuda.Mutators.Common"><tt class="xref">Backends.Cuda.Mutators.Common</tt></a></td><td>
+     <em></em></td></tr><tr class="cg-1">
+     <td></td>
+     <td>&nbsp;&nbsp;&nbsp;
+     <a href="cudabackend.html#module-Backends.Cuda.Visitors.CM_Visitors"><tt class="xref">Backends.Cuda.Visitors.CM_Visitors</tt></a></td><td>
      <em></em></td></tr><tr class="cg-1">
      <td></td>
      <td>&nbsp;&nbsp;&nbsp;
@@ -102,7 +107,7 @@
    <tr class="cap"><td></td><td><a name="cap-C"><strong>C</strong></a></td><td></td></tr><tr>
      <td></td>
      <td>
-     <a href="cbackend.html#module-CBackend"><tt class="xref">CBackend</tt></a></td><td>
+     <a href="cbackend.html#module-C"><tt class="xref">C</tt></a></td><td>
      <em>Converts IR to C with OpenMP extensions</em></td></tr><tr>
      <td></td>
      <td>
@@ -110,7 +115,7 @@
      <em>Common classes for all backends</em></td></tr><tr>
      <td></td>
      <td>
-     <a href="cudabackend.html#module-CudaBackend"><tt class="xref">CudaBackend</tt></a></td><td>
+     <a href="cudabackend.html#module-Cuda"><tt class="xref">Cuda</tt></a></td><td>
      <em>Converts IR to CUDA</em></td></tr><tr class="pcap"><td></td><td>&nbsp;</td><td></td></tr>
    <tr class="cap"><td></td><td><a name="cap-D"><strong>D</strong></a></td><td></td></tr><tr>
      <td></td>
@@ -118,14 +123,45 @@
      <a href="dotbackend.html#module-DotBackend"><tt class="xref">DotBackend</tt></a></td><td>
      <em>Converts IR to Dot</em></td></tr><tr class="pcap"><td></td><td>&nbsp;</td><td></td></tr>
    <tr class="cap"><td></td><td><a name="cap-F"><strong>F</strong></a></td><td></td></tr><tr>
-     <td></td>
+     <td><img src="_static/minus.png" id="toggle-6"
+            class="toggler" style="display: none" alt="-" /></td>
      <td>
      <a href="frontend.html#module-Frontend"><tt class="xref">Frontend</tt></a></td><td>
-     <em>Methods to build the IR of a source file</em></td></tr><tr class="pcap"><td></td><td>&nbsp;</td><td></td></tr>
-   <tr class="cap"><td></td><td><a name="cap-T"><strong>T</strong></a></td><td></td></tr><tr>
+     <em>Methods to build the IR of a source file</em></td></tr><tr class="cg-6">
+     <td></td>
+     <td>&nbsp;&nbsp;&nbsp;
+     <a href="frontend.html#module-Frontend.InternalRepr"><tt class="xref">Frontend.InternalRepr</tt></a></td><td>
+     <em></em></td></tr><tr class="cg-6">
+     <td></td>
+     <td>&nbsp;&nbsp;&nbsp;
+     <a href="frontend.html#module-Frontend.Parse"><tt class="xref">Frontend.Parse</tt></a></td><td>
+     <em></em></td></tr><tr class="pcap"><td></td><td>&nbsp;</td><td></td></tr>
+   <tr class="cap"><td></td><td><a name="cap-P"><strong>P</strong></a></td><td></td></tr><tr>
      <td></td>
      <td>
+     <a href="frontend.html#module-Parse"><tt class="xref">Parse</tt></a></td><td>
+     <em>Parsing utilities</em></td></tr><tr class="pcap"><td></td><td>&nbsp;</td><td></td></tr>
+   <tr class="cap"><td></td><td><a name="cap-T"><strong>T</strong></a></td><td></td></tr><tr>
+     <td><img src="_static/minus.png" id="toggle-8"
+            class="toggler" style="display: none" alt="-" /></td>
+     <td>
      <a href="tools.html#module-Tools"><tt class="xref">Tools</tt></a></td><td>
+     <em></em></td></tr><tr class="cg-8">
+     <td></td>
+     <td>&nbsp;&nbsp;&nbsp;
+     <a href="tools.html#module-Tools.Debug"><tt class="xref">Tools.Debug</tt></a></td><td>
+     <em></em></td></tr><tr class="cg-8">
+     <td></td>
+     <td>&nbsp;&nbsp;&nbsp;
+     <a href="tools.html#module-Tools.Declarations"><tt class="xref">Tools.Declarations</tt></a></td><td>
+     <em></em></td></tr><tr class="cg-8">
+     <td></td>
+     <td>&nbsp;&nbsp;&nbsp;
+     <a href="tools.html#module-Tools.Dump"><tt class="xref">Tools.Dump</tt></a></td><td>
+     <em></em></td></tr><tr class="cg-8">
+     <td></td>
+     <td>&nbsp;&nbsp;&nbsp;
+     <a href="tools.html#module-Tools.Tree"><tt class="xref">Tools.Tree</tt></a></td><td>
      <em></em></td></tr>
    </table>
 
@@ -161,7 +197,7 @@
         <li class="right" >
           <a href="#" title="Global Module Index"
              >modules</a> |</li>
-        <li><a href="index.html">llCoMP v1.0 documentation</a> &raquo;</li> 
+        <li><a href="index.html">llCoMP v1.0.1 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

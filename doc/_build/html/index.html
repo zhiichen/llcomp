@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>llCoMP Developer Documentation &mdash; llCoMP v1.0 documentation</title>
+    <title>llCoMP Developer Documentation &mdash; llCoMP v1.0.1 documentation</title>
     <link rel="stylesheet" href="_static/default.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '#',
-        VERSION:     '1.0',
+        VERSION:     '1.0.1',
         COLLAPSE_MODINDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -19,8 +19,8 @@
     </script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="llCoMP v1.0 documentation" href="#" />
-    <link rel="next" title="Frontend" href="frontend.html" /> 
+    <link rel="top" title="llCoMP v1.0.1 documentation" href="#" />
+    <link rel="next" title="llCoMP Setup" href="extra/llcSetup.html" /> 
   </head>
   <body>
     <div class="related">
@@ -33,9 +33,9 @@
           <a href="modindex.html" title="Global Module Index"
              accesskey="M">modules</a> |</li>
         <li class="right" >
-          <a href="frontend.html" title="Frontend"
+          <a href="extra/llcSetup.html" title="llCoMP Setup"
              accesskey="N">next</a> |</li>
-        <li><a href="#">llCoMP v1.0 documentation</a> &raquo;</li> 
+        <li><a href="#">llCoMP v1.0.1 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -45,46 +45,51 @@
           <div class="body">
             
   <div class="section" id="llcomp-developer-documentation">
-<h1>llCoMP Developer Documentation<a class="headerlink" href="#llcomp-developer-documentation" title="Permalink to this headline">¶</a></h1>
-<p>llCoMP is a translator framework designed for <em>fast prototyping</em>.
-With little effort, you can build translators from OpenMP/C to different High
-Performance Computing languages, libraries and frameworks.  Currently we have
-implemented the CUDA Backend, but we have plans to implement new ones.</p>
-<div class="figure align-center" id="layered-design">
-<img alt="_images/layered_design.png" src="_images/layered_design.png" />
+<h1><strong>llCoMP</strong> Developer Documentation<a class="headerlink" href="#llcomp-developer-documentation" title="Permalink to this headline">¶</a></h1>
+<p><strong>llCoMP</strong> is a translator framework designed for <em>fast prototyping</em>.
+With a small development effort, developers can build translators from OpenMP/C to different High
+Performance Computing languages, libraries and frameworks. Currently we have
+implemented the CUDA Backend, but we have plans to integrate more backends (see <a class="reference external" href="futureWork.html"><em>Future Work</em></a>).</p>
+<p><strong>llCoMP</strong> MiddleEnd capabilities allows users to apply a predefened set of high level
+optimization techiques (like loop unrolling or loop flatening), or to implement their own
+set of high level optimizations.</p>
+<div class="section" id="llc-language">
+<h2><strong>llc</strong> Language<a class="headerlink" href="#llc-language" title="Permalink to this headline">¶</a></h2>
+<p><strong>llc</strong> language has been presented on several papers <a class="reference external" href="publications.html#dorta-2006-bsl">[Dorta:2006:BSL]</a>, as an effective language
+for high performance computing. <strong>llc</strong> is a language based on <strong>OpenMP</strong>/C where parallelism
+is expressed using compiler directives.</p>
+<p>See more about <strong>llc</strong> in <a class="reference external" href="llcLanguage.html"><em>llc Language</em></a>.</p>
 </div>
-<p>In the diagram (<a class="reference internal" href="#layered-design">layered_design</a>), the different layers of the framework are exposed.</p>
-<p>The uppermost level contains the <a title="Methods to build the IR of a source file" class="reference external" href="frontend.html#module-Frontend"><tt class="xref docutils literal"><span class="pre">Frontend</span></tt></a>, which gives the tools required to transform
-the source code into the internal representation.</p>
-<p>The <tt class="xref docutils literal"><span class="pre">MiddleEnd</span></tt> module encapsulates transformations from the IR to the IR, for example,
-loop optimizations or type data conversions.</p>
-<p>Finally <a title="Repository of implemented backends" class="reference external" href="backends.html#module-Backends"><tt class="xref docutils literal"><span class="pre">Backends</span></tt></a> module contains all the implemented backends</p>
-<p>Tools to manipulate the internal representation (and do some other stuff), are packaged
-on the <a title="" class="reference external" href="tools.html#module-Tools"><tt class="xref docutils literal"><span class="pre">Tools</span></tt></a> module.</p>
-<p>In addition, some utils and examples are presented in order to show the capabilities of the framework.</p>
-<p>Contents:</p>
+<div class="section" id="llcomp-setup">
+<h2><strong>llCoMP</strong> Setup<a class="headerlink" href="#llcomp-setup" title="Permalink to this headline">¶</a></h2>
+<p>In order to setup inst</p>
+</div>
+<div class="section" id="llcomp-additional-documentation-and-howtos">
+<h2><strong>llCoMP</strong> Additional documentation and HOWTOs<a class="headerlink" href="#llcomp-additional-documentation-and-howtos" title="Permalink to this headline">¶</a></h2>
+<p>Some tutorials and HOWTO about <strong>llCoMP</strong>.</p>
 <ul>
-<li class="toctree-l1"><a class="reference external" href="frontend.html">Frontend</a><ul>
-<li class="toctree-l2"><a class="reference external" href="frontend.html#parsing-tools">Parsing Tools</a></li>
-<li class="toctree-l2"><a class="reference external" href="frontend.html#internal-representation">Internal Representation</a></li>
+<li class="toctree-l1"><a class="reference external" href="extra/llcSetup.html"><strong>llCoMP</strong> Setup</a><ul>
+<li class="toctree-l2"><a class="reference external" href="extra/llcSetup.html#llcomp-requirements"><strong>llCoMP</strong> Requirements</a></li>
+<li class="toctree-l2"><a class="reference external" href="extra/llcSetup.html#llcomp-install"><strong>llCoMP</strong> Install</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference external" href="backends.html">Backends</a><ul>
-<li class="toctree-l2"><a class="reference external" href="common.html">Common</a></li>
-<li class="toctree-l2"><a class="reference external" href="dotbackend.html">Dot Backend</a></li>
-<li class="toctree-l2"><a class="reference external" href="cbackend.html">CBackend</a></li>
-<li class="toctree-l2"><a class="reference external" href="cudabackend.html">CUDA Backend</a></li>
 </ul>
-</li>
-<li class="toctree-l1"><a class="reference external" href="tools.html">Tools</a><ul>
-<li class="toctree-l2"><a class="reference external" href="tools.html#tree-tools">Tree Tools</a></li>
-<li class="toctree-l2"><a class="reference external" href="tools.html#serialization-tools">Serialization Tools</a></li>
-<li class="toctree-l2"><a class="reference external" href="tools.html#declarations-tools">Declarations Tools</a></li>
-<li class="toctree-l2"><a class="reference external" href="tools.html#debug-tools">Debug Tools</a></li>
+</div>
+<div class="section" id="contents">
+<h2>Contents<a class="headerlink" href="#contents" title="Permalink to this headline">¶</a></h2>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="softwareArchitecture.html">Software Architecture</a></li>
+<li class="toctree-l1"><a class="reference external" href="softwareArchitecture.html#architecture-details">Architecture details</a><ul>
+<li class="toctree-l2"><a class="reference external" href="frontend.html">Frontend</a></li>
+<li class="toctree-l2"><a class="reference external" href="backends.html">Backends</a></li>
+<li class="toctree-l2"><a class="reference external" href="tools.html">Tools</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference external" href="glossary.html">Glossary</a></li>
+<li class="toctree-l1"><a class="reference external" href="futureWork.html">Future Work</a></li>
+<li class="toctree-l1"><a class="reference external" href="publications.html">Publications</a></li>
 </ul>
+</div>
 </div>
 <div class="section" id="indices-and-tables">
 <h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
@@ -103,15 +108,23 @@ on the <a title="" class="reference external" href="tools.html#module-Tools"><tt
         <div class="sphinxsidebarwrapper">
             <h3><a href="#">Table Of Contents</a></h3>
             <ul>
-<li><a class="reference external" href="#">llCoMP Developer Documentation</a><ul>
+<li><a class="reference external" href="#"><strong>llCoMP</strong> Developer Documentation</a><ul>
+<li><a class="reference external" href="#llc-language"><strong>llc</strong> Language</a></li>
+<li><a class="reference external" href="#llcomp-setup"><strong>llCoMP</strong> Setup</a></li>
+<li><a class="reference external" href="#llcomp-additional-documentation-and-howtos"><strong>llCoMP</strong> Additional documentation and HOWTOs</a><ul>
+</ul>
+</li>
+<li><a class="reference external" href="#contents">Contents</a><ul>
+</ul>
+</li>
 </ul>
 </li>
 <li><a class="reference external" href="#indices-and-tables">Indices and tables</a></li>
 </ul>
 
             <h4>Next topic</h4>
-            <p class="topless"><a href="frontend.html"
-                                  title="next chapter">Frontend</a></p>
+            <p class="topless"><a href="extra/llcSetup.html"
+                                  title="next chapter"><strong>llCoMP</strong> Setup</a></p>
             <h3>This Page</h3>
             <ul class="this-page-menu">
               <li><a href="_sources/index.txt"
@@ -144,9 +157,9 @@ on the <a title="" class="reference external" href="tools.html#module-Tools"><tt
           <a href="modindex.html" title="Global Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="frontend.html" title="Frontend"
+          <a href="extra/llcSetup.html" title="llCoMP Setup"
              >next</a> |</li>
-        <li><a href="#">llCoMP v1.0 documentation</a> &raquo;</li> 
+        <li><a href="#">llCoMP v1.0.1 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
