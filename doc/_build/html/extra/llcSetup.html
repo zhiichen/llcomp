@@ -1,0 +1,189 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>llCoMP Setup &mdash; llCoMP v1.0.1 documentation</title>
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.0.1',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="llCoMP v1.0.1 documentation" href="../index.html" />
+    <link rel="next" title="Software Architecture" href="../softwareArchitecture.html" />
+    <link rel="prev" title="llCoMP Developer Documentation" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../modindex.html" title="Global Module Index"
+             accesskey="M">modules</a> |</li>
+        <li class="right" >
+          <a href="../softwareArchitecture.html" title="Software Architecture"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="../index.html" title="llCoMP Developer Documentation"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">llCoMP v1.0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="llcomp-setup">
+<h1><strong>llCoMP</strong> Setup<a class="headerlink" href="#llcomp-setup" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="llcomp-requirements">
+<h2><strong>llCoMP</strong> Requirements<a class="headerlink" href="#llcomp-requirements" title="Permalink to this headline">¶</a></h2>
+<p>Previously of installing <strong>llCoMP</strong> on your system, you must satisfy the following requirements:</p>
+<ol class="arabic">
+<li><p class="first">Bison and Flex</p>
+</li>
+<li><p class="first">python-ply</p>
+</li>
+<li><p class="first">python-yaml
+Only required if you want to rebuild the frontend</p>
+</li>
+<li><p class="first">pycparser
+Clone it from the pycparser project source page:</p>
+<p>hg clone <a class="reference external" href="https://pycparser.googlecode.com/hg/">https://pycparser.googlecode.com/hg/</a> pycparser</p>
+<p>Check that works properly by running the z_test.py script</p>
+</li>
+</ol>
+</div>
+<div class="section" id="llcomp-install">
+<h2><strong>llCoMP</strong> Install<a class="headerlink" href="#llcomp-install" title="Permalink to this headline">¶</a></h2>
+<ol class="arabic">
+<li><dl class="first docutils">
+<dt>Clone the source code repository</dt>
+<dd><ol class="first last loweralpha">
+<li><p class="first">If you want the last branch, clone from google code:</p>
+<blockquote>
+<p>hg clone <a class="reference external" href="http://llcomp.googlecode.com/hg/">http://llcomp.googlecode.com/hg/</a> llcomp</p>
+</blockquote>
+</li>
+<li><dl class="first docutils">
+<dt>If you want the heavy work-in-progress branch, get the code from the private repository</dt>
+<dd><p class="first last">at bitbucket. Note that you need a valid account.</p>
+</dd>
+</dl>
+</li>
+</ol>
+</dd>
+</dl>
+</li>
+<li><p class="first">Move to the destination dir and create a config_local.py file (you can copy the config.py file as an example):</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># Local config file for llcomp</span>
+<span class="c"># Current work dir</span>
+<span class="n">WORKDIR</span><span class="o">=</span><span class="s">&quot;/home/user/llcomp&quot;</span> <span class="c"># llcomp setup dir</span>
+<span class="c"># Location of cuda files</span>
+<span class="n">CUDA_INSTALL_DIR</span><span class="o">=</span><span class="s">&quot;/usr/local/cuda/&quot;</span>
+<span class="c"># C includes for templates</span>
+<span class="c"># pycparser dir</span>
+<span class="n">PYCPARSER_DIR</span><span class="o">=</span><span class="s">&quot;/home/user/pycparser/&quot;</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first">In order to use the <strong>llc</strong> syntax, it is necessary to patch pycparser. Patch files are located in the utils/pycparser dir.</p>
+<ol class="loweralpha simple">
+<li>Copy all files under the utils/pycparser dir to the directory where you previously installed pycparser</li>
+<li>Run the update_patch script with the apply argument (bash update_patch.sh apply)</li>
+<li>Run the new z_test.py to check that new syntax has been correctly installed.</li>
+</ol>
+</li>
+<li><p class="first">Export the llcomp and pycparser dir to the PYTHONPATH</p>
+<div class="highlight-python"><pre>export PYTHONPATH='/home/user/llcomp':'/home/user/pycparser'</pre>
+</div>
+</li>
+<li><p class="first">Run checkall script to run tests and check for a correct installation</p>
+<div class="highlight-python"><pre>python tests/checkall.py</pre>
+</div>
+</li>
+</ol>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h3><a href="../index.html">Table Of Contents</a></h3>
+            <ul>
+<li><a class="reference external" href="#"><strong>llCoMP</strong> Setup</a><ul>
+<li><a class="reference external" href="#llcomp-requirements"><strong>llCoMP</strong> Requirements</a></li>
+<li><a class="reference external" href="#llcomp-install"><strong>llCoMP</strong> Install</a></li>
+</ul>
+</li>
+</ul>
+
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="../index.html"
+                                  title="previous chapter"><strong>llCoMP</strong> Developer Documentation</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="../softwareArchitecture.html"
+                                  title="next chapter">Software Architecture</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../_sources/extra/llcSetup.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <input type="submit" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../modindex.html" title="Global Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../softwareArchitecture.html" title="Software Architecture"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="../index.html" title="llCoMP Developer Documentation"
+             >previous</a> |</li>
+        <li><a href="../index.html">llCoMP v1.0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+      &copy; Copyright 2010, Ruymán Reyes &lt;rreyes@ull.es&gt;.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.4.
+    </div>
+  </body>
+</html>
