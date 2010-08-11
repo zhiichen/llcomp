@@ -1,0 +1,156 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Software Architecture &mdash; llCoMP v1.0.1 documentation</title>
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '#',
+        VERSION:     '1.0.1',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="llCoMP v1.0.1 documentation" href="index.html" />
+    <link rel="next" title="Frontend" href="frontend.html" />
+    <link rel="prev" title="llCoMP Mutator tutorial" href="extra/middleTutorial.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="modindex.html" title="Global Module Index"
+             accesskey="M">modules</a> |</li>
+        <li class="right" >
+          <a href="frontend.html" title="Frontend"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="extra/middleTutorial.html" title="llCoMP Mutator tutorial"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">llCoMP v1.0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="software-architecture">
+<h1>Software Architecture<a class="headerlink" href="#software-architecture" title="Permalink to this headline">¶</a></h1>
+<div class="figure align-center" id="layered-design">
+<img alt="_images/layered_design.png" src="_images/layered_design.png" />
+</div>
+<p>In the diagram (<a class="reference internal" href="#layered-design">layered_design</a>), the different layers of the framework are exposed.</p>
+<p>The uppermost level contains the <a title="Methods to build the IR of a source file" class="reference external" href="frontend.html#module-Frontend"><tt class="xref docutils literal"><span class="pre">Frontend</span></tt></a>, which gives the tools required to transform
+the source code into the internal representation.</p>
+<p>The <tt class="xref docutils literal"><span class="pre">MiddleEnd</span></tt> module encapsulates transformations from the IR to the IR, for example,
+loop optimizations or type data conversions.</p>
+<p>Finally <a title="Repository of implemented backends" class="reference external" href="backends.html#module-Backends"><tt class="xref docutils literal"><span class="pre">Backends</span></tt></a> module contains all the implemented backends</p>
+<p>Tools to manipulate the internal representation (and do some other stuff), are packaged
+on the <a title="" class="reference external" href="tools.html#module-Tools"><tt class="xref docutils literal"><span class="pre">Tools</span></tt></a> module.</p>
+<p>In addition, some utils and examples are presented in order to show the capabilities of the framework.</p>
+</div>
+<div class="section" id="architecture-details">
+<h1>Architecture details<a class="headerlink" href="#architecture-details" title="Permalink to this headline">¶</a></h1>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="frontend.html">Frontend</a><ul>
+<li class="toctree-l2"><a class="reference external" href="frontend.html#module-Parse">Parsing Tools</a></li>
+<li class="toctree-l2"><a class="reference external" href="frontend.html#module-Frontend.InternalRepr">Internal Representation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="backends.html">Backends</a><ul>
+<li class="toctree-l2"><a class="reference external" href="common.html">Common</a></li>
+<li class="toctree-l2"><a class="reference external" href="dotbackend.html">Dot Backend</a></li>
+<li class="toctree-l2"><a class="reference external" href="cbackend.html">CBackend</a></li>
+<li class="toctree-l2"><a class="reference external" href="cudabackend.html">CUDA Backend</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="tools.html">Tools</a><ul>
+<li class="toctree-l2"><a class="reference external" href="tools.html#module-Tools.Tree">Tree Tools</a></li>
+<li class="toctree-l2"><a class="reference external" href="tools.html#module-Tools.Dump">Serialization Tools</a></li>
+<li class="toctree-l2"><a class="reference external" href="tools.html#module-Tools.Declarations">Declarations Tools</a></li>
+<li class="toctree-l2"><a class="reference external" href="tools.html#module-Tools.Debug">Debug Tools</a></li>
+</ul>
+</li>
+</ul>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h3><a href="index.html">Table Of Contents</a></h3>
+            <ul>
+<li><a class="reference external" href="#">Software Architecture</a></li>
+<li><a class="reference external" href="#architecture-details">Architecture details</a><ul>
+</ul>
+</li>
+</ul>
+
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="extra/middleTutorial.html"
+                                  title="previous chapter"><strong>llCoMP</strong> Mutator tutorial</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="frontend.html"
+                                  title="next chapter">Frontend</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="_sources/softwareArchitecture.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <input type="submit" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="modindex.html" title="Global Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="frontend.html" title="Frontend"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="extra/middleTutorial.html" title="llCoMP Mutator tutorial"
+             >previous</a> |</li>
+        <li><a href="index.html">llCoMP v1.0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+      &copy; Copyright 2010, Ruymán Reyes &lt;rreyes@ull.es&gt;.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.4.
+    </div>
+  </body>
+</html>
