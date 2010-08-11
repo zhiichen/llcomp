@@ -3,43 +3,55 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-llCoMP Developer Documentation
-==================================
+|llCoMP| Developer Documentation
+========================================================================
 
 .. sectionauthor:: Ruymán Reyes Castro <rreyes@ull.es>
 
-llCoMP is a translator framework designed for *fast prototyping*. 
+|llCoMP| is a translator framework designed for *fast prototyping*. 
 With a small development effort, developers can build translators from OpenMP/C to different High
 Performance Computing languages, libraries and frameworks. Currently we have
-implemented the CUDA Backend, but we have plans to implement new ones.
+implemented the CUDA Backend, but we have plans to integrate more backends (see :doc:`futureWork`).
 
-Also, llCoMP allows users to apply different optimization techiniques before 
-translating, in order to optimize the final code. Although we plan to implement
-several optimization techiques, it is easy for developers to implement their own.
+|llCoMP| MiddleEnd capabilities allows users to apply a predefened set of high level
+optimization techiques (like loop unrolling or loop flatening), or to implement their own
+set of high level optimizations.
 
-Software Architecture
+
+|llc| Language
 **********************************
 
+|llc| language has been presented on several papers [Dorta:2006:BSL]_, as an effective language
+for high performance computing. |llc| is a language based on |OpenMP|/C where parallelism 
+is expressed using compiler directives. 
 
-.. _layered_design:
-.. figure:: images/layered_design.png
-   :align:  center
+See more about |llc| in :doc:`llcLanguage`.
 
-In the diagram (layered_design_), the different layers of the framework are exposed. 
 
-The uppermost level contains the :mod:`Frontend`, which gives the tools required to transform 
-the source code into the internal representation.
 
-The :mod:`MiddleEnd` module encapsulates transformations from the IR to the IR, for example, 
-loop optimizations or type data conversions.
+|llCoMP| Setup
+**********************************
 
-Finally :mod:`Backends` module contains all the implemented backends
+In order to setup inst
 
-Tools to manipulate the internal representation (and do some other stuff), are packaged 
-on the :mod:`Tools` module.
 
-In addition, some utils and examples are presented in order to show the capabilities of the framework.
+|llCoMP| Additional documentation and HOWTOs
+**************************************************
 
+Some tutorials and HOWTO about |llCoMP|.
+
+
+.. toctree::
+   :glob:
+
+   extra/*
+
+.. comment
+  * :doc:`Install |llCoMP| in your system <extra/llcSetup.rst>`.
+  * Tutorial: Convert a file from C to CUDA
+  * Tutorial: Write a simple mutator for loop interchange
+  * Tutorial: Add a new language keyword
+  * HOWTO use DotDebugTool
 
 Contents
 ********************************
@@ -47,10 +59,10 @@ Contents
 .. toctree::
    :maxdepth: 2
 
-   frontend.rst
-   backends.rst
-   tools.rst
+   softwareArchitecture.rst
    glossary.rst
+   futureWork.rst
+   publications.rst
 
 Indices and tables
 ==================

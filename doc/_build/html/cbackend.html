@@ -5,13 +5,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>CBackend &mdash; llCoMP v1.0 documentation</title>
+    <title>CBackend &mdash; llCoMP v1.0.1 documentation</title>
     <link rel="stylesheet" href="_static/default.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '#',
-        VERSION:     '1.0',
+        VERSION:     '1.0.1',
         COLLAPSE_MODINDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -19,7 +19,7 @@
     </script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="llCoMP v1.0 documentation" href="index.html" />
+    <link rel="top" title="llCoMP v1.0.1 documentation" href="index.html" />
     <link rel="up" title="Backends" href="backends.html" />
     <link rel="next" title="CUDA Backend" href="cudabackend.html" />
     <link rel="prev" title="Dot Backend" href="dotbackend.html" /> 
@@ -40,7 +40,8 @@
         <li class="right" >
           <a href="dotbackend.html" title="Dot Backend"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">llCoMP v1.0 documentation</a> &raquo;</li>
+        <li><a href="index.html">llCoMP v1.0.1 documentation</a> &raquo;</li>
+          <li><a href="softwareArchitecture.html" >Software Architecture</a> &raquo;</li>
           <li><a href="backends.html" accesskey="U">Backends</a> &raquo;</li> 
       </ul>
     </div>  
@@ -50,28 +51,28 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="module-Backends.CBackend.Writers.OmpWriter">
-<h1>CBackend<a class="headerlink" href="#module-Backends.CBackend.Writers.OmpWriter" title="Permalink to this headline">¶</a></h1>
-<p>The <tt class="xref docutils literal"><span class="pre">CBackend</span></tt> module contains two writers, <tt class="xref docutils literal"><span class="pre">CWriter</span></tt> and <tt class="xref docutils literal"><span class="pre">OmpWriter</span></tt>,
+  <div class="section" id="module-Backends.C.Writers.OmpWriter">
+<h1>CBackend<a class="headerlink" href="#module-Backends.C.Writers.OmpWriter" title="Permalink to this headline">¶</a></h1>
+<p>The <tt class="xref docutils literal"><span class="pre">C</span></tt> module contains two writers, <tt class="xref docutils literal"><span class="pre">CWriter</span></tt> and <tt class="xref docutils literal"><span class="pre">OmpWriter</span></tt>,
 which produces <strong>C</strong> and <strong>OpenMP</strong> code</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">This backend is widely used on llCoMP.</p>
 </div>
 <dl class="class">
-<dt id="Backends.CBackend.Writers.CWriter.CWriter">
-<em class="property">class </em><tt class="descclassname">Backends.CBackend.Writers.CWriter.</tt><tt class="descname">CWriter</tt><big>(</big><em>filename=None</em>, <em>stream=None</em><big>)</big><a class="headerlink" href="#Backends.CBackend.Writers.CWriter.CWriter" title="Permalink to this definition">¶</a></dt>
+<dt id="Backends.C.Writers.CWriter.CWriter">
+<em class="property">class </em><tt class="descclassname">Backends.C.Writers.CWriter.</tt><tt class="descname">CWriter</tt><big>(</big><em>filename=None</em>, <em>stream=None</em><big>)</big><a class="headerlink" href="#Backends.C.Writers.CWriter.CWriter" title="Permalink to this definition">¶</a></dt>
 <dd><p>A visitor which translates the IR to plain C code</p>
 <dl class="method">
-<dt id="Backends.CBackend.Writers.CWriter.CWriter.generic_visit_nodeList">
-<tt class="descname">generic_visit_nodeList</tt><big>(</big><em>nodeList</em>, <em>separator</em>, <em>offset</em><big>)</big><a class="headerlink" href="#Backends.CBackend.Writers.CWriter.CWriter.generic_visit_nodeList" title="Permalink to this definition">¶</a></dt>
+<dt id="Backends.C.Writers.CWriter.CWriter.generic_visit_nodeList">
+<tt class="descname">generic_visit_nodeList</tt><big>(</big><em>nodeList</em>, <em>separator</em>, <em>offset</em><big>)</big><a class="headerlink" href="#Backends.C.Writers.CWriter.CWriter.generic_visit_nodeList" title="Permalink to this definition">¶</a></dt>
 <dd>Visit a list of nodes , writing values within a separator</dd></dl>
 
 </dd></dl>
 
 <dl class="class">
-<dt id="Backends.CBackend.Writers.OmpWriter.OmpWriter">
-<em class="property">class </em><tt class="descclassname">Backends.CBackend.Writers.OmpWriter.</tt><tt class="descname">OmpWriter</tt><big>(</big><em>filename=None</em>, <em>stream=None</em><big>)</big><a class="headerlink" href="#Backends.CBackend.Writers.OmpWriter.OmpWriter" title="Permalink to this definition">¶</a></dt>
+<dt id="Backends.C.Writers.OmpWriter.OmpWriter">
+<em class="property">class </em><tt class="descclassname">Backends.C.Writers.OmpWriter.</tt><tt class="descname">OmpWriter</tt><big>(</big><em>filename=None</em>, <em>stream=None</em><big>)</big><a class="headerlink" href="#Backends.C.Writers.OmpWriter.OmpWriter" title="Permalink to this definition">¶</a></dt>
 <dd>Visitor which translates the IR to C/OpenMP.</dd></dl>
 
 </div>
@@ -125,7 +126,8 @@ which produces <strong>C</strong> and <strong>OpenMP</strong> code</p>
         <li class="right" >
           <a href="dotbackend.html" title="Dot Backend"
              >previous</a> |</li>
-        <li><a href="index.html">llCoMP v1.0 documentation</a> &raquo;</li>
+        <li><a href="index.html">llCoMP v1.0.1 documentation</a> &raquo;</li>
+          <li><a href="softwareArchitecture.html" >Software Architecture</a> &raquo;</li>
           <li><a href="backends.html" >Backends</a> &raquo;</li> 
       </ul>
     </div>
