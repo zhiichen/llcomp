@@ -172,7 +172,7 @@ void rinit (int seed) {
 	CLOCK_Start(chrono);
 
   #pragma omp target device(cuda) copy_in(c)
-  #pragma omp parallel private(z, ztemp, j) shared(nt, c)
+  #pragma omp parallel private(z, ztemp, i, j) shared(nt, c)
   {
 	 numoutside = 0;
     #pragma omp for reduction (+:numoutside)
