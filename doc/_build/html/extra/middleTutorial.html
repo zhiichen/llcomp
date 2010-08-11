@@ -1,0 +1,312 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>llCoMP Mutator tutorial &mdash; llCoMP v1.0.1 documentation</title>
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.0.1',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="llCoMP v1.0.1 documentation" href="../index.html" />
+    <link rel="next" title="Software Architecture" href="../softwareArchitecture.html" />
+    <link rel="prev" title="llCoMP Setup" href="llcSetup.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../modindex.html" title="Global Module Index"
+             accesskey="M">modules</a> |</li>
+        <li class="right" >
+          <a href="../softwareArchitecture.html" title="Software Architecture"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="llcSetup.html" title="llCoMP Setup"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">llCoMP v1.0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="llcomp-mutator-tutorial">
+<h1><strong>llCoMP</strong> Mutator tutorial<a class="headerlink" href="#llcomp-mutator-tutorial" title="Permalink to this headline">¶</a></h1>
+<p>This tutorial will show step by step how to write a mutator for <strong>llCoMP</strong>.
+This mutator will look for the construct <strong>llc interchange</strong>, and swap
+the inmediatly following loops.</p>
+<div class="section" id="loop-interchange">
+<h2>Loop Interchange<a class="headerlink" href="#loop-interchange" title="Permalink to this headline">¶</a></h2>
+<p>In compiler theory, loop interchange is the process of exchanging the order of two iteration variables.</p>
+<p>For example, in the code fragment</p>
+<div class="highlight-python"><pre>for(i = 0; i &lt; 10; i++)
+  for (j = 0; j &lt; 100; j++)
+   a[i][j] = 3.0</pre>
+</div>
+<p>loop interchange would result in</p>
+<div class="highlight-python"><pre>for (j = 0; j &lt; 100; j++)
+   for(i = 0; i &lt; 10; i++)
+       a[i][j] = 3.0</pre>
+</div>
+<p>This transformation may lead to performance improvements in some architectures due to improved cache usage, or it
+ease other optimizations.</p>
+<p>Note that not all iteration variables may be interchanged, due to dependency problems. We will assume that user
+have previously resolved dependency problems.</p>
+</div>
+<div class="section" id="new-language-construct">
+<h2>New language construct<a class="headerlink" href="#new-language-construct" title="Permalink to this headline">¶</a></h2>
+<p>In order to apply this mutator, we need to add a new construct to <strong>llc</strong>. Our intention is that, when
+the user detects a situation where loop interchange may be suitable, she only needs to write this new construct
+and <strong>llCoMP</strong> will handle the rest. As an example:</p>
+<div class="highlight-python"><pre>#pragma llc interchange
+for(i = 0; i &lt; 10; i++)
+   for (j = 0; j &lt; 100; j++)
+       a[i][j] = 3.0</pre>
+</div>
+<p>Note: We are designing a new frontend structure, and probabily the files that need to be edited may change.</p>
+<p>More information of this process can be found in the PLY documentation.</p>
+<p>In order to add this construct, we need to edit the _c_ast.yaml file, from the pycparser distribution. Navigate to the <strong>llc</strong> section, and
+add the llcInterchange construct. This will create a node object, representing the compiler token. Between brackets we can define aditional attributes to the token. <em>name</em> is the internal name of the token, used for debugging. <em>loop</em> is a link to the first loop of the nested loops that we are going to swap</p>
+<div class="highlight-python"><pre># llc
+llcNestedFor : [name, loop*]
+llcInterchange : [name, loop*]
+# Construct
+OmpParallel : [name, clauses**, stmt*]
+OmpFor : [name, clauses**, stmt*]</pre>
+</div>
+<p>Next, we need to add the lexical rules for this token, so, open the c_lexer.py file from the pycparser distribution, and navigate to the <strong>llc</strong> section, about line 170. Here you can add token names. In this case, we add the &#8216;INTERCHANGE&#8217; token</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="s">&#39;LLC&#39;</span><span class="p">,</span> <span class="c"># llc</span>
+<span class="c"># Constructs</span>
+<span class="s">&#39;NESTED_FOR&#39;</span><span class="p">,</span> <span class="c"># nested for</span>
+<span class="s">&#39;INTERCHANGE&#39;</span><span class="p">,</span> <span class="c"># interchange</span>
+<span class="c">####################</span>
+<span class="c"># OpenMP 3.0 syntax</span>
+<span class="s">&#39;OMP&#39;</span><span class="p">,</span> <span class="c"># openmp</span>
+<span class="c"># Constructs</span>
+<span class="s">&#39;PARALLEL&#39;</span><span class="p">,</span>
+<span class="s">&#39;SECTIONS&#39;</span><span class="p">,</span>
+</pre></div>
+</div>
+<p>Now, move to the next <strong>llc</strong> section, about line 291. This contain token
+definitions, regular expressions that recognized the tokens. This definitions
+are defined as python methods. For our token, we define a function called
+<em>t_directive_INTERCHANGE</em> (directive is the name of the lexical status, and
+INTERCHANGE is the name of the token). The second line, beginning with r, is
+the regular expression matching the token. Both  <em>pragma llc interchange</em> or
+<em>pragma llc swap</em> recognized as INTERCHANGE.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">def</span> <span class="nf">t_directive_INTERCHANGE</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+   <span class="s">r&#39;interchange|swap&#39;</span>
+   <span class="n">t</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="s">&#39;INTERCHANGE&#39;</span>
+   <span class="k">return</span> <span class="n">t</span>
+</pre></div>
+</div>
+<p>Finally, we need to add a parser rule to tell the fronted how this new construct is written.
+open the file c_parser.py from the pycparser distribution, and navigate to the <strong>llc</strong> section.
+The grammar rules for <strong>llc</strong> tokens are about line 421. You can add your new rule by writing a
+new method. INTERCHANGE token must precede a for loop, so a iteration-statement
+follows the INTERCHANGE token. We save the loop on the loop attribute of the
+llcInterchange node.:</p>
+<div class="highlight-python"><pre>directive_1(self, p):
+   """ llc_directive : NESTED_FOR PPHASH PRAGMA OMP workshare_directive"""
+   p[0] = c_ast.llcNestedFor(name = 'NESTED FOR', loop = p[5], coord=self._coord(p.lineno(1)))
+
+def p_llc_directive_2(self, p):
+   """ llc_directive : INTERCHANGE iteration_statement"""
+   p[0] = c_ast.llcInterchange(name = 'INTERCHANGE', loop = p[2], coord=self._coord(p.lineno(1)))</pre>
+</div>
+<p>Now you need to rebuild the compiler tables, so the new grammar rules are build.</p>
+<div class="highlight-python"><pre># Build the token classes
+$ cd pycparser/
+$ python _ast_gen.py
+# Rebuild tables
+$ python _build_tables.py</pre>
+</div>
+<p>To check that you haven&#8217;t broke anything, move to the <strong>llCoMP</strong> directory and run all tests</p>
+<div class="highlight-python"><pre>$ cd llcomp/
+$ python tests/checkall.py</pre>
+</div>
+<p>To check your new construct, create an example file and see if it is parsed properly. The easiest
+way is to edit the z_test.py file inside pycparser, adding the new token to the example.</p>
+</div>
+<div class="section" id="writing-a-new-mutator">
+<h2>Writing a new mutator<a class="headerlink" href="#writing-a-new-mutator" title="Permalink to this headline">¶</a></h2>
+<p>The easiest way to add a new mutator is to put it on the <tt class="xref docutils literal"><span class="pre">MiddleEnd</span></tt> of the compiler.
+We will create a new module inside <tt class="xref docutils literal"><span class="pre">MiddleEnd</span></tt> called Loop, where we will store
+different loop optimizations. All modules of <strong>llCoMP</strong> have a similar structure.</p>
+<div class="highlight-python"><pre>Loop/
+├── __init__.py
+├── Visitors
+├── Writers
+├── tests
+└── Mutators
+    ├── __init__.py
+    └── LoopInterchange.py</pre>
+</div>
+<p>The LoopInterchange file will contain all methods and classes required to implement the Loop Interchange Mutator.</p>
+<p>First step to write a <a class="reference external" href="../glossary.html#term-mutator"><em class="xref">Mutator</em></a> is to implement a <a class="reference external" href="../glossary.html#term-filter"><em class="xref">Filter</em></a>. In our case, the <a class="reference external" href="../glossary.html#term-filter"><em class="xref">Filter</em></a> will look
+for the <em>llcInterchange</em>  node in the Internal Representation. All filters inherit from the <tt class="xref docutils literal"><span class="pre">GenericFilterVisitor</span></tt>.
+The Loop Interchange Filter is easy to implement</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">LoopInterchangeFilter</span><span class="p">(</span><span class="n">GenericFilterVisitor</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Returns llcInterchange nodes</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">def</span> <span class="nf">condition</span><span class="p">(</span><span class="n">node</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">node</span><span class="p">)</span> <span class="o">==</span> <span class="n">c_ast</span><span class="o">.</span><span class="n">llcInterchange</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">True</span>
+            <span class="k">return</span> <span class="bp">False</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">LoopInterchangeFilter</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">condition_func</span> <span class="o">=</span> <span class="n">condition</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The condition of the filter is that the node being check is a llcInterchange node.
+When the filter is running and the condition is True, the current node is returned.
+If our filter does not require an specific order of search, faster search methods can be used.</p>
+<p>The <a class="reference external" href="../glossary.html#term-mutator"><em class="xref">Mutator</em></a> for LoopInterchange inherits from <tt class="xref docutils literal"><span class="pre">AbstractMutator</span></tt>. All  mutators share a common structure. The example show a mutator that does nothing but search for the llcInterchange node and return it.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">LoopInterchange</span><span class="p">(</span><span class="n">AbstractMutator</span><span class="p">):</span>
+   <span class="sd">&quot;&quot;&quot; Apply Loop Interchange &quot;&quot;&quot;</span>
+   <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+       <span class="nb">super</span><span class="p">(</span><span class="n">LoopInterchange</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+
+   <span class="k">def</span> <span class="nf">filter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ast</span><span class="p">):</span>
+       <span class="sd">&quot;&quot;&quot;  &quot;&quot;&quot;</span>
+       <span class="k">raise</span> <span class="bp">NotImplemented</span>
+
+   <span class="k">def</span> <span class="nf">filter_iterator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ast</span><span class="p">):</span>
+       <span class="sd">&quot;&quot;&quot; Fast filter  &quot;&quot;&quot;</span>
+       <span class="k">return</span> <span class="bp">NotImplemented</span>
+
+   <span class="k">def</span> <span class="nf">fast_filter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ast</span><span class="p">):</span>
+       <span class="sd">&quot;&quot;&quot; Fast filter , looking for binary expressions &quot;&quot;&quot;</span>
+       <span class="k">return</span> <span class="n">LoopInterchangeFilter</span><span class="p">()</span><span class="o">.</span><span class="n">dfs_iter</span><span class="p">(</span><span class="n">ast</span><span class="p">)</span>
+
+   <span class="k">def</span> <span class="nf">mutatorFunction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ast</span><span class="p">):</span>
+       <span class="sd">&quot;&quot;&quot; Mutator code &quot;&quot;&quot;</span>
+       <span class="k">return</span> <span class="n">ast</span>
+</pre></div>
+</div>
+<p>The fast_filter method calls the Deep First Search iterator of the LoopInterchange filter (note that this have been inherited,
+and no additional effort was needed).
+For simplicity, we will assume that the construct only appears on a Compound Statement node.
+The ast param is the node returned by the filter, so now it contains a loopInterchange node.
+Applying loop interchange to a loop is as easy as implementing this mutator method</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># Name things to ease code reading</span>
+<span class="n">interchange_parent</span> <span class="o">=</span> <span class="n">ast</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">parent</span>  <span class="c"># Note that the parent of any llc node is a pragma node</span>
+<span class="n">interchange_node</span> <span class="o">=</span> <span class="n">ast</span>
+<span class="n">first_loop</span> <span class="o">=</span> <span class="n">ast</span><span class="o">.</span><span class="n">loop</span>
+<span class="n">second_loop</span> <span class="o">=</span> <span class="n">ast</span><span class="o">.</span><span class="n">loop</span><span class="o">.</span><span class="n">stmt</span>
+<span class="c"># 1. Put second loop as the first</span>
+<span class="n">ReplaceTool</span><span class="p">(</span><span class="n">new_node</span> <span class="o">=</span> <span class="n">second_loop</span><span class="p">,</span> <span class="n">old_node</span> <span class="o">=</span> <span class="n">interchange_node</span><span class="o">.</span><span class="n">parent</span><span class="p">)</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">interchange_parent</span><span class="p">,</span> <span class="s">&#39;stmts&#39;</span><span class="p">)</span>
+<span class="c"># 2. Preserve parent link</span>
+<span class="n">second_loop</span><span class="o">.</span><span class="n">parent</span> <span class="o">=</span> <span class="n">interchange_parent</span>
+<span class="c"># 3. Move the contents of the loop to the first loop</span>
+<span class="n">first_loop</span><span class="o">.</span><span class="n">stmt</span> <span class="o">=</span> <span class="n">second_loop</span><span class="o">.</span><span class="n">stmt</span>
+<span class="n">first_loop</span><span class="o">.</span><span class="n">parent</span> <span class="o">=</span> <span class="n">second_loop</span>
+<span class="c"># Change the new outer loop statements to the new inner loop</span>
+<span class="n">second_loop</span><span class="o">.</span><span class="n">stmt</span> <span class="o">=</span> <span class="n">first_loop</span>
+<span class="c"># Return the new outer loop</span>
+<span class="k">return</span> <span class="n">second_loop</span>
+</pre></div>
+</div>
+<p>In order to ease further compiler phases, all mutators must remove any constructs from the Internal Representation.
+It is also a good practice to ensure that the parent node is preserved after applying the mutator. The easiest
+way is to call the method link_all_parents , but it is not efficient. We recommend to manually update the parent links.
+Future release will make <strong>llCoMP</strong> tools to preserve this links, but currently cannot be guaranteed.</p>
+<p>Check the correct implementation of interchange by writing a simple script. Copy the c2c.py example to a new file
+called c2interchange.py, and apply the mutator in the Second Layer section.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c">###################### Second Layer  : Transformation tools</span>
+<span class="c"># Optimize code</span>
+<span class="kn">from</span> <span class="nn">MiddleEnd.Loop.Mutators.LoopInterchange</span> <span class="kn">import</span> <span class="n">LoopInterchange</span>
+<span class="n">LoopInterchange</span><span class="p">(</span><span class="n">start_ast</span> <span class="o">=</span> <span class="n">new_ast</span><span class="p">)</span><span class="o">.</span><span class="n">fast_apply_all</span><span class="p">(</span><span class="n">new_ast</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>If you run the new script , you see how the loops swaps</p>
+<div class="highlight-python"><pre>$ python bin/c2interchange.py examples/nestedLoop.c output.c</pre>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h3><a href="../index.html">Table Of Contents</a></h3>
+            <ul>
+<li><a class="reference external" href="#"><strong>llCoMP</strong> Mutator tutorial</a><ul>
+<li><a class="reference external" href="#loop-interchange">Loop Interchange</a></li>
+<li><a class="reference external" href="#new-language-construct">New language construct</a></li>
+<li><a class="reference external" href="#writing-a-new-mutator">Writing a new mutator</a></li>
+</ul>
+</li>
+</ul>
+
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="llcSetup.html"
+                                  title="previous chapter"><strong>llCoMP</strong> Setup</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="../softwareArchitecture.html"
+                                  title="next chapter">Software Architecture</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../_sources/extra/middleTutorial.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <input type="submit" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../modindex.html" title="Global Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../softwareArchitecture.html" title="Software Architecture"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="llcSetup.html" title="llCoMP Setup"
+             >previous</a> |</li>
+        <li><a href="../index.html">llCoMP v1.0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+      &copy; Copyright 2010, Ruymán Reyes &lt;rreyes@ull.es&gt;.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.4.
+    </div>
+  </body>
+</html>
