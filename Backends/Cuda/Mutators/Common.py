@@ -84,8 +84,9 @@ class AbstractCudaMutator(AbstractMutator):
  
     def buildDeclarations(self, numThreads, reduction_node_list, shared_node_list, ast):
         """ Builds the declaration section 
-             @param numThreads number of threads
-             @return Declarations subtree
+
+            :param numThreads: number of threads involved
+            :return: Declarations subtree
         """ 
         # Position in the template for dimA declaration, just in case we change it
         DIMA_POS = 0
@@ -189,8 +190,9 @@ class AbstractCudaMutator(AbstractMutator):
 
     def buildHostReduction(self, reduction_vars, ast):
         """ Instanciate the reduction pattern 
-    
-            @return Compound with the reduction code
+ 
+           :param reduction_vars: Vars in the reduction clause
+           :return: Compound with the reduction code
         """
         if len(reduction_vars) == 0:
             return c_ast.Compound(stmts = [], decls = [])
