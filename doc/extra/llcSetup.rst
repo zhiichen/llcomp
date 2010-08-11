@@ -61,4 +61,15 @@ Previously of installing |llCoMP| on your system, you must satisfy the following
      python tests/checkall.py 
 
 
+Known Problems
+**********************************
+
+1. In order to fasten compilation, |llCoMP| uses a cached version of parsing tables. This caching should be disabled if any change have been made to the frontend. Otherwise, the run will fail. To disable cache, in the module :mod:`Frontend.Parse` the function parse_source should look like this. If you want to re-enable cache, set **yacc_optimize** and **lex_optimize** to **True**  ::
+
+
+     ast = c_parser.CParser(lex_optimize = False, yacc_optimize = False).parse(
+     stripped_source, filename = code_name)
+
+
+
 

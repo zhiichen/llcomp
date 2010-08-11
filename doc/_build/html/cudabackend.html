@@ -159,9 +159,7 @@ Their parent is <tt class="xref docutils literal"><span class="pre">Backends.Cud
 <dl class="method">
 <dt id="Backends.Cuda.Mutators.Common.AbstractCudaMutator.buildKernel">
 <tt class="descname">buildKernel</tt><big>(</big><em>shared_list</em>, <em>private_list</em>, <em>reduction_list</em>, <em>loop</em>, <em>ast</em><big>)</big><a class="headerlink" href="#Backends.Cuda.Mutators.Common.AbstractCudaMutator.buildKernel" title="Permalink to this definition">¶</a></dt>
-<dd><p>Build CUDA Kernel code</p>
-<p><a href="#id1"><span class="problematic" id="id2">|return|</span></a> Cast with the kernel source</p>
-</dd></dl>
+<dd>Build CUDA Kernel code</dd></dl>
 
 <dl class="method">
 <dt id="Backends.Cuda.Mutators.Common.AbstractCudaMutator.getThreadNum">
@@ -172,31 +170,6 @@ Their parent is <tt class="xref docutils literal"><span class="pre">Backends.Cud
 <dt id="Backends.Cuda.Mutators.Common.AbstractCudaMutator.get_names">
 <tt class="descname">get_names</tt><big>(</big><em>elem</em>, <em>ast</em><big>)</big><a class="headerlink" href="#Backends.Cuda.Mutators.Common.AbstractCudaMutator.get_names" title="Permalink to this definition">¶</a></dt>
 <dd>Return a list of names for a type</dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="Backends.Cuda.Mutators.Common.CudaTransformer">
-<em class="property">class </em><tt class="descclassname">Backends.Cuda.Mutators.Common.</tt><tt class="descname">CudaTransformer</tt><a class="headerlink" href="#Backends.Cuda.Mutators.Common.CudaTransformer" title="Permalink to this definition">¶</a></dt>
-<dd><p>CudaTransformer pretends to be the main class for all CUDA code transformations.</p>
-<dl class="staticmethod">
-<dt id="Backends.Cuda.Mutators.Common.CudaTransformer.apply">
-<em class="property">static </em><tt class="descname">apply</tt><big>(</big><em>ast</em><big>)</big><a class="headerlink" href="#Backends.Cuda.Mutators.Common.CudaTransformer.apply" title="Permalink to this definition">¶</a></dt>
-<dd><p>The apply method calls al the known CUDA mutators, in an specified order.
-This method need heavy re-engineering.</p>
-<blockquote>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field"><th class="field-name">param ast:</th><td class="field-body">Original AST</td>
-</tr>
-<tr class="field"><th class="field-name">return:</th><td class="field-body">CUDA Ast</td>
-</tr>
-</tbody>
-</table>
-</blockquote>
-</dd></dl>
 
 </dd></dl>
 

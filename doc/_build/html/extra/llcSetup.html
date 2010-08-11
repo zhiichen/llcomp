@@ -20,7 +20,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <link rel="top" title="llCoMP v1.0.1 documentation" href="../index.html" />
-    <link rel="next" title="Software Architecture" href="../softwareArchitecture.html" />
+    <link rel="next" title="llCoMP Mutator tutorial" href="middleTutorial.html" />
     <link rel="prev" title="llCoMP Developer Documentation" href="../index.html" /> 
   </head>
   <body>
@@ -34,7 +34,7 @@
           <a href="../modindex.html" title="Global Module Index"
              accesskey="M">modules</a> |</li>
         <li class="right" >
-          <a href="../softwareArchitecture.html" title="Software Architecture"
+          <a href="middleTutorial.html" title="llCoMP Mutator tutorial"
              accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="../index.html" title="llCoMP Developer Documentation"
@@ -118,6 +118,17 @@ Clone it from the pycparser project source page:</p>
 </li>
 </ol>
 </div>
+<div class="section" id="known-problems">
+<h2>Known Problems<a class="headerlink" href="#known-problems" title="Permalink to this headline">¶</a></h2>
+<ol class="arabic">
+<li><p class="first">In order to fasten compilation, <strong>llCoMP</strong> uses a cached version of parsing tables. This caching should be disabled if any change have been made to the frontend. Otherwise, the run will fail. To disable cache, in the module <a title="" class="reference external" href="../frontend.html#module-Frontend.Parse"><tt class="xref docutils literal"><span class="pre">Frontend.Parse</span></tt></a> the function parse_source should look like this. If you want to re-enable cache, set <strong>yacc_optimize</strong> and <strong>lex_optimize</strong> to <strong>True</strong></p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">ast</span> <span class="o">=</span> <span class="n">c_parser</span><span class="o">.</span><span class="n">CParser</span><span class="p">(</span><span class="n">lex_optimize</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span> <span class="n">yacc_optimize</span> <span class="o">=</span> <span class="bp">False</span><span class="p">)</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span>
+<span class="n">stripped_source</span><span class="p">,</span> <span class="n">filename</span> <span class="o">=</span> <span class="n">code_name</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+</ol>
+</div>
 </div>
 
 
@@ -131,6 +142,7 @@ Clone it from the pycparser project source page:</p>
 <li><a class="reference external" href="#"><strong>llCoMP</strong> Setup</a><ul>
 <li><a class="reference external" href="#llcomp-requirements"><strong>llCoMP</strong> Requirements</a></li>
 <li><a class="reference external" href="#llcomp-install"><strong>llCoMP</strong> Install</a></li>
+<li><a class="reference external" href="#known-problems">Known Problems</a></li>
 </ul>
 </li>
 </ul>
@@ -139,8 +151,8 @@ Clone it from the pycparser project source page:</p>
             <p class="topless"><a href="../index.html"
                                   title="previous chapter"><strong>llCoMP</strong> Developer Documentation</a></p>
             <h4>Next topic</h4>
-            <p class="topless"><a href="../softwareArchitecture.html"
-                                  title="next chapter">Software Architecture</a></p>
+            <p class="topless"><a href="middleTutorial.html"
+                                  title="next chapter"><strong>llCoMP</strong> Mutator tutorial</a></p>
             <h3>This Page</h3>
             <ul class="this-page-menu">
               <li><a href="../_sources/extra/llcSetup.txt"
@@ -173,7 +185,7 @@ Clone it from the pycparser project source page:</p>
           <a href="../modindex.html" title="Global Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="../softwareArchitecture.html" title="Software Architecture"
+          <a href="middleTutorial.html" title="llCoMP Mutator tutorial"
              >next</a> |</li>
         <li class="right" >
           <a href="../index.html" title="llCoMP Developer Documentation"

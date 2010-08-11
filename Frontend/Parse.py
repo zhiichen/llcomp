@@ -33,7 +33,7 @@ def parse_source(code_source, code_name):
     # Send / Retrieve string to the preprocessor
     stripped_source = p.communicate(code_source)[0]
     # Parse the file and get the AST
-    ast = c_parser.CParser(lex_optimize = True, yacc_optimize = True).parse(
+    ast = c_parser.CParser(lex_optimize = False, yacc_optimize = False).parse(
         stripped_source, filename = code_name)
     return ast
 
