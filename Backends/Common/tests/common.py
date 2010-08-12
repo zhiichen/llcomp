@@ -46,7 +46,7 @@ class TestCommonFunctions(TestCase):
           template_code = '''
               int main() {
                   int i = 0;
-           /*       printf("Hello World!\n");*/
+                  i = 7;
               }
           '''
           ast = parse_source(template_code, "Tool test 1")
@@ -58,9 +58,23 @@ class TestCommonFunctions(TestCase):
                   f = 7;
               }
           """
-          declarations = AstToIR(Writer = OmpWriter).transform(parse_source(template_code, "Tool test 2")).ext[-1].body.decls
+          tmp = AstToIR(Writer = OmpWriter).transform(parse_source(template_code, "Tool test 2")).ext[-1].body
+          declarations = tmp.decls
+          statements = tmp.stmts
+
           from Tools.Tree import InsertTool, ReplaceTool, RemoveTool
           InsertTool(subtree = declarations, position = "begin").apply(new_ast.ext[-1].body, 'decls')
+
+          self.assertEqual(new_ast.ext[-1].body.decls[-1].parent, new_ast.ext[-1].body)
+
+
+          # print new_ast.ext[-1].body.stmts[-1];
+          #ReplaceTool(new_node = statements, old_node = new_ast.ext[-1].body.stmts[-1]).apply(new_ast.ext[-1].body, 'stmts')
+
+          #self.assertEqual(new_ast.ext[-1].body.stmts[-1].parent, new_ast.ext[-1].body)
+
+          #RemoveTool(target_node = new_ast.ext[-1].body.stmts[-1]).apply(new_ast.ext[-1].body, 'stmts')
+
 
           self.assertEqual(new_ast.ext[-1].body.decls[-1].parent, new_ast.ext[-1].body)
 

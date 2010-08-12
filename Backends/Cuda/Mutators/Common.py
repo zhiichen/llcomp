@@ -289,7 +289,7 @@ class AbstractCudaMutator(AbstractMutator):
                 
              }
              """
-        tree = self.parse_snippet(template_code, {'kernelName' : self.kernel_name, 'reduction_vars' : reduction_vars, 'shared_vars' : shared_vars, 'typedefs' : typedef_list, 'private_vars' : private_vars, 'loop_vars' : loop_vars, 'loop' : loop} , name = 'KernelBuild', show = True)
+        tree = self.parse_snippet(template_code, {'kernelName' : self.kernel_name, 'reduction_vars' : reduction_vars, 'shared_vars' : shared_vars, 'typedefs' : typedef_list, 'private_vars' : private_vars, 'loop_vars' : loop_vars, 'loop' : loop} , name = 'KernelBuild', show = False)
 
         
         # DeclsToParamsMutator().apply(tree.ext[-1].function.decl.type.args)
