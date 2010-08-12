@@ -1,7 +1,6 @@
-Index: pycparser/_c_ast.yaml
-===================================================================
---- pycparser/_c_ast.yaml	(revisión: 95)
-+++ pycparser/_c_ast.yaml	(copia de trabajo)
+diff -r bb7a2715b598 pycparser/_c_ast.yaml
+--- a/pycparser/_c_ast.yaml	Fri Jul 09 08:49:52 2010 +0200
++++ b/pycparser/_c_ast.yaml	Thu Aug 12 12:22:09 2010 +0100
 @@ -92,6 +92,14 @@
  #
  FuncCall: [name*, args*]
@@ -28,7 +27,7 @@ Index: pycparser/_c_ast.yaml
 +# llc 
 +
 +llcNestedFor : [name, loop*]
-+
++llcInterchange : [name, loop*]
 +
 +# Construct
 +

@@ -1,8 +1,7 @@
-Index: pycparser/c_lexer.py
-===================================================================
---- pycparser/c_lexer.py	(revisión: 95)
-+++ pycparser/c_lexer.py	(copia de trabajo)
-@@ -157,6 +157,64 @@
+diff -r bb7a2715b598 pycparser/c_lexer.py
+--- a/pycparser/c_lexer.py	Fri Jul 09 08:49:52 2010 +0200
++++ b/pycparser/c_lexer.py	Thu Aug 12 12:22:09 2010 +0100
+@@ -157,6 +157,65 @@
          
          # pre-processor 
          'PPHASH',      # '#'
@@ -20,6 +19,7 @@ Index: pycparser/c_lexer.py
 +  
 +   # Constructs
 +    'NESTED_FOR', # nested for
++    'INTERCHANGE', # Loop interchange
 +
 +#    'RESULT', # result
 +
@@ -35,7 +35,7 @@ Index: pycparser/c_lexer.py
 +
 +   # Clauses
 +   'SHARED', 'PRIVATE', 'REDUCTION', 'NOWAIT', 'THREADPRIVATE', 'COPYIN', 'SCHEDULE', 'OMP_SCHEDULE_KIND',
-+   'MASTER', 'CRITICAL', 'ATOMIC', 'BARRIER', 'FLUSH', 'SINGLE', 'FIRSTPRIVATE',
++   'MASTER', 'CRITICAL', 'ATOMIC', 'BARRIER', 'FLUSH', 'SINGLE', 'FIRSTPRIVATE', 'COLLAPSE',
 +
 +   ####################
 +   # New clauses
@@ -67,7 +67,7 @@ Index: pycparser/c_lexer.py
      )
  
      ##
-@@ -209,6 +267,7 @@
+@@ -209,6 +268,7 @@
          # ppline: preprocessor line directives
          # 
          ('ppline', 'exclusive'),
@@ -75,7 +75,7 @@ Index: pycparser/c_lexer.py
      )
      
      def t_PPHASH(self, t):
-@@ -216,14 +275,183 @@
+@@ -216,14 +276,194 @@
          m = self.line_pattern.match(
              t.lexer.lexdata, pos=t.lexer.lexpos)
          
@@ -109,6 +109,11 @@ Index: pycparser/c_lexer.py
 +        t.type = 'NESTED_FOR'
 +        return t
 +
++    def t_directive_INTERCHANGE(self, t):
++        r'interchange|swap'
++        t.type = 'INTERCHANGE'
++        return t
++
 +
 +    def t_directive_OMP(self, t):
 +        r'omp'
@@ -139,6 +144,12 @@ Index: pycparser/c_lexer.py
 +    def t_directive_FIRSTPRIVATE(self, t):
 +        r'firstprivate'
 +        t.type = 'FIRSTPRIVATE'
++        return t
++
++
++    def t_directive_COLLAPSE(self, t):
++        r'collapse'
++        t.type = 'COLLAPSE'
 +        return t
 +
 +
@@ -261,7 +272,7 @@ Index: pycparser/c_lexer.py
      ##
      ## Rules for the ppline state
      ##
-@@ -267,6 +495,18 @@
+@@ -267,6 +507,18 @@
          msg = 'invalid #line directive'
          self._error(msg, t)
  
@@ -280,7 +291,7 @@ Index: pycparser/c_lexer.py
      ##
      ## Rules for the normal state
      ##
-@@ -298,7 +538,12 @@
+@@ -298,6 +550,11 @@
      t_GE                = r'>='
      t_EQ                = r'=='
      t_NE                = r'!='
@@ -288,12 +299,11 @@ Index: pycparser/c_lexer.py
 +    # CUDA kernel launch
 +    t_LKLAUNCH            = r'<<<'
 +    t_RKLAUNCH            = r'>>>'
- 
 +
+ 
      # Assignment operators
      t_EQUALS            = r'='
-     t_TIMESEQUAL        = r'\*='
-@@ -337,7 +582,7 @@
+@@ -337,7 +594,7 @@
  
      t_STRING_LITERAL    = string_literal
      
@@ -302,13 +312,3 @@ Index: pycparser/c_lexer.py
      # functions to impose a strict order (otherwise, decimal
      # is placed before the others because its regex is longer,
      # and this is bad)
-@@ -410,7 +655,8 @@
- 
- 
- if __name__ == "__main__":
--    filename = '../zp.c'
-+#    filename = '../z_test.c'
-+    filename = '../examples/c_files/funky.c'
-     text = open(filename).read()
-     
-     #~ text = '"'+r"""ka \p ka"""+'"'

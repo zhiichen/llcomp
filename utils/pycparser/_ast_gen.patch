@@ -1,7 +1,6 @@
-Index: pycparser/_ast_gen.py
-===================================================================
---- pycparser/_ast_gen.py	(revisión: 95)
-+++ pycparser/_ast_gen.py	(copia de trabajo)
+diff -r bb7a2715b598 pycparser/_ast_gen.py
+--- a/pycparser/_ast_gen.py	Fri Jul 09 08:49:52 2010 +0200
++++ b/pycparser/_ast_gen.py	Thu Aug 12 12:22:08 2010 +0100
 @@ -72,13 +72,13 @@
  
          if self.all_entries:

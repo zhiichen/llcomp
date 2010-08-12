@@ -1,8 +1,7 @@
-Index: pycparser/c_parser.py
-===================================================================
---- pycparser/c_parser.py	(revisión: 95)
-+++ pycparser/c_parser.py	(copia de trabajo)
-@@ -21,9 +21,9 @@
+diff -r bb7a2715b598 pycparser/c_parser.py
+--- a/pycparser/c_parser.py	Fri Jul 09 08:49:52 2010 +0200
++++ b/pycparser/c_parser.py	Thu Aug 12 12:22:09 2010 +0100
+@@ -19,9 +19,9 @@
  class CParser(PLYParser):    
      def __init__(
              self, 
@@ -14,7 +13,7 @@ Index: pycparser/c_parser.py
              yacctab='pycparser.yacctab',
              yacc_debug=False):
          """ Create a new CParser.
-@@ -292,6 +292,7 @@
+@@ -290,6 +290,7 @@
              bitsize=None, 
              coord=decl.coord)
          
@@ -22,7 +21,7 @@ Index: pycparser/c_parser.py
          typename = spec['type']
          declaration = self._fix_decl_name_type(declaration, typename)
          return c_ast.FuncDef(
-@@ -362,12 +363,192 @@
+@@ -360,12 +361,205 @@
          """
          p[0] = p[1]
  
@@ -30,7 +29,7 @@ Index: pycparser/c_parser.py
 -        """ pp_directive  : PPHASH 
 +    def p_external_declaration_4(self, p):
 +        """ external_declaration    : cuda_kernel 
-         """
++        """
 +        p[0] = [p[1]]
 +    
 +    def p_cuda_kernel(self, p):
@@ -64,7 +63,7 @@ Index: pycparser/c_parser.py
 +
 +    def p_pp_directive_2(self, p):
 +        """ pp_directive  : PPHASH
-+        """
+         """
          self._parse_error('Directives not supported yet', 
              self._coord(p.lineno(1)))
  
@@ -85,9 +84,15 @@ Index: pycparser/c_parser.py
 +            stmt = p[3],
 +            coord=self._coord(p.lineno(1)))]
 +
-+    def p_llc_directive(self, p):
++    def p_llc_directive_1(self, p):
 +       """ llc_directive : NESTED_FOR PPHASH PRAGMA OMP workshare_directive"""
 +       p[0] = c_ast.llcNestedFor(name = 'NESTED FOR', loop = p[5], coord=self._coord(p.lineno(1)))
++
++    def p_llc_directive_2(self, p):
++       """ llc_directive : INTERCHANGE iteration_statement"""
++       p[0] = c_ast.llcInterchange(name = 'INTERCHANGE', loop = p[2], coord=self._coord(p.lineno(1)))
++
++
 +
 +    def p_workshare_directive_1(self, p):
 +       """ workshare_directive : FOR omp_clause_list iteration_statement """
@@ -192,6 +197,13 @@ Index: pycparser/c_parser.py
 +       p[0] = [c_ast.OmpClause(type = str(p[1]) , name = str(p[1]).upper(), identifiers = p[3], coord = self._coord(p.lineno(1)))]
 +
 +
++    def p_clause_7(self, p):
++       """ clause : COLLAPSE LPAREN INT_CONST_DEC RPAREN """
++       p[0] = [c_ast.OmpClause(type = str(p[1]) , name = str(p[1]).upper(), identifiers = None, coord = self._coord(p.lineno(1)))]
++
++
++
++
 +    def p_device_list(self, p):
 +       """ device_list  : CUDA
 +                        | FPGA
@@ -217,7 +229,7 @@ Index: pycparser/c_parser.py
      # In function definitions, the declarator can be followed by
      # a declaration list, for old "K&R style" function definitios.
      #
-@@ -404,6 +585,13 @@
+@@ -402,6 +596,13 @@
          """
          p[0] = p[1]
  
@@ -231,7 +243,7 @@ Index: pycparser/c_parser.py
      # In C, declarations can come several in a line:
      #   int x, *px, romulo = 5;
      #
-@@ -1176,6 +1364,15 @@
+@@ -1174,6 +1375,15 @@
          """
          p[0] = c_ast.UnaryOp('p' + p[2], p[1], p[1].coord)
  
