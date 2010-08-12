@@ -17,10 +17,10 @@ COMMAND_LINE_OPTIONS = getopt.getopt(sys.argv[1:], '', ['create','help'])
 if ('--create', '') in COMMAND_LINE_OPTIONS[0]:
     print " Building test trees "
     buildCommonTests.build_tools_tree()
-    basic.build_test_trees()
-    buildCudaTests.build_pi_tree()
-    buildCudaTests.build_mandel_tree()
-    buildCudaTests.build_jacobi_tree()
+#    basic.build_test_trees()
+#    buildCudaTests.build_pi_tree()
+#    buildCudaTests.build_mandel_tree()
+#    buildCudaTests.build_jacobi_tree()
 
 
 if ('--help', '') in COMMAND_LINE_OPTIONS[0]:
@@ -36,12 +36,12 @@ TEST_SUITE = unittest.TestLoader().loadTestsFromTestCase(
 unittest.TextTestRunner(verbosity=2).run(TEST_SUITE)
 
 
-print " Running basic parser tests "
-TEST_SUITE = unittest.TestLoader().loadTestsFromTestCase(
-   basic.TestParserFunctions)
-unittest.TextTestRunner(verbosity=2).run(TEST_SUITE)
-
-print " Running Backend tests "
-TEST_SUITE = unittest.TestLoader().loadTestsFromTestCase(
-   cudaBackend.TestCudaFunctions)
-unittest.TextTestRunner(verbosity=2).run(TEST_SUITE)
+#print " Running basic parser tests "
+#TEST_SUITE = unittest.TestLoader().loadTestsFromTestCase(
+#   basic.TestParserFunctions)
+#unittest.TextTestRunner(verbosity=2).run(TEST_SUITE)
+#
+#print " Running Backend tests "
+#TEST_SUITE = unittest.TestLoader().loadTestsFromTestCase(
+#   cudaBackend.TestCudaFunctions)
+#unittest.TextTestRunner(verbosity=2).run(TEST_SUITE)

@@ -39,7 +39,7 @@ class CM_llcNestedFor(CM_OmpParallelFor):
             f = llcNestedForFilter()
             num = 0;
             for elem in f.iterate(ast):
-                print " Elem: " + str(elem.loop)
+                # print " Elem: " + str(elem.loop)
                 # Save previous state
                 old_name = self.kernel_name
                 old_clauses = self._clauses
@@ -54,9 +54,9 @@ class CM_llcNestedFor(CM_OmpParallelFor):
  #                   DotDebugTool().apply(self._parallel)
                     raise StopIteration
 
-                print " ** Mutator function ** "
+                # print " ** Mutator function ** "
                 start_node = self.mutatorFunction(ast, elem.loop)
-                print " ** Done ** "
+                # print " ** Done ** "
                 # Restore previous state
                 self.kernel_name = old_name
                 self._clauses = old_clauses
@@ -182,7 +182,7 @@ class CM_llcNestedFor(CM_OmpParallelFor):
              ;
              }
              """
-        tree = self.parse_snippet(template_code, {'kernelName' : self.kernel_name, 'reduction_vars' : reduction_vars, 'shared_vars' : shared_vars, 'typedefs' : typedef_list, 'private_vars' : private_vars, 'loop_vars' : loop_vars} , name = 'KernelBuild', show = True)
+        tree = self.parse_snippet(template_code, {'kernelName' : self.kernel_name, 'reduction_vars' : reduction_vars, 'shared_vars' : shared_vars, 'typedefs' : typedef_list, 'private_vars' : private_vars, 'loop_vars' : loop_vars} , name = 'KernelBuild', show = False)
 
         # OpenMP shared vars are parameters of the kernel function
         if shared_list:
