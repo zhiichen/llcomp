@@ -53,20 +53,36 @@ class InsertTool:
          # Check attribute is a list of nodes
          if not type(attr) == type([]):
               raise NodeNotValid(target_node)
-         # Find the place to insert
-         if self.node:
-              self.place = attr.index(self.node)
-         # Insert the node
-         if self.position == "begin":
-              # Funny trick to insert as first element: first reverse, then insert on 0
-              childrens = list(self.subtree.children())
-              childrens.reverse()
-              for it in childrens:
-                    attr.insert(self.place, it)
-         elif self.position == "end":
-              attr.extend(self.subtree.children())
+         if type(self.subtree) == type([]):
+             # Find the place to insert
+             if self.node:
+                  self.place = attr.index(self.node)
+             # Insert the node
+             if self.position == "begin":
+                  # Funny trick to insert as first element: first reverse, then insert on 0
+                  childrens = self.subtree # list(self.subtree.children())
+                  childrens.reverse()
+                  for it in childrens:
+                        attr.insert(self.place, it)
+             elif self.position == "end":
+                  attr.extend(self.subtree)
+             else:
+                  raise PositionNotValid
          else:
-              raise PositionNotValid
+             # Find the place to insert
+             if self.node:
+                  self.place = attr.index(self.node)
+             # Insert the node
+             if self.position == "begin":
+                  # Funny trick to insert as first element: first reverse, then insert on 0
+                  childrens = list(self.subtree.children())
+                  childrens.reverse()
+                  for it in childrens:
+                        attr.insert(self.place, it)
+             elif self.position == "end":
+                  attr.extend(self.subtree.children())
+             else:
+                  raise PositionNotValid
          # Update the target_node with the new_subtree
          setattr(target_node, attribute_name, attr)
          return target_node
