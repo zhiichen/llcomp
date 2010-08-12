@@ -64,23 +64,6 @@ class AbstractCudaMutator(AbstractMutator):
         else:
              return node.left
 
-    def parse_snippet(self, template_code, subs_dir, name, show = False):
-        subtree = None
-        if subs_dir:
-            template_code = TemplateParser(template_code).render(**subs_dir)
-            if show:
-                print " Template " + str(template_code)
-        try:
-            subtree = parse_source(template_code, name)
-        except c_parser.ParseError, e:
-            print "Parse error:" + str(e)
-            return None
-        except IOError:
-                print "Pipe Error"
-                return None
-        return subtree;
-
-
  
     def buildDeclarations(self, numThreads, reduction_node_list, shared_node_list, ast):
         """ Builds the declaration section 

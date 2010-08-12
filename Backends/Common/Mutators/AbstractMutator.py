@@ -7,7 +7,7 @@ from Tools.Declarations import type_of_id, decl_of_id
 from Tools.Debug import DotDebugTool
 from Frontend.Parse import parse_source
 
-from Backends.Common.TemplateEngine.TemplateParser import TemplateParser, get_template_array
+from Backends.Common.TemplateEngine.TemplateParser import TemplateParser, get_template_array, get_typedefs_to_template
 
 from pycparser import  c_ast
 
@@ -52,6 +52,34 @@ class AbstractMutator(object):
              :return: Starting point of the mutation
         """
         return ast
+
+
+    def parse_snippet(self, template_code, subs_dir, name, show = False):
+        """ Transform a template code snippet to the IR
+
+            :param template_code: String with the source code
+            :param subs_dir: Dictionary with substutitions
+            :param name: Name of the template to be parsed (debugging)
+            :param show: Show the template after variable substitution (debugging)
+            :return: Representation of the parsed template
+
+        """
+        subtree = None
+        if subs_dir:
+            template_code = TemplateParser(template_code).render(**subs_dir)
+            if show:
+                print " Template " + str(template_code)
+        try:
+            subtree = parse_source(template_code, name)
+        except c_parser.ParseError, e:
+            print "Parse error:" + str(e)
+            return None
+        except IOError:
+                print "Pipe Error"
+                return None
+        return subtree;
+
+
 
     def apply(self, ast, mutator_opt_arg = None):
         """ Apply a mutation 
