@@ -1,6 +1,7 @@
 from pycparser import c_parser, c_ast
 
 source_code = """
+/* #include "fus.h" */
 int main() {
    int i = 0;
    char a[10];
@@ -8,8 +9,7 @@ int main() {
    #pragma omp target device (cuda) copy_out(a)
    #pragma omp parallel shared(a)
    {
-      #pragma llc nested 
-      #pragma omp for 
+      #pragma omp for collapse(1)
       for (i = 0; i <= 10; i++) {
         for (i = 0; i <= 10; i++) {
            a[i] = 'c';
