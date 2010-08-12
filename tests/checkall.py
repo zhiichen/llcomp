@@ -2,6 +2,9 @@
 
 """
 import unittest
+
+
+from  Backends.Common.tests  import common, buildCommonTests
 from  Backends.C.tests  import basic
 from  Backends.Cuda.tests import  cudaBackend, buildCudaTests
 
@@ -13,6 +16,7 @@ COMMAND_LINE_OPTIONS = getopt.getopt(sys.argv[1:], '', ['create','help'])
 
 if ('--create', '') in COMMAND_LINE_OPTIONS[0]:
     print " Building test trees "
+    buildCommonTests.build_tools_tree()
     basic.build_test_trees()
     buildCudaTests.build_pi_tree()
     buildCudaTests.build_mandel_tree()
@@ -24,6 +28,12 @@ if ('--help', '') in COMMAND_LINE_OPTIONS[0]:
     print " llCoMP Test tool " 
     print " Use --create to update trees "
     sys.exit(0)
+
+
+print " Running Common  tests "
+TEST_SUITE = unittest.TestLoader().loadTestsFromTestCase(
+   common.TestCommonFunctions)
+unittest.TextTestRunner(verbosity=2).run(TEST_SUITE)
 
 
 print " Running basic parser tests "

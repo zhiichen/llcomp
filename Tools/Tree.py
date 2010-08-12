@@ -43,7 +43,10 @@ class InsertTool:
 
      def apply(self, target_node, attribute_name):
          """ Apply the insertion on the attribute of the target node
-    
+
+                Updates the parent link of the subtree    
+
+
                 :param target_node: Node where insert the subtree
                 :param attribute_name: Attribute of the target_node where the subtree is to be inserted
 
@@ -63,8 +66,13 @@ class InsertTool:
                   childrens = self.subtree # list(self.subtree.children())
                   childrens.reverse()
                   for it in childrens:
+                        # The parent of every child is now the target_node
+                        setattr(it, 'parent', target_node)
                         attr.insert(self.place, it)
              elif self.position == "end":
+                  # The parent of every child is now the target_node
+                  for elem in self.subtree:
+                    setattr(elem, 'parent', target_node)
                   attr.extend(self.subtree)
              else:
                   raise PositionNotValid
@@ -78,8 +86,12 @@ class InsertTool:
                   childrens = list(self.subtree.children())
                   childrens.reverse()
                   for it in childrens:
+                        setattr(it, 'parent', target_node)
                         attr.insert(self.place, it)
              elif self.position == "end":
+                  # The parent of every child is now the target_node
+                  for elem in self.subtree.children():
+                    setattr(elem, 'parent', target_node)
                   attr.extend(self.subtree.children())
              else:
                   raise PositionNotValid
