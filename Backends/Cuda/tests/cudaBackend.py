@@ -13,26 +13,12 @@ from Backends.Cuda.Writers.CUDAWriter import CUDAWriter
 from Frontend.InternalRepr import AstToIR
 
 
+from Backends.Common.tests.common import TestCase
+
 BACKEND_NAME = 'Cuda'
 TEST_PATH = 'Backends/' + BACKEND_NAME + '/tests/'
 CODE_PATH =  TEST_PATH + 'codes/'
 TREE_PATH =  TEST_PATH + 'trees/'
-
-class TestCase(unittest.TestCase):
-    def __init__(self, *args, **kwargs):
-        super(TestCase, self).__init__(*args, **kwargs)
-
-    def check_output(self, new_tree, good_tree):
-        import difflib
-        import pprint
-        # Build differ object and calculate diferences
-        d = difflib.Differ()
-        diff = list(d.compare(str(good_tree).split('\n'), str(new_tree).split('\n')))
-        # If differences exists, show them
-        if len([elem for elem in diff if elem[0] != ' ']) != 0:
-            pprint.pprint(diff)
-        self.assertEqual(str(good_tree).split('\n'), str(new_tree).split('\n'))
-
 
     
 
