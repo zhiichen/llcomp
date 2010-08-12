@@ -25,14 +25,7 @@ set of high level optimizations.
 for high performance computing. |llc| is a language based on |OpenMP|/C where parallelism 
 is expressed using compiler directives. 
 
-See more about |llc| in :doc:`llcLanguage`.
-
-
-
-|llCoMP| Setup
-**********************************
-
-In order to setup inst
+Read more about |llc| in :doc:`llcLanguage`.
 
 
 |llCoMP| Additional documentation and HOWTOs
@@ -45,13 +38,6 @@ Some tutorials and HOWTO about |llCoMP|.
    :glob:
 
    extra/*
-
-.. comment
-  * :doc:`Install |llCoMP| in your system <extra/llcSetup.rst>`.
-  * Tutorial: Convert a file from C to CUDA
-  * Tutorial: Write a simple mutator for loop interchange
-  * Tutorial: Add a new language keyword
-  * HOWTO use DotDebugTool
 
 Contents
 ********************************
