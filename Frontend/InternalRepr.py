@@ -9,6 +9,7 @@ from pycparser import  c_ast
 
 import cStringIO
 
+import copy as Copy
 
 class AstToIR:
     """Transform a C ast to the internal representation
@@ -24,9 +25,30 @@ class AstToIR:
             cw.visit(node)
             return writeIO.getvalue()
 
+        def copy(self):
+            new = self.__class__(*self.__dict__)
+            new.__dict__.update(self.__dict__)
+            return new
+
+
+        def deepcopy(self, memo):
+            new = self.__class__(*self.__dict__)
+            partial_dict = {}
+            for key,value in self.__dict__.items():
+                if key not in self.__nocopy__ and not value in memo.keys():
+                    partial_dict[key] = Copy.deepcopy(value)
+                else:
+                    partial_dict[key] = value
+            new.__dict__.update(partial_dict)
+            return new
+
+
         # Overload __str__ method on Node class
         # Will apply to all instances !!
         c_ast.Node.__str__ = fast_write
+        c_ast.Node.__nocopy__ = ['parent',]
+        c_ast.Node.__copy__ = copy
+        c_ast.Node.__deepcopy__ = deepcopy
 
     
     def deep_first_search(self, root, visited = None, preorder_process  = lambda x: None):
