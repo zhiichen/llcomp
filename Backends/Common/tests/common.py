@@ -62,22 +62,23 @@ class TestCommonFunctions(TestCase):
           declarations = tmp.decls
           statements = tmp.stmts
 
-          from Tools.Tree import InsertTool, ReplaceTool, RemoveTool
+          from Tools.Tree import InsertTool, ReplaceTool, RemoveTool, CloneTool
           InsertTool(subtree = declarations, position = "begin").apply(new_ast.ext[-1].body, 'decls')
 
           self.assertEqual(new_ast.ext[-1].body.decls[-1].parent, new_ast.ext[-1].body)
-
-
-          # print new_ast.ext[-1].body.stmts[-1];
-          #ReplaceTool(new_node = statements, old_node = new_ast.ext[-1].body.stmts[-1]).apply(new_ast.ext[-1].body, 'stmts')
-
-          #self.assertEqual(new_ast.ext[-1].body.stmts[-1].parent, new_ast.ext[-1].body)
-
-          #RemoveTool(target_node = new_ast.ext[-1].body.stmts[-1]).apply(new_ast.ext[-1].body, 'stmts')
-
-
+          # Clone the last statement
+#          InsertTool(subtree = c_ast.Compound(stmts = [new_ast.ext[-1].body.stmts[-1].__deepcopy__({}),], decls = []), position = 'begin').apply(new_ast.ext[-1].body, 'stmts')
+          CloneTool(original = new_ast.ext[-1].body.stmts[-1], position = 'begin').apply(new_ast.ext[-1].body, 'stmts')
+          # Check replace tool
+          ReplaceTool(new_node = statements[-1], old_node = new_ast.ext[-1].body.stmts[-1]).apply(new_ast.ext[-1].body, 'stmts')
+          # Check if parent link is preserved
+          self.assertEqual(new_ast.ext[-1].body.stmts[-1].parent, new_ast.ext[-1].body)
+          # Check remove tool
+          RemoveTool(target_node = new_ast.ext[-1].body.stmts[-1]).apply(new_ast.ext[-1].body, 'stmts')
+          # Check parent links
           self.assertEqual(new_ast.ext[-1].body.decls[-1].parent, new_ast.ext[-1].body)
 
+          # Tree must be the same as original
           good_tree = Dump.load(TREE_PATH + '/insert_tool_tree')
           self.check_output(new_ast, good_tree) 
 

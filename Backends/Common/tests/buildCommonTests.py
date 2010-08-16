@@ -22,22 +22,23 @@ def build_tools_tree():
     """
     template_code = '''
     int main() {
+        int f = 0;
         int i = 0;
         i = 7;
     }
     '''
-    ast = parse_source(template_code, "Tool test 1")
-    # Transform the C ast into the internal representation
-    new_ast = AstToIR(Writer = OmpWriter).transform(ast)
-    template_code = """
-        int main() {
-            int f = 0;
-            f = 7;
-        }
-    """
-    declarations = AstToIR(Writer = OmpWriter).transform(parse_source(template_code, "Tool test 2")).ext[-1].body.decls
-    from Tools.Tree import InsertTool, ReplaceTool, RemoveTool
-    InsertTool(subtree = declarations, position = "begin").apply(new_ast.ext[-1].body, 'decls')
+    new_ast = parse_source(template_code, "Tool test 1")
+#    # Transform the C ast into the internal representation
+#    new_ast = AstToIR(Writer = OmpWriter).transform(ast)
+#    template_code = """
+#        int main() {
+#            int f = 0;
+#            f = 7;
+#        }
+#    """
+#    declarations = AstToIR(Writer = OmpWriter).transform(parse_source(template_code, "Tool test 2")).ext[-1].body.decls
+#    from Tools.Tree import InsertTool, ReplaceTool, RemoveTool
+#    InsertTool(subtree = declarations, position = "begin").apply(new_ast.ext[-1].body, 'decls')
 
     Dump.save(TREE_PATH + '/insert_tool_tree', new_ast)
 

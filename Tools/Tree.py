@@ -23,11 +23,13 @@ class PositionNotValid(Exception):
 
 
 
-class InsertTool:
+class InsertTool(object):
      """Inserts the childs of a node (a subtree) on the given position. 
 
          .. note:: 
                 It doesn't insert the parent node of the new subtree. 
+         .. note::
+                New subtree must not be already a subtree of target_node
 
 
          Example:
@@ -100,7 +102,25 @@ class InsertTool:
          return target_node
 
 
-class ReplaceTool:
+
+
+class CloneTool(InsertTool):
+     """ Make a clone (deep copy) of a node and insert it on the given target_node.attribute
+
+         .. note:: 
+                It doesn't insert the parent node of the new subtree. 
+
+         Example:
+            >>> CloneTool(original = node, position = 'begin').apply(cuda_stmts, 'decls')
+
+     """
+     def __init__(self, original = None, position = "begin"):
+         """Prepare insertion """
+         subtree = c_ast.Compound(stmts = [original.__deepcopy__({}),], decls = [])
+         super(CloneTool,self).__init__(subtree = subtree, position = position)     
+   
+
+class ReplaceTool(object):
      """ Replace a subtree with another 
 
 
@@ -128,9 +148,11 @@ class ReplaceTool:
          position = attr.index(self.old_node)
          attr[position] = self.new_node
          setattr(target_node, attribute_name, attr)
+         # Update target node
+         setattr(self.new_node, 'parent', target_node)
          return target_node
 
-class RemoveTool:
+class RemoveTool(object):
      """ Remove a subtree from the AST
 
      """
